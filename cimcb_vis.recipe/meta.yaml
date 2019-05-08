@@ -1,0 +1,39 @@
+package:
+  name: cimcb_vis
+  version: 0.1
+
+source:
+  path: ../
+
+build:
+  noarch: python
+  number: 0
+  script: "{{ PYTHON }} -m pip install . --no-deps -vv"
+
+requirements:
+  build:
+    - setuptools
+    - python >=3.5
+    - numpy >=1.12
+    - pandas
+    - matplotlib
+    - seaborn
+    - networkx
+    - scipy
+    - scikit-learn
+
+  run:
+    - python >=3.5
+    - numpy >=1.12
+    - pandas
+    - matplotib
+    - seaborn
+    - networkx
+    - scipy
+    - scikit-learn
+
+about:
+  home: https://github.com/brettChapman
+  license: http://www.apache.org/licenses/LICENSE-2.0.html
+  summary: "This is a pre-release."
+
