@@ -49,7 +49,7 @@ For further detail on the usage refer to the docstring.
 #### cimcb_vis.utils
 - [df_to_Json](https://github.com/brettChapman/cimcb_vis/blob/master/cimcb_vis/utils/df_to_Json.py#L5-L23): Generates a Json data structure from an edges dataframe.
 - [mergeBlocks](https://github.com/brettChapman/cimcb_vis/blob/master/cimcb_vis/utils/mergeBlocks.py#L6-L28): Merges multiply Omics blocks into a single peak table and data table.
-- [range_scale](https://github.com/brettChapman/cimcb_vis/blob/master/cimcb_vis/utils/range_scale.py#L7-L22): Scales a range of values between a sets of user chosen values.
+- [range_scale](https://github.com/brettChapman/cimcb_vis/blob/master/cimcb_vis/utils/range_scale.py#L7-L22): Scales a range of values between user chosen values.
 - [spatialClustering](https://github.com/brettChapman/cimcb_vis/blob/master/cimcb_vis/utils/spatialClustering.py#L7-L29): Spatially clusters a matrix based on a user chosen distance metric clustering method.
 
 ### License

@@ -208,8 +208,8 @@ def getCSSbundle():
 def getJSbundle():
 
     js_text = '''
-
-    var pvalues = [];
+    
+    var loggedPvalues = [];
     var corrCoeff = [];
 
     var diameter = $diameter,
@@ -563,11 +563,16 @@ def getJSbundle():
 
     d3.select('#negCorrCoeffSlider').call(n_corrCoeffSlider);
  
-    d3.select('#pvalueValue').text(d3.max(pvalues).toPrecision(5));
-        
-    var pvalueSlider = d3.slider().scale(d3.scale.log().domain([Math.exp(d3.min(pvalues)), Math.exp(d3.max(pvalues))]).clamp(true)).value(Math.exp(d3.max(pvalues))).min(Math.exp(d3.min(pvalues))).max(Math.exp(d3.max(pvalues))).step(1E-20).on("slide", function(evt, value) {
+    d3.select('#pvalueValue').text(Math.exp(d3.max(loggedPvalues)).toPrecision(5));
+    
+    var pvalueSlider = d3.slider().scale(d3.scale.log().domain([d3.min(loggedPvalues), d3.max(loggedPvalues)]).clamp(true)).value(d3.max(loggedPvalues)).min(d3.min(loggedPvalues)).max(d3.max(loggedPvalues)).step(0.00001).on("slide", function(evt, value) {
                         
-            var pvalueValue = Math.log(value)
+            if (value == 0) {
+      		    var pvalueValue = value;
+            } else {
+      		    var pvalueValue = Math.exp(value);
+            }          
+                        
             var tension = currValues.tension;
             currValues['abs_corrCoeff'] = -1
             currValues['p_corrCoeff'] = 0
@@ -762,10 +767,16 @@ def getJSbundle():
       					    , d.target = d[d.length - 1]
                             , d.link_color = d.source.imports[d.target.keyname]["link_color"]
                             , d.link_corrCoeff = d.source.imports[d.target.keyname]["link_corrCoeff"]
-                            , corrCoeff.push(d.source.imports[d.target.keyname]["link_corrCoeff"])
-                            , pvalues.push(d.source.imports[d.target.keyname]["link_pvalue"])
+                            , corrCoeff.push(d.source.imports[d.target.keyname]["link_corrCoeff"])                            
                             , d.link_pvalue = d.source.imports[d.target.keyname]["link_pvalue"];
-             				})
+                            
+                            if (d.source.imports[d.target.keyname]["link_pvalue"] == 0) {
+  							    loggedPvalues.push(d.source.imports[d.target.keyname]["link_pvalue"]);
+  							} else {
+   							    loggedPvalues.push(Math.log(d.source.imports[d.target.keyname]["link_pvalue"]));
+  							}
+  								
+            })
     	    .attr("class", "link")
     	    .attr("d", line)
     	    .style("stroke", function(d) { return d.link_color; });
