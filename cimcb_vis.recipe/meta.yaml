@@ -21,6 +21,7 @@ requirements:
     - networkx
     - scipy
     - scikit-learn
+    - tqdm
 
   run:
     - python >=3.5
@@ -31,6 +32,7 @@ requirements:
     - networkx
     - scipy
     - scikit-learn
+    - tqdm
 
 about:
   home: https://github.com/brettChapman

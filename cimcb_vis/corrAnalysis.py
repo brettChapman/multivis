@@ -1,4 +1,5 @@
 from scipy import stats
+from tqdm import tqdm
 import numpy as np
 import pandas as pd
 
@@ -11,7 +12,7 @@ def corrAnalysis(multi_peaks, multi_blocks, correlationType):
         df_corr = pd.DataFrame()
         df_pval = pd.DataFrame()
 
-        for i in X.columns:
+        for i in tqdm(X.columns):
 
             corrList = []
             pvalList = []
