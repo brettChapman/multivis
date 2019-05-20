@@ -10,7 +10,7 @@ setup(
     long_description=long_description,
     license="http://www.apache.org/licenses/LICENSE-2.0.html",
     url="https://github.com/brettChapman/cimcb_vis",
-    packages=["cimcb_vis", "cimcb_vis.networks", "cimcb_vis.utils"],
+    packages=["cimcb_vis", "cimcb_vis.utils"],
     python_requires=">=3.5",
     install_requires=["numpy>=1.12",
                       "pandas",
