@@ -32,7 +32,7 @@ def get_cluster_classes(dn, labels, label='ivl'):
 
     return cluster
 
-def clustermap(X, row_linkage, col_linkage, imageFileName, rowColorGrouping, colColorGrouping, heatmap_cmap, group_cmap, row_color_threshold, col_color_threshold, fontSize, saveImage, figSize):
+def clustermap(X, row_linkage, col_linkage, imageFileName, rowColorGrouping, colColorGrouping, heatmap_cmap, group_cmap, row_color_threshold, col_color_threshold, fontSize, saveImage, dpi, figSize):
 
     groupCmap = plt.cm.get_cmap(group_cmap);
 
@@ -40,7 +40,7 @@ def clustermap(X, row_linkage, col_linkage, imageFileName, rowColorGrouping, col
     for i in range(groupCmap.N):
         groupColors.append(matplotlib.colors.rgb2hex(groupCmap(i)[:3]))
 
-    sns.set_context("notebook", font_scale=fontSize)
+    #sns.set_context("notebook", font_scale=fontSize)
 
     if rowColorGrouping or colColorGrouping:
 
@@ -92,6 +92,13 @@ def clustermap(X, row_linkage, col_linkage, imageFileName, rowColorGrouping, col
                                           , yticklabels=True
                                           , cmap=heatmap_cmap)
 
+                    hm = grid.ax_heatmap.get_position()
+                    plt.setp(grid.ax_heatmap.yaxis.get_majorticklabels(), fontsize=fontSize)
+                    plt.setp(grid.ax_heatmap.xaxis.get_majorticklabels(), fontsize=fontSize)
+                    grid.ax_heatmap.set_position([hm.x0, hm.y0, hm.width * 0.1, hm.height])
+                    col = grid.ax_col_dendrogram.get_position()
+                    grid.ax_col_dendrogram.set_position([col.x0, col.y0, col.width * 0.1, col.height * 1])
+
                     for tick_label in grid.ax_heatmap.axes.get_xticklabels():
                         tick_text = tick_label.get_text()
                         tick_color = col_palette[tick_text]
@@ -107,7 +114,7 @@ def clustermap(X, row_linkage, col_linkage, imageFileName, rowColorGrouping, col
                     #print(grid.dendrogram_col.linkage)
 
                     if saveImage:
-                        grid.savefig(imageFileName)
+                        grid.savefig(imageFileName, dpi=dpi)
 
                 else:
                     print("Too few colors in color map. Please choose alternative group colour map or colour by row only.")
@@ -138,6 +145,30 @@ def clustermap(X, row_linkage, col_linkage, imageFileName, rowColorGrouping, col
                                       , yticklabels=True
                                       , cmap=heatmap_cmap)
 
+                hm = grid.ax_heatmap.get_position()
+                plt.setp(grid.ax_heatmap.yaxis.get_majorticklabels(), fontsize=fontSize)
+                plt.setp(grid.ax_heatmap.xaxis.get_majorticklabels(), fontsize=fontSize)
+                #grid.ax_heatmap.set_position([hm.x0,  hm.y0, hm.width, hm.height])
+                col = grid.ax_col_dendrogram.get_position()
+                row = grid.ax_row_dendrogram.get_position()
+
+                relPos = (hm.x0 - row.x0);
+
+
+
+                grid.ax_col_dendrogram.set_position([col.x0, col.y0, col.width, col.height * 10.0])
+                grid.ax_row_dendrogram.set_position([row.x0, row.y0, row.width * 10.0, row.height])
+                row = grid.ax_row_dendrogram.get_position()
+                grid.ax_heatmap.set_position([hm.x0 + relPos + row.x0, hm.y0, hm.width, hm.height])
+
+
+                #row = grid.ax_row_dendrogram.get_position()
+                #grid.ax_row_dendrogram.set_position([row.x0 - relPos, row.y0, row.width, row.height])
+
+
+                print(hm.x0)
+                print(row.x0)
+
                 for tick_label in grid.ax_heatmap.axes.get_yticklabels():
                     tick_text = tick_label.get_text()
                     tick_color = row_palette[tick_text]
@@ -146,7 +177,7 @@ def clustermap(X, row_linkage, col_linkage, imageFileName, rowColorGrouping, col
                 grid.cax.set_position([0.05, 0.22, .03, .45])
 
                 if saveImage:
-                    grid.savefig(imageFileName)
+                    grid.savefig(imageFileName, dpi=dpi)
 
             else:
                 print("Too few colors in color map. Please choose alternative group colour map or colour by column only.")
@@ -172,6 +203,13 @@ def clustermap(X, row_linkage, col_linkage, imageFileName, rowColorGrouping, col
                                       , yticklabels=True
                                       , cmap=heatmap_cmap)
 
+                hm = grid.ax_heatmap.get_position()
+                plt.setp(grid.ax_heatmap.yaxis.get_majorticklabels(), fontsize=fontSize)
+                plt.setp(grid.ax_heatmap.xaxis.get_majorticklabels(), fontsize=fontSize)
+                grid.ax_heatmap.set_position([hm.x0, hm.y0, hm.width * 0.1, hm.height])
+                col = grid.ax_col_dendrogram.get_position()
+                grid.ax_col_dendrogram.set_position([col.x0, col.y0, col.width * 0.1, col.height * 1])
+
                 for tick_label in grid.ax_heatmap.axes.get_xticklabels():
                     tick_text = tick_label.get_text()
                     tick_color = col_palette[tick_text]
@@ -180,7 +218,7 @@ def clustermap(X, row_linkage, col_linkage, imageFileName, rowColorGrouping, col
                 grid.cax.set_position([0.05, 0.22, .03, .45])
 
                 if saveImage:
-                    grid.savefig(imageFileName)
+                    grid.savefig(imageFileName, dpi=dpi)
 
             else:
                 print("Too few colors in color map. Please choose alternative group colour map or colour by row only.")
@@ -194,6 +232,13 @@ def clustermap(X, row_linkage, col_linkage, imageFileName, rowColorGrouping, col
                               , xticklabels=True
                               , yticklabels=True
                               , cmap=heatmap_cmap)
+
+        hm = grid.ax_heatmap.get_position()
+        plt.setp(grid.ax_heatmap.yaxis.get_majorticklabels(), fontsize=fontSize)
+        plt.setp(grid.ax_heatmap.xaxis.get_majorticklabels(), fontsize=fontSize)
+        grid.ax_heatmap.set_position([hm.x0, hm.y0, hm.width * 0.1, hm.height])
+        col = grid.ax_col_dendrogram.get_position()
+        grid.ax_col_dendrogram.set_position([col.x0, col.y0, col.width * 0.8, col.height * 1])
         
         grid.cax.set_position([0.05, 0.22, .03, .45])
         
@@ -203,6 +248,6 @@ def clustermap(X, row_linkage, col_linkage, imageFileName, rowColorGrouping, col
         #row_labels = [label.get_text() for label in ax.yaxis.get_ticklabels()]
 
         if saveImage:
-            grid.savefig(imageFileName)
+            grid.savefig(imageFileName, dpi=dpi)
 
     #return col_labels, row_labels #pd.DataFrame(xlabel_texts, columns=['XLabels']), pd.DataFrame(ylabel_texts, columns=['YLabels'])

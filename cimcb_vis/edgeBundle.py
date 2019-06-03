@@ -13,13 +13,17 @@ class edgeBundle:
 
         self.set_params()
 
-    def set_params(self, diameter=960, innerRadiusOffset=120, fontSize=10, filterOffSet=-60, color_scale='Score', edge_cmap="brg"):
+    def set_params(self, diameter=960, innerRadiusOffset=120, groupSeparation=1, linkFadeOpacity=0.05, fontSize=10, backgroundColor='white', sliderTextColor='black', filterOffSet=-60, color_scale='Score', edge_cmap="brg"):
 
-        diameter, innerRadiusOffset, fontSize, filterOffSet, color_scale, edge_cmap = self.__paramCheck(diameter, innerRadiusOffset, fontSize, filterOffSet, color_scale, edge_cmap)
+        diameter, innerRadiusOffset, groupSeparation, linkFadeOpacity, fontSize, backgroundColor, sliderTextColor, filterOffSet, color_scale, edge_cmap = self.__paramCheck(diameter, innerRadiusOffset, groupSeparation, linkFadeOpacity, fontSize, backgroundColor, sliderTextColor, filterOffSet, color_scale, edge_cmap)
 
         self.diameter = diameter;
         self.innerRadiusOffset = innerRadiusOffset;
+        self.groupSeparation = groupSeparation;
+        self.linkFadeOpacity = linkFadeOpacity;
         self.fontSize = fontSize;
+        self.backgroundColor = backgroundColor;
+        self.sliderTextColor = sliderTextColor;
         self.filterOffSet = filterOffSet;
         self.color_scale = color_scale;
         self.edge_cmap = edge_cmap;
@@ -31,7 +35,7 @@ class edgeBundle:
 
         return DF
 
-    def __paramCheck(self, diameter, innerRadiusOffset, fontSize, filterOffSet, color_scale, edge_cmap):
+    def __paramCheck(self, diameter, innerRadiusOffset, groupSeparation, linkFadeOpacity, fontSize, backgroundColor, sliderTextColor, filterOffSet, color_scale, edge_cmap):
 
         if not isinstance(diameter, float):
             if not isinstance(diameter, int):
@@ -41,9 +45,23 @@ class edgeBundle:
             if not isinstance(innerRadiusOffset, int):
                 raise ValueError("Inner radius offset is not valid. Choose a float or integer value.")
 
+        if not isinstance(groupSeparation, float):
+            if not isinstance(groupSeparation, int):
+                raise ValueError("Group separation is not valid. Choose a float or integer value.")
+
+        if not isinstance(linkFadeOpacity, float):
+            if not isinstance(linkFadeOpacity, int):
+                raise ValueError("Link fade opacity is not valid. Choose a float or integer value.")
+
         if not isinstance(fontSize, float):
             if not isinstance(fontSize, int):
                 raise ValueError("Font size is not valid. Choose a float or integer value.")
+
+        if backgroundColor.lower() not in ["black", "white"]:
+            raise ValueError("Background colour is not valid. Choose either \"white\" or \"black\".")
+
+        if sliderTextColor.lower() not in ["black", "white"]:
+            raise ValueError("Slider text colour is not valid. Choose either \"white\" or \"black\".")
 
         if not isinstance(filterOffSet, float):
             if not isinstance(filterOffSet, int):
@@ -55,7 +73,7 @@ class edgeBundle:
         if not isinstance(edge_cmap, str):
             raise ValueError("Edge Cmap is not valid. Choose a valid string option from https://matplotlib.org/users/colormaps.html.")
 
-        return diameter, innerRadiusOffset, fontSize, filterOffSet, color_scale, edge_cmap
+        return diameter, innerRadiusOffset, groupSeparation, linkFadeOpacity, fontSize, backgroundColor, sliderTextColor, filterOffSet, color_scale, edge_cmap
 
     def __getCSSbundle(self):
 
@@ -63,7 +81,9 @@ class edgeBundle:
             .node {
             font: "Helvetica Neue", Helvetica, Arial, sans-serif;
             font-size: $fontSize;
-        }    
+        }
+        
+        body {background-color: $backgroundColor;}
 
         .node:hover {
             stroke-opacity: 1.0;
@@ -135,36 +155,42 @@ class edgeBundle:
             position: absolute;
             bottom: $radioOffSet;
             left: 0px; 
+            color: $sliderTextColor;
         }
        
         #scoreSelect {
             position: absolute;
             bottom: $radioOffSet;
-            left: 160px; 
+            left: 160px;
+            color: $sliderTextColor;
         }
      
         #abs_score, #p_score, #n_score {
             position: absolute;
             bottom: $filterSliderOffSet;
-            left: 0px; 
+            left: 0px;
+            color: $sliderTextColor;
         }
        
         #pvalue {
             position: absolute;
             bottom: $filterSliderOffSet;
-            left: 0px; 
+            left: 0px;
+            color: $sliderTextColor;
         }
        
         #tension {
             position: absolute;
             bottom: $tensionSliderOffSet;
-            left: 0px; 
+            left: 0px;
+            color: $sliderTextColor;
         }
       
         #abs_scoreValue, #p_scoreValue, #n_scoreValue, #pvalueValue, #tensionValue {
             position: absolute;
             bottom: 0px;
             left: 375px;
+            color: $sliderTextColor;
         }
        
         #abs_scoreHide {
@@ -256,6 +282,17 @@ class edgeBundle:
             margin-left: 0;
             margin-bottom: -.6em;      
         }
+        
+        text {
+            font-family: sans-serif;
+                -webkit-touch-callout: none; /* iOS Safari */
+                -webkit-user-select: none; /* Safari */
+                -khtml-user-select: none; /* Konqueror HTML */
+                -moz-user-select: none; /* Firefox */
+                -ms-user-select: none; /* Internet Explorer/Edge */
+                user-select: none; /* Non-prefixed version, currently supported by Chrome and Opera */
+        }
+        
         '''
 
         return css_text
@@ -263,7 +300,7 @@ class edgeBundle:
     def __getJSbundle(self):
 
         js_text = '''
-        
+                
         var pvalues = [];
         var scores = [];
     
@@ -272,10 +309,11 @@ class edgeBundle:
         innerRadius = radius - $innerRadiusOffset;
         
         var cluster = d3.layout.cluster()
+            .separation(function(a, b) { return (a.parent == b.parent ? 1 : $groupSeparation ) })
             .size([360, innerRadius]);
     
         var bundle = d3.layout.bundle();
-    
+        
         var canvas = d3.select("#wrapper")
                 .append("svg")
                 .attr("width", diameter)
@@ -656,9 +694,9 @@ class edgeBundle:
                 var n_scoreValue = currValues.n_score;
                 currValues['tension'] = tension;
       
-                d3.select('#tensionValue').text(Math.round(tension * 1000) / 1000);
+                d3.select('#tensionValue').text(tension.toPrecision(2));
           
-                var form = document.getElementById("scoreSelect")
+                var form = document.getElementById("filterType")
                 var form_val;
       
                 for(var i=0; i<form.length; i++){
@@ -667,14 +705,28 @@ class edgeBundle:
                     }
                 }
       
-                if (form_val == "PosScoreRadio") {
-                    var FlareData = filterData(p_scoreValue, 1, pvalueValue);
-                } else if (form_val == "NegScoreRadio") {
-                    var FlareData = filterData(n_scoreValue, 0, pvalueValue);
-                } else if (form_val == "AbsScoreRadio") {
-                    var FlareData = filterData(abs_scoreValue, 1, pvalueValue);
-                }
+                if (form_val == "scoreRadio") { 
+          
+                    var score_form = document.getElementById("scoreSelect")
+                    var score_form_val;
       
+                    for(var i=0; i<score_form.length; i++){
+                        if(score_form[i].checked){
+                            score_form_val = score_form[i].id;        
+                        }
+                    }
+      
+                    if (score_form_val == "PosScoreRadio") {
+                        var FlareData = filterData(p_scoreValue, 1, 1);
+                    } else if (score_form_val == "NegScoreRadio") {
+                        var FlareData = filterData(n_scoreValue, 0, 1);
+                    } else if (score_form_val == "AbsScoreRadio") {
+                        var FlareData = filterData(abs_scoreValue, 1, 1);
+                    }
+                } else {
+                    var FlareData = filterData(-1, 1, pvalueValue);
+                }
+                
                 var linkLine = updateBundle(FlareData);
       
                 var line = linkLine.line;
@@ -815,11 +867,11 @@ class edgeBundle:
         
             link.each(function(d) { d.source = d[0]
                                 , d.target = d[d.length - 1]
-                                , d.link_color = d.source.imports[d.target.keyname]["link_color"]
-                                , d.link_score = d.source.imports[d.target.keyname]["link_score"]
-                                , scores.push(d.source.imports[d.target.keyname]["link_score"])
-                                , pvalues.push(d.source.imports[d.target.keyname]["link_pvalue"])              
-                                , d.link_pvalue = d.source.imports[d.target.keyname]["link_pvalue"];  								
+                                , d.link_color = d.source.imports[d.target.id]["link_color"]
+                                , d.link_score = d.source.imports[d.target.id]["link_score"]
+                                , scores.push(d.source.imports[d.target.id]["link_score"])
+                                , pvalues.push(d.source.imports[d.target.id]["link_pvalue"])              
+                                , d.link_pvalue = d.source.imports[d.target.id]["link_pvalue"];  								
                 })
                 .attr("class", "link")
                 .attr("d", line)
@@ -868,7 +920,7 @@ class edgeBundle:
                     .classed("node--target", function(n) { return n.target; })
                     .classed("node--source", function(n) { return n.source; });
             
-                link.style('opacity', o => (o.source === d || o.target === d ? 1 : 0.05))
+                link.style('opacity', o => (o.source === d || o.target === d ? 1 : $linkFadeOpacity))
             }
     
             function mouseouted(d) {
@@ -888,21 +940,21 @@ class edgeBundle:
             function packageHierarchy(classes) {
                 var map = {}    ;
     
-                function find(keyname, data) {
-                    var node = map[keyname], i;
+                function find(id, data) {
+                    var node = map[id], i;
                     if (!node) {
-                        node = map[keyname] = data || {keyname: keyname, children: []};
-                        if (keyname.length) {
-                            node.parent = find(keyname.substring(0, i = keyname.lastIndexOf("#")));
+                        node = map[id] = data || {id: id, children: []};
+                        if (id.length) {
+                            node.parent = find(id.substring(0, i = id.lastIndexOf("#")));
                             node.parent.children.push(node);
-                            node.key = keyname.substring(i + 1);
+                            node.key = id.substring(i + 1);
                         }
                     }
                     return node;
                 }
     
                 classes.forEach(function(d) {
-                    find(d.keyname, d);
+                    find(d.id, d);
                 });
     
                 return map[""];
@@ -912,12 +964,12 @@ class edgeBundle:
                 var map = {}, imports = [];
     
                 nodes.forEach(function(d) {
-                    map[d.keyname] = d;
+                    map[d.id] = d;
                 });
     
                 nodes.forEach(function(d) {       
                     if (d.imports) Object.keys(d.imports).forEach(function(i) {    
-                        imports.push({source: map[d.keyname], target: map[i]});
+                        imports.push({source: map[d.id], target: map[i]});
                     });
                 });
     
@@ -1041,15 +1093,15 @@ class edgeBundle:
                 # Make a list of keys
                 key_list = []
                 for item in d['children']:
-                    key_list.append(item['keyname'])
+                    key_list.append(item['id'])
 
                 # if parent index is NOT a key in flare.JSON, append it
                 if not parent_index in key_list:
-                    d['children'].append({"keyname": parent_index, "name": parent_label, "node_color": parent_color, "group": parent_group, "children": [{"keyname": child_index, "name": child_label, "node_color": child_color, "link_score": link_score, "link_sign": link_sign, "link_pvalue": link_pvalue, "group": child_group, "link_color": link_color}]})
+                    d['children'].append({"id": parent_index, "name": parent_label, "node_color": parent_color, "group": parent_group, "children": [{"id": child_index, "name": child_label, "node_color": child_color, "link_score": link_score, "link_sign": link_sign, "link_pvalue": link_pvalue, "group": child_group, "link_color": link_color}]})
 
                 # if parent index IS a key in flare.json, add a new child to it
                 else:
-                    d['children'][key_list.index(parent_index)]['children'].append({"keyname": child_index, "name": child_label, "node_color": child_color, "link_score": link_score, "link_sign": link_sign, "link_pvalue": link_pvalue, "group": child_group, "link_color": link_color})
+                    d['children'][key_list.index(parent_index)]['children'].append({"id": child_index, "name": child_label, "node_color": child_color, "link_score": link_score, "link_sign": link_sign, "link_pvalue": link_pvalue, "group": child_group, "link_color": link_color})
             else:
                 parent_index = row[0]
                 parent_name = row[1]
@@ -1067,15 +1119,15 @@ class edgeBundle:
                 # Make a list of keys
                 key_list = []
                 for item in d['children']:
-                    key_list.append(item['keyname'])
+                    key_list.append(item['id'])
 
                 # if parent index is NOT a key in flare.JSON, append it
                 if not parent_index in key_list:
-                    d['children'].append({"keyname": parent_index, "name": parent_label, "node_color": parent_color, "children": [{"keyname": child_index, "name": child_label, "node_color": child_color, "link_score": link_score, "link_sign": link_sign, "link_pvalue": link_pvalue, "link_color": link_color}]})
+                    d['children'].append({"id": parent_index, "name": parent_label, "node_color": parent_color, "children": [{"id": child_index, "name": child_label, "node_color": child_color, "link_score": link_score, "link_sign": link_sign, "link_pvalue": link_pvalue, "link_color": link_color}]})
 
                 # if parent index IS a key in flare.json, add a new child to it
                 else:
-                    d['children'][key_list.index(parent_index)]['children'].append({"keyname": child_index, "name": child_label, "node_color": child_color, "link_score": link_score, "link_sign": link_sign, "link_pvalue": link_pvalue, "link_color": link_color})
+                    d['children'][key_list.index(parent_index)]['children'].append({"id": child_index, "name": child_label, "node_color": child_color, "link_score": link_score, "link_sign": link_sign, "link_pvalue": link_pvalue, "link_color": link_color})
 
         flare = d
 
@@ -1099,8 +1151,8 @@ class edgeBundle:
                 for idx, val in enumerate(value):
 
                     if "start_block" in edges.columns:
-                        dParent = {"keyname": "", "name": "", "node_color": "", "group": "", "imports": {}}
-                        parent_index = str(value[idx]['keyname'])
+                        dParent = {"id": "", "name": "", "node_color": "", "group": "", "imports": {}}
+                        parent_index = str(value[idx]['id'])
                         parentGroup = str(value[idx]['group'])
 
                         flareParentIndex = flareString + "#" + parentGroup + "#" + parent_index
@@ -1108,15 +1160,15 @@ class edgeBundle:
                         dParent["group"] = parentGroup
 
                     else:
-                        parent_index = str(value[idx]['keyname'])
-                        dParent = {"keyname": "", "name": "", "node_color": "", "imports": {}}
+                        parent_index = str(value[idx]['id'])
+                        dParent = {"id": "", "name": "", "node_color": "", "imports": {}}
 
                         flareParentIndex = flareString + "#" + parent_index
 
                     parentName = str(value[idx]['name'])
                     parentColor = str(value[idx]['node_color'])
 
-                    dParent["keyname"] = flareParentIndex
+                    dParent["id"] = flareParentIndex
                     dParent["name"] = parentName
                     dParent["node_color"] = parentColor
 
@@ -1129,8 +1181,8 @@ class edgeBundle:
                         link_color = str(child['link_color'])
 
                         if "start_block" in edges.columns:
-                            dChild = {"keyname": "", "name": "", "node_color": "", "group": "", "imports": {}}
-                            child_index = str(child['keyname'])
+                            dChild = {"id": "", "name": "", "node_color": "", "group": "", "imports": {}}
+                            child_index = str(child['id'])
                             childGroup = str(child['group'])
 
                             flareChildIndex = flareString + "#" + childGroup + "#" + child_index
@@ -1138,8 +1190,8 @@ class edgeBundle:
                             dChild["group"] = childGroup
 
                         else:
-                            child_index = str(child['keyname'])
-                            dChild = {"keyname": "", "name": "", "node_color": "", "imports": {}}
+                            child_index = str(child['id'])
+                            dChild = {"id": "", "name": "", "node_color": "", "imports": {}}
 
                             flareChildIndex = flareString + "#" + child_index
 
@@ -1149,7 +1201,7 @@ class edgeBundle:
 
                         dParent["imports"][flareChildIndex] = {"link_score": link_score, "link_sign": link_sign, "link_pvalue": link_pvalue, "link_color": link_color}
 
-                        dChild["keyname"] = flareChildIndex
+                        dChild["id"] = flareChildIndex
                         dChild["name"] = childName
                         dChild["node_color"] = childColor
 
@@ -1231,7 +1283,11 @@ class edgeBundle:
         edges = self.edges
         diameter = self.diameter
         innerRadiusOffset = self.innerRadiusOffset
+        groupSeparation = self.groupSeparation
+        linkFadeOpacity = self.linkFadeOpacity
         fontSize = self.fontSize
+        backgroundColor = self.backgroundColor
+        sliderTextColor = self.sliderTextColor
         filterOffSet = self.filterOffSet
         color_scale = self.color_scale
         edge_cmap = self.edge_cmap
@@ -1258,9 +1314,13 @@ class edgeBundle:
 
         js_text = js_text_template_bundle.substitute({'flareData': json.dumps(bundleJson)
                                                          , 'diameter': diameter
-                                                         , 'innerRadiusOffset': innerRadiusOffset})
+                                                         , 'innerRadiusOffset': innerRadiusOffset
+                                                         , 'groupSeparation': groupSeparation
+                                                         , 'linkFadeOpacity': linkFadeOpacity})
 
         css_text = css_text_template_bundle.substitute({'fontSize': str(fontSize) + 'px'
+                                                           , 'backgroundColor': backgroundColor
+                                                           , 'sliderTextColor': sliderTextColor
                                                            , 'radioOffSet': str(filterOffSet) + 'px'
                                                            , 'filterSliderOffSet': str(filterOffSet - 30) + 'px'
                                                            , 'tensionSliderOffSet': str(filterOffSet - 60) + 'px'})
