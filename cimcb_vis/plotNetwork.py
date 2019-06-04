@@ -23,29 +23,41 @@ class plotNetwork:
 
         return g
 
-    def set_params(self, imageFileName='networkPlot.jpg', saveImage=True, graphviz_prog='neato', sizing_column='Pvalue', sizeScale='linear', size_range=(150,2000), filter_threshold=0.0001, filter_column='Pvalue', sign="BOTH", fontSize=15, figSize=(30,20), alpha=0.5, addLabels=True, keepSingletons=False):
+    def set_params(self, node_params, filter_params, imageFileName='networkPlot.jpg', saveImage=True, graphviz_prog='neato', figSize=(30,20)):
 
-        imageFileName, saveImage, graphviz_prog, sizing_column, fontSize, figSize, alpha, addLabels, keepSingletons = self.__paramCheck(imageFileName, saveImage, graphviz_prog, sizing_column, sizeScale, size_range, filter_threshold, filter_column, sign, fontSize, figSize, alpha, addLabels, keepSingletons)
+        self.__set_node_params(**node_params)
+
+        self.__set_filter_params(**filter_params)
+
+        imageFileName, saveImage, graphviz_prog, figSize = self.__paramCheck(imageFileName, saveImage, graphviz_prog, figSize)
 
         self.__imageFileName = imageFileName;
         self.__saveImage = saveImage;
         self.__graphviz_prog = graphviz_prog;
+        self.__figSize = figSize;
+
+    def __set_node_params(self, sizing_column='Pvalue', sizeScale='reverse_linear', size_range=(150,2000), alpha=0.5, addLabels=True, fontSize=15, keepSingletons=True):
+
+        sizing_column, sizeScale, size_range, alpha, addLabels, fontSize, keepSingletons = self.__node_paramCheck(sizing_column, sizeScale, size_range, alpha, addLabels, fontSize, keepSingletons)
+
         self.__sizing_column = sizing_column;
         self.__sizeScale = sizeScale;
         self.__size_range = size_range;
-        self.__filter_threshold = filter_threshold;
-        self.__filter_column = filter_column;
-        self.__sign = sign;
-        self.__fontSize = fontSize;
-        self.__figSize = figSize;
         self.__alpha = alpha
         self.__addLabels = addLabels
-        self.__keepSingletons = keepSingletons
+        self.__fontSize = fontSize;
+        self.__keepSingletons = keepSingletons;
 
-    def __paramCheck(self, imageFileName, saveImage, graphviz_prog, sizing_column, sizeScale, size_range, filter_threshold, filter_column, sign, fontSize, figSize, alpha, addLabels, keepSingletons):
+    def __set_filter_params(self, column='Pvalue', threshold=0.01, operator='>', sign='both'):
 
-        g = self.__g
-        col_list = list(g.nodes[0].keys())
+        column, threshold, operator, sign = self.__filter_paramCheck(column, threshold, operator, sign)
+
+        self.__filter_column = column;
+        self.__filter_threshold = threshold;
+        self.__operator = operator;
+        self.__sign = sign;
+
+    def __paramCheck(self, imageFileName, saveImage, graphviz_prog, figSize):
 
         if not isinstance(imageFileName, str):
                 raise ValueError("Image file name is not valid. Choose a string value.")
@@ -56,6 +68,18 @@ class plotNetwork:
         if graphviz_prog not in ["neato", "dot", "fdp", "sfdp", "twopi", "circo"]:
             raise ValueError("Graphviz layout program not valid. Choose either \"neato\", \"dot\", \"fdp\", \"sfdp\", \"twopi\" or \"circo\".")
 
+        if not isinstance(figSize, tuple):
+            raise ValueError("Figure size is not valid. Choose a tuple of length 2.")
+        else:
+            for length in figSize:
+                if not isinstance(length, float):
+                    if not isinstance(length, int):
+                        raise ValueError("Figure size items not valid. Choose a float or integer value.")
+
+        return imageFileName, saveImage, graphviz_prog, figSize
+
+    def __node_paramCheck(self, sizing_column, sizeScale, size_range, alpha, addLabels, fontSize, keepSingletons):
+
         if sizing_column not in col_list:
             raise ValueError("Sizing column not valid. Choose one of {}.".format(', '.join(col_list)))
         else:
@@ -63,10 +87,12 @@ class plotNetwork:
                 try:
                     float(g.node[node][sizing_column])
                 except ValueError:
-                    raise ValueError("Sizing column contains invalid values. Choose a sizing column containing float or integer values.")
+                    raise ValueError(
+                        "Sizing column contains invalid values. Choose a sizing column containing float or integer values.")
 
-        if sizeScale not in ["linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume"]:
-            raise ValueError("Size scale type not valid. Choose either \"linear\", \"reverse_linear\", \"log\", \"reverse_log\", \"square\", \"reverse_square\", \"area\", \"reverse_area\", \"volume\", \"reverse_volume\".")
+        if sizeScale.lower() not in ["linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume"]:
+            raise ValueError(
+                "Size scale type not valid. Choose either \"linear\", \"reverse_linear\", \"log\", \"reverse_log\", \"square\", \"reverse_square\", \"area\", \"reverse_area\", \"volume\", \"reverse_volume\".")
 
         if not isinstance(size_range, tuple):
             raise ValueError("Size range is not valid. Choose a tuple of length 2.")
@@ -76,38 +102,6 @@ class plotNetwork:
                     if not isinstance(size, int):
                         raise ValueError("Size items not valid. Choose a float or integer value.")
 
-        if not isinstance(filter_threshold, float):
-            if not isinstance(filter_threshold, int):
-                raise ValueError("Filter threshold is not valid. Choose a float or integer value.")
-            elif filter_threshold == 0:
-                raise ValueError("Filter threshold should not be zero. Choose a value close to zero or above.")
-        elif filter_threshold == 0.0:
-            raise ValueError("Filter threshold should not be zero. Choose a value close to zero or above.")
-
-        if filter_column not in col_list:
-            raise ValueError("Filter column not valid. Choose one of {}.".format(', '.join(col_list)))
-        else:
-            for idx, node in enumerate(g.nodes()):
-                try:
-                    float(g.node[node][filter_column])
-                except ValueError:
-                    raise ValueError("Filter column contains invalid values. Choose a filter column containing float or integer values.")
-
-        if sign not in ["POS", "NEG", "BOTH"]:
-            raise ValueError("Sign not valid. Choose either \"POS\", \"NEG\", or \"BOTH\".")
-
-        if not isinstance(fontSize, float):
-            if not isinstance(fontSize, int):
-                raise ValueError("Font size is not valid. Choose a float or integer value.")
-
-        if not isinstance(figSize, tuple):
-            raise ValueError("Figure size is not valid. Choose a tuple of length 2.")
-        else:
-            for length in figSize:
-                if not isinstance(length, float):
-                    if not isinstance(length, int):
-                        raise ValueError("Figure size items not valid. Choose a float or integer value.")
-
         if not isinstance(alpha, float):
             if not (alpha >= 0 and alpha <= 1):
                 raise ValueError("Alpha value is not valid. Choose a float between 0 and 1.")
@@ -115,10 +109,45 @@ class plotNetwork:
         if not type(addLabels) == bool:
             raise ValueError("Add labels is not valid. Choose either \"True\" or \"False\".")
 
+        if not isinstance(fontSize, float):
+            if not isinstance(fontSize, int):
+                raise ValueError("Font size is not valid. Choose a float or integer value.")
+
         if not type(keepSingletons) == bool:
             raise ValueError("Keep singletons is not valid. Choose either \"True\" or \"False\".")
 
-        return imageFileName, saveImage, graphviz_prog, sizing_column, fontSize, figSize, alpha, addLabels, keepSingletons
+        return sizing_column, sizeScale, size_range, alpha, addLabels, fontSize, keepSingletons
+
+    def __filter_paramCheck(self, column, threshold, operator, sign):
+
+        g = self.__g
+        col_list = list(g.nodes[0].keys())
+
+        if column not in col_list:
+            raise ValueError("Filter column not valid. Choose one of {}.".format(', '.join(col_list)))
+        else:
+            for idx, node in enumerate(g.nodes()):
+                try:
+                    float(g.node[node][column])
+                except ValueError:
+                    raise ValueError(
+                        "Filter column contains invalid values. Choose a filter column containing float or integer values.")
+
+        if not isinstance(threshold, float):
+            if not isinstance(threshold, int):
+                raise ValueError("Filter threshold is not valid. Choose a float or integer value.")
+            elif threshold == 0:
+                raise ValueError("Filter threshold should not be zero. Choose a value close to zero or above.")
+        elif threshold == 0.0:
+            raise ValueError("Filter threshold should not be zero. Choose a value close to zero or above.")
+
+        if operator not in ["<", ">", "<=", ">="]:
+            raise ValueError("Operator not valid. Choose either \"<\", \">\", \"<=\" or \">=\".")
+
+        if sign.lower() not in ["pos", "neg", "both"]:
+            raise ValueError("Sign not valid. Choose either \"pos\", \"neg\", or \"both\".")
+
+        return column, threshold, operator, sign
 
     def run(self):
 
@@ -134,15 +163,12 @@ class plotNetwork:
             #target = v
             weight = g.edges[source, target]['weight']
 
-            if self.__sign == "POS":
+            if self.__sign == "pos":
                 if weight < 0:
                     edgeList.append((source, target))
-            elif self.__sign == "NEG":
+            elif self.__sign == "neg":
                 if weight >= 0:
                     edgeList.append((source, target))
-
-
-
 
         g.remove_edges_from(edgeList)
 

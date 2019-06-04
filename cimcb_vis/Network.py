@@ -19,7 +19,7 @@ class Network(Edge):
 
         self.__networkXEdges()
 
-    def set_params(self, filterScoreType='Pval', hard_threshold=0.005, link_type='Score', lengthScale='linear', length_range=[1,10], internalCorrelation=False, sign="BOTH", verbose=0):
+    def set_params(self, filterScoreType='Pval', hard_threshold=0.005, link_type='Score', lengthScale='linear', length_range=(1,10), internalCorrelation=False, sign="both", verbose=0):
 
         Edge.set_params(self, filterScoreType, hard_threshold, internalCorrelation, sign, verbose)
 
@@ -34,7 +34,7 @@ class Network(Edge):
         if lengthScale not in ["linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square"]:
             raise ValueError("Length scale type not valid. Choose either \"linear\", \"reverse_linear\", \"log\", \"reverse_log\", \"square\", \"reverse_square\".")
 
-        if not isinstance(length_range, list):
+        if not isinstance(length_range, tuple):
             raise ValueError("Length range is not valid. Choose a list of length 2.")
         else:
             for length in length_range:

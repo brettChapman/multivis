@@ -21,7 +21,7 @@ class Edge:
 
         self.runEdges()
 
-    def set_params(self, filterScoreType='Pval', hard_threshold=0.005, internalCorrelation=False, sign="BOTH", verbose=0):
+    def set_params(self, filterScoreType='Pval', hard_threshold=0.005, internalCorrelation=False, sign="both", verbose=0):
 
         filterScoreType, hard_threshold, internalCorrelation, sign, verbose = self.__paramCheck(filterScoreType, hard_threshold, internalCorrelation, sign, verbose)
 
@@ -51,9 +51,9 @@ class Edge:
 
         return Peaks
 
-    def __paramCheck(self, filtScoreType, hard_threshold, internalCorrelation, sign, verbose):
+    def __paramCheck(self, filterScoreType, hard_threshold, internalCorrelation, sign, verbose):
 
-        if filtScoreType not in ["Pval", "Score"]:
+        if filterScoreType.lower() not in ["pval", "score"]:
             raise ValueError("Filter score type not valid. Choose either \"Pval\" or \"Score\".")
 
         if not isinstance(hard_threshold, float):
@@ -63,13 +63,13 @@ class Edge:
         if not type(internalCorrelation) == bool:
             raise ValueError("Internal correlation not valid. Choose either \"True\" or \"False\".")
 
-        if sign not in ["POS", "NEG", "BOTH"]:
-            raise ValueError("Sign is not valid. Choose either \"POS\" or \"NEG\" or \"BOTH\".")
+        if sign.lower() not in ["pos", "neg", "both"]:
+            raise ValueError("Sign is not valid. Choose either \"pos\" or \"neg\" or \"both\".")
 
         if verbose not in [0, 1]:
             raise ValueError("Verbose not valid. Choose either 0 or 1.")
 
-        return filtScoreType, hard_threshold, internalCorrelation, sign, verbose
+        return filterScoreType, hard_threshold, internalCorrelation, sign, verbose
 
     def __scoreBlock1(self, nodes, peaks, scores, pvalues, blocks, block1):
 
@@ -177,7 +177,7 @@ class Edge:
 
         return nodes, scoreBlocks_blocked2, pvalBlocks_blocked2
 
-    def __buildEdges(self, nodes, SCORE, PVAL, block1, block2, filtScoreType, hard_threshold, sign):
+    def __buildEdges(self, nodes, SCORE, PVAL, block1, block2, filterScoreType, hard_threshold, sign):
 
         if 'Group' in nodes.columns:
             blocks = list(nodes['Group'].unique())
@@ -328,14 +328,14 @@ class Edge:
 
         edges = pd.DataFrame()
 
-        if filtScoreType in options:
-            edges = options[filtScoreType];
+        if filterScoreType in options:
+            edges = options[filterScoreType];
         else:
             print ("Error: wrong score type specified. Valid entries are 'Score' and 'Pval'.")
 
-        if sign == "POS":
+        if sign.lower() == "pos":
             edges = edges[edges['Sign'] > 0].reset_index(drop=True)
-        elif sign == "NEG":
+        elif sign.lower() == "neg":
             edges = edges[edges['Sign'] < 0].reset_index(drop=True)
 
         return edges

@@ -1,7 +1,7 @@
 import pandas as pd
 import collections
 
-def mergeBlocks(peak_blocks, data_blocks, size_column):
+def mergeBlocks(peak_blocks, data_blocks):
 
     blocks = list(data_blocks.keys())
 
@@ -21,10 +21,6 @@ def mergeBlocks(peak_blocks, data_blocks, size_column):
 
         if 'Label' not in peak.columns:
             print("No \"Label\" column in {} peak block".format(block))
-            break;
-
-        if size_column not in peak.columns:
-            print("No \"{}\" column in {} peak block".format(size_column, block))
             break;
 
         if df_peaks.empty:
