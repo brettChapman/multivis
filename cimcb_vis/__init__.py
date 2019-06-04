@@ -10,4 +10,4 @@ from .clustermap import clustermap
 from .polarDendrogram import polarDendrogram
 from . import utils
 
-__all__ = ["corrAnalysis", "Edge", "graphviz_plotNetwork", "interactiveNetwork", "edgeBundle", "clustermap", "polarDendrogram", "utils"]
+__all__ = ["corrAnalysis", "Edge", "plotNetwork", "interactiveNetwork", "edgeBundle", "clustermap", "polarDendrogram", "utils"]
