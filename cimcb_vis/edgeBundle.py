@@ -590,7 +590,7 @@ class edgeBundle:
                 currValues['abs_score'] = scoreValue;
                 currValues['s_abs_score'] = scoreValue;
                 currValues['pvalue'] = 1;
-    
+                
                 d3.select('#abs_scoreValue').text(absScale(scoreValue).toPrecision(5));
           
                 var FlareData = filterData(scoreValue, 1, 1);
@@ -667,7 +667,7 @@ class edgeBundle:
                 currValues['n_score'] = -1
                 currValues['pvalue'] = pvalueValue;
                 currValues['s_pvalue'] = pvalueValue;
-          
+                
                 d3.select('#pvalueValue').text(pvalueValue.toPrecision(5));
           
                 var FlareData = filterData(-1, 1, pvalueValue);
@@ -1039,22 +1039,22 @@ class edgeBundle:
                 </form>
       
                 <div id="abs_scoreHide">
-                    <h3 id="abs_score">Corr. coeff: <div id="absScoreSlider"></div><span id="abs_scoreValue">0</span></h3>
+                    <h3 id="abs_score">Corr. coeff: <div id="absScoreSlider"></div><span style="white-space: nowrap;" id="abs_scoreValue">0</span></h3>
                 </div> 
     
                 <div id="p_scoreHide">
-                    <h3 id="p_score"> Corr. coeff: <div id="posScoreSlider"></div><span id="p_scoreValue"></span></h3>
+                    <h3 id="p_score"> Corr. coeff: <div id="posScoreSlider"></div><span style="white-space: nowrap;" id="p_scoreValue"></span></h3>
                 </div>
     
                 <div id="n_scoreHide">
-                    <h3 id="n_score"> Corr. coeff: <div id="negScoreSlider"></div><span id="n_scoreValue"></span></h3>
+                    <h3 id="n_score"> Corr. coeff: <div id="negScoreSlider"></div><span style="white-space: nowrap;" id="n_scoreValue"></span></h3>
                 </div>
       
                 <div id="pvalueHide">
-                    <h3 id="pvalue"> Pvalue: <div id="pvalueSlider"></div><span id="pvalueValue"></span></h3>
+                    <h3 id="pvalue"> Pvalue: <div id="pvalueSlider"></div><span style="white-space: nowrap;" id="pvalueValue"></span></h3>
                 </div>
     
-                <h3 id="tension">Tension: <div id="tensionSlider"></div><span id="tensionValue"></span></h3>
+                <h3 id="tension">Tension: <div id="tensionSlider"></div><span style="white-space: nowrap;" id="tensionValue"></span></h3>
             </div>
       
             <script src="https://d3js.org/d3.v3.min.js"></script>

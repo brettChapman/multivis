@@ -214,13 +214,20 @@ def getJSnetwork():
 
     js_text = '''
     
-    var switchDict = $switch
+    var paramD = $paramDict
+        
+    var params = JSON.parse(JSON.stringify(paramD));
     
-    switchData = JSON.parse(JSON.stringify(switchDict));
+    //var sizingScale  = JSON.parse(params.size_scale)
     
+    //sizingScale = typeof sizingScale == 'string' ? [sizingScale] : sizingScale;
+       
+    
+    //document.write(sizingScale[0])
+        
     var networkData = $networkData
 
-    var width = 960, height = 600;
+    var width = $width, height = $height;
    
     var svg = d3.select("body").append("svg")
         .attr("width", width)
@@ -232,11 +239,10 @@ def getJSnetwork():
         .force("link", d3.forceLink().id(d => d.id))
         .force("charge", d3.forceManyBody().strength([-120]))//.distanceMax([500]))
         .force("center", d3.forceCenter(width / 2, height / 2))
-        .force("collide", d3.forceCollide().radius( function (d) { return pvalueSize(d.Pvalue); }));
+        .force("collide", d3.forceCollide().radius( function (d) { return defaultSize(d['Pvalue]]; }));
 
     var container = svg.append('g');
 
-    // Create form for search (see function below).
     var search = d3.select("body").append('form').attr('onsubmit', 'return false;');
 
     var box = search.append('input')
@@ -278,8 +284,8 @@ def getJSnetwork():
 	 	linkedByIndex[d.target + ',' + d.source] = 1;
     });
 
-    var pvalueSize = d3.scaleLinear()
-  	    .domain([d3.min(graph.nodes, function(d) {return d.Pvalue; }),d3.max(graph.nodes, function(d) {return d.Pvalue; })])
+    var defaultSize = d3.scaleLinear()
+  	    .domain([d3.min(graph.nodes, function(d) {return d['Pvalue']; }),d3.max(graph.nodes, function(d) {return d['Pvalue']; })])
   	    .range([8,25]);
     
     var scaleLinks = d3.scaleLinear()
@@ -301,7 +307,7 @@ def getJSnetwork():
         node.exit().remove();
     
         var newNode = node.enter().append("circle")
-				.attr('r', function(d, i) { return pvalueSize(d.Pvalue); })
+				.attr('r', function(d, i) { return defaultSize(d['Pvalue']); })
       		    .attr("fill", function(d) { return d.Color; })
       		    .attr('class', 'node')
       		    .on('mouseover.tooltip', function(d) {
@@ -323,6 +329,7 @@ def getJSnetwork():
         				}
     			})
       		    .on('click', fade(0.1))
+      		    //.on('mouseover', releaseNode)
       		    .on("mouseout.tooltip", function() {
         			    tooltip.transition()
 	        			    .duration(100)
@@ -368,7 +375,8 @@ def getJSnetwork():
         								.style("top", (d3.event.pageY + 10) + "px");
         			}
     			})
-      		    .on('click', fade(0.1))   
+      		    .on('click', fade(0.1))
+      		    //.on('mouseover', releaseNode)
       	        .on("mouseout.tooltip", function() {
         			    tooltip.transition()
 	        				.duration(100)
@@ -431,20 +439,16 @@ def getJSnetwork():
             .attr("x2", function(d) { return d.target.x; })
             .attr("y2", function(d) { return d.target.y; });
 
-    	node
-            //.attr("cx", function(d) { return d.x; })
-            //.attr("cy", function(d) { return d.y; });
-        
+    	node       
             .attr("cx", function(d) { return d.x = Math.max(d3.select(this).attr("r"), Math.min(width - d3.select(this).attr("r"), d.x)); })
 			.attr("cy", function(d) { return d.y = Math.max(d3.select(this).attr("r"), Math.min(height - d3.select(this).attr("r"), d.y)); });
       
         label.attr("x", function(d){ return d.x; })
-    		 .attr("y", function (d) {return d.y + 5; });   
-        
+    		 .attr("y", function (d) {return d.y + 5; });        
     }
      
-    var sliderString = switchData.switch;
-  
+    var sliderString =  params.link_type;
+      
     var slider = d3.select('body').append('p').text(sliderString + ' Threshold: ');
 
     slider.append('label')
@@ -504,11 +508,12 @@ def getJSnetwork():
 		});
 
     dropdown.selectAll('option')
-		.data(['Pvalue', 'Score', 'VIP1', 'QC_RSD'])
+		.data(sizingScale)
 		.enter().append('option')		
 		.text(function(d) { return d; });
 
     function dragstarted(d) {
+    
         if (!d3.event.active) simulation.alphaTarget(0.3).restart();
         d.fx = d.x;
         d.fy = d.y;
@@ -523,8 +528,21 @@ def getJSnetwork():
         if (!d3.event.active) simulation.alphaTarget(0);
         d.fx = null;
         d.fy = null;
+        
+        
+        //testing below
+        //d.fx = d3.event.x;
+        //d.fy = d3.event.y;
+        
+        
     }
+        
+    function releaseNode(d) {
     
+        d.fx = null;
+        d.fy = null;
+    }
+        
     function zoomed() {
 	    container.attr("transform", "translate(" + d3.event.transform.x + ", " + d3.event.transform.y + ") scale(" + d3.event.transform.k + ")");
     }
@@ -595,9 +613,9 @@ def getJSnetwork2():
 
     js_text = '''
     
-    var switchDict = $switch
+    var linkDict = $link_type;
     
-    switchData = JSON.parse(JSON.stringify(switchDict));
+    switchData = JSON.parse(JSON.stringify(linkDict));
    
     var networkData = $networkData
     
@@ -1413,7 +1431,10 @@ def getHTMLnetwork2():
     
     return html
 
-def interactiveNetwork(g, prog, link_type):#, fix_position, networkx_link_type, width, height, charge, node_text_size, size_range):
+def interactiveNetwork(g, prog, link_type, canvas_size, size_scales):#, fix_position, networkx_link_type, width, height, charge, node_text_size, size_range):
+
+    width = canvas_size[0]
+    height = canvas_size[1]
 
     #if fix_position:
     #    fixed = "true";
@@ -1422,8 +1443,7 @@ def interactiveNetwork(g, prog, link_type):#, fix_position, networkx_link_type, 
 
     # > for filtering on Rho, < for filtering on Pval
 
-    linkType = {"switch": link_type};
-
+    paramDict = {"link_type": link_type, "size_scale": size_scales}
 
     if link_type == 'Pval':
         threshOp = '<';
@@ -1468,11 +1488,10 @@ def interactiveNetwork(g, prog, link_type):#, fix_position, networkx_link_type, 
     html_template_network = Template(getHTMLnetwork());
 
     js_text_network = js_text_template_network.substitute({'networkData': json.dumps(data)
-                                                           , 'switch': linkType
-                                                           , 'threshOp': threshOp
-
-
-                                                           })
+                                                              , 'paramDict': paramDict
+                                                              , 'threshOp': threshOp
+                                                              , 'width': width
+                                                              , 'height': height})
 
     #js_text_network = js_text_template_network.substitute({'networkData': data
     #                                                       , 'fixed': fixed
