@@ -23,7 +23,7 @@ class plotNetwork:
 
         return g
 
-    def set_params(self, node_params, filter_params, imageFileName='networkPlot.jpg', saveImage=True, graphviz_prog='neato', figSize=(30,20)):
+    def set_params(self, node_params={}, filter_params={}, imageFileName='networkPlot.jpg', saveImage=True, graphviz_prog='neato', figSize=(30,20)):
 
         self.__set_node_params(**node_params)
 
@@ -79,6 +79,9 @@ class plotNetwork:
         return imageFileName, saveImage, graphviz_prog, figSize
 
     def __node_paramCheck(self, sizing_column, sizeScale, size_range, alpha, addLabels, fontSize, keepSingletons):
+
+        g = self.__g
+        col_list = list(g.nodes[0].keys())
 
         if sizing_column not in col_list:
             raise ValueError("Sizing column not valid. Choose one of {}.".format(', '.join(col_list)))
@@ -155,12 +158,9 @@ class plotNetwork:
 
         plt.subplots(figsize=self.__figSize);
 
-        #//edges = list(g.edges())
         edgeList = []
         for idx, (source, target) in enumerate(g.edges()):
-            #//print(edge)
-            #source = u
-            #target = v
+
             weight = g.edges[source, target]['weight']
 
             if self.__sign == "pos":
@@ -177,8 +177,18 @@ class plotNetwork:
 
             value = float(g.node[node][self.__filter_column])
 
-            if value > float(self.__filter_threshold):
-                nodeList.append(node)
+            if self.__operator == ">":
+                if value > float(self.__filter_threshold):
+                    nodeList.append(node)
+            elif self.__operator == "<":
+                if value < float(self.__filter_threshold):
+                    nodeList.append(node)
+            elif self.__operator == "<=":
+                if value <= float(self.__filter_threshold):
+                    nodeList.append(node)
+            elif self.__operator == ">=":
+                if value >= float(self.__filter_threshold):
+                    nodeList.append(node)
 
         for node in nodeList:
             g.remove_node(node)

@@ -20,7 +20,7 @@ cimcb_vis requires:
 ### User installation
 The recommend way to install cimcb_vis and dependencies is to using ``conda``:
 ```console
-conda install -c brettChapman cimcb_vis
+conda install -c brett.chapman cimcb_vis
 ```
 or ``pip``:
 ```console

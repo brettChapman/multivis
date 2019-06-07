@@ -213,21 +213,12 @@ def getCSSnetwork2():
 def getJSnetwork():
 
     js_text = '''
-    
-    var paramD = $paramDict
-        
-    var params = JSON.parse(JSON.stringify(paramD));
-    
-    //var sizingScale  = JSON.parse(params.size_scale)
-    
-    //sizingScale = typeof sizingScale == 'string' ? [sizingScale] : sizingScale;
-       
-    
-    //document.write(sizingScale[0])
+              
+    var params = JSON.parse(JSON.stringify($paramDict));
         
     var networkData = $networkData
 
-    var width = $width, height = $height;
+    var width = params.width, height = params.height;
    
     var svg = d3.select("body").append("svg")
         .attr("width", width)
@@ -237,9 +228,8 @@ def getJSnetwork():
 
     var simulation = d3.forceSimulation()
         .force("link", d3.forceLink().id(d => d.id))
-        .force("charge", d3.forceManyBody().strength([-120]))//.distanceMax([500]))
-        .force("center", d3.forceCenter(width / 2, height / 2))
-        .force("collide", d3.forceCollide().radius( function (d) { return defaultSize(d['Pvalue]]; }));
+        .force("charge", d3.forceManyBody().strength([params.chargeStrength]))//.distanceMax([500]))
+        .force("center", d3.forceCenter(width / 2, height / 2));        
 
     var container = svg.append('g');
 
@@ -283,20 +273,182 @@ def getJSnetwork():
         linkedByIndex[d.source + ',' + d.target] = 1;
 	 	linkedByIndex[d.target + ',' + d.source] = 1;
     });
-
-    var defaultSize = d3.scaleLinear()
-  	    .domain([d3.min(graph.nodes, function(d) {return d['Pvalue']; }),d3.max(graph.nodes, function(d) {return d['Pvalue']; })])
-  	    .range([8,25]);
     
+    document.write(d3.max(graph.nodes, function(d) {return d[centrality]; }))
+    
+    updateNodeSize(Object.keys(params.node_size_scale)[0])
+    
+    function updateNodeSize(centrality) {
+    
+        var scaleType = params.node_size_scale[centrality].scale
+        var range = params.node_size_scale[centrality].range
+    
+        initScale = d3.scaleLinear()
+  	        .domain([d3.min(graph.nodes, function(d) {return d[centrality]; }),d3.max(graph.nodes, function(d) {return d[centrality]; })])
+  	        .range([1,10]);
+
+        //document.write(d3.max(graph.nodes, function(d) {return d[centrality]; }))
+        
+        scaledValues = []
+        graph.nodes.forEach( function (d) { scaledValues.push(initScale(d[centrality])); });
+                           
+        if (scaleType == "linear") {
+            //document.write(scaleType)
+            linearScale = d3.scaleLinear()
+  	             .domain([d3.min(scaledValues),d3.max(scaledValues)])
+  	             .range(range);
+  	         
+  	        graph.nodes.forEach( function (d) { d.Size = linearScale(initScale(d[centrality])); });
+          
+        } else if (scaleType == "reverse_linear") {
+            //document.write(scaleType)
+            reversed_linear_values = []
+             
+            scaledValues.forEach( function (d) { reversed_linear_values.push(1/d); });
+             
+            reversedLinearScale = d3.scaleLinear()
+  	            .domain([d3.min(reversed_linear_values),d3.max(reversed_linear_values)])
+  	            .range(range);
+  	         
+  	        graph.nodes.forEach( function (d) { d.Size = reversedLinearScale(initScale(d[centrality])); });
+  	         
+        } else if (scaleType == "log") {
+            //document.write(scaleType)
+            
+            //document.write(scaledValues)
+            logScale = d3.scaleLog()
+  	            .domain([d3.min(scaledValues),d3.max(scaledValues)])
+  	            .range(range);
+  	        
+  	        //document.write(d3.min(scaledValues))
+  	         
+  	        graph.nodes.forEach( function (d) { d.Size = logScale(initScale(d[centrality])); });
+          
+        } else if (scaleType == "reverse_log") {
+            //document.write(scaleType)
+            reversed_log_values = []
+             
+            scaledValues.forEach( function (d) { reversed_log_values.push(1/d); });
+             
+            document.write(d3.min(reversed_log_values))
+             
+            reversedLogScale = d3.scaleLog()
+  	            .domain([d3.min(reversed_log_values),d3.max(reversed_log_values)])
+  	            .range(range);
+  	         
+  	        graph.nodes.forEach( function (d) { d.Size = reversedLogScale(initScale(d[centrality])); });
+  	         
+  	    } else if (scaleType == "square") {
+  	        //document.write(scaleType)       
+            squareScale = d3.scalePow()
+  	            .domain([d3.min(scaledValues),d3.max(scaledValues)])
+  	            .exponent(2)
+  	            .range(range);
+  	         
+  	        graph.nodes.forEach( function (d) { d.Size = squareScale(initScale(d[centrality])); });
+  	      
+  	    } else if (scaleType == "reverse_square") {
+  	        //document.write(scaleType)
+  	        reversed_squared_values = []
+  	         
+  	        scaledValues.forEach( function (d) { reversed_squared_values.push(1/d); });
+  	         
+  	        reversedSquareScale = d3.scalePow()
+  	            .domain([d3.min(reversed_square_values),d3.max(reversed_square_values)])
+  	            .exponent(2)
+  	            .range(range);
+  	         
+  	        graph.nodes.forEach( function (d) { d.Size = reversedSquareScale(initScale(d[centrality])); });
+  	      
+  	    } else if (scaleType == "area") {
+  	        //document.write(scaleType)
+  	        area_values = []
+  	         
+  	        scaledValues.forEach( function (d) { area_values.push(Math.PI * (d * d)); });
+  	         
+  	        areaScale = d3.scaleLinear()
+  	            .domain([d3.min(area_values),d3.max(area_values)])
+  	            .range(range);
+  	         
+  	        graph.nodes.forEach( function (d) { d.Size = areaScale(initScale(d[centrality])); });
+  	         
+  	    } else if (scaleType == "reverse_area") {
+  	        //document.write(scaleType)
+  	        reversed_values = []
+  	        reversed_area_values = []
+  	         
+  	        scaledValues.forEach( function (d) { reversed_values.push(1/d); });
+  	        reversed_values.forEach( function (d) { reversed_area_values.push(Math.PI * (d * d)); });
+  	         
+  	        reversedAreaScale = d3.scaleLinear()
+  	            .domain([d3.min(reversed_area_values),d3.max(reversed_area_values)])
+  	            .range(range);
+  	         
+  	        graph.nodes.forEach( function (d) { d.Size = reversedAreaScale(initScale(d[centrality])); });
+  	         
+  	    } else if (scaleType == "volume") {
+            //document.write(scaleType)
+            volume_values = []
+             
+            scaledValues.forEach( function (d) { volume_values.push(4 / 3 * (Math.PI * (d * d * d))); });
+             
+            volumeScale = d3.scaleLinear()
+  	            .domain([d3.min(volume_values),d3.max(volume_values)])
+  	            .range(range);
+  	         
+  	        graph.nodes.forEach( function (d) { d.Size = volumeScale(initScale(d[centrality])); });
+          
+        } else if (scaleType == "reverse_volume") {
+            //document.write(scaleType)
+            reversed_values = []
+            reversed_volume_values = []
+             
+            scaledValues.forEach( function (d) { reversed_values.push(1/d); });
+            reversed_values.forEach( function (d) { reversed_volume_values.push(4 / 3 * (Math.PI * (d * d * d))); });
+             
+            reversedVolumeScale = d3.scaleLinear()
+  	            .domain([d3.min(reversed_volume_values),d3.max(reversed_volume_values)])
+  	            .range(range);
+  	         
+  	        graph.nodes.forEach( function (d) { d.Size = reversedVolumeScale(initScale(d[centrality])); });
+  	           
+        }    
+    }
+    
+    //var initScale = scaleDict[Object.keys(params.node_size_scale)[0]][0]
+    //var defaultSize = scaleDict[Object.keys(params.node_size_scale)[0]][1]
+    
+        
+    //if (params.node_size_scale[Object.keys(params.node_size_scale)[0]].scale == "linear") {
+     //   var defaultSize = d3.scaleLinear()
+  	 //       .domain([d3.min(graph.nodes, function(d) {return d[Object.keys(params.node_size_scale)[0]]; }),d3.max(graph.nodes, function(d) {return d[Object.keys(params.node_size_scale)[0]]; })])
+  	 //       .range(params.node_size_scale[Object.keys(params.node_size_scale)[0]].range);
+    //} else if (params.node_size_scale[Object.keys(params.node_size_scale)[0]].scale == "reverse_linear") {
+     //   defaultScalePrefix = String(params.node_size_scale[Object.keys(params.node_size_scale)[0]].scale) + "_"
+        
+     //   graph.nodes.forEach( function (d) { d[defaultScalePrefix + Object.keys(params.node_size_scale)[0]] = 1/d[Object.keys(params.node_size_scale)[0]]; });
+                
+      //  var defaultSize = d3.scaleLinear()
+  	   //     .domain([d3.min(graph.nodes, function(d) {return d[defaultScalePrefix + Object.keys(params.node_size_scale)[0]]; }),d3.max(graph.nodes, function(d) {return d[defaultScalePrefix + Object.keys(params.node_size_scale)[0]]; })])
+  	   //     .range(params.node_size_scale[Object.keys(params.node_size_scale)[0]].range);
+  	//}
+  	//else if
+  	
+  	//var defaultSize = d3.scaleLinear()
+  	//    .domain([d3.min(graph.nodes, function(d) {return d[Object.keys(params.node_size_scale)[0]]; }),d3.max(graph.nodes, function(d) {return d[Object.keys(params.node_size_scale)[0]]; })])
+  	//    .range(params.node_size_scale[Object.keys(params.node_size_scale)[0]]);
+  	
+  	//var defaultSize_log = d3.scaleLog()
+  	//    .domain([Math.log(d3.min(graph.nodes, function(d) {return d[Object.keys(params.node_size_scale)[0]]; })),Math.log(d3.max(graph.nodes, function(d) {return d[Object.keys(params.node_size_scale)[0]]; }))])
+  	//    .range([Math.log(params.node_size_scale[Object.keys(params.node_size_scale)[0]][0]),Math.log(params.node_size_scale[Object.keys(params.node_size_scale)[0]][1])]);  
+  	    
     var scaleLinks = d3.scaleLinear()
   	    .domain([d3.min(graph.links, function(d) {return d.weight; }),d3.max(graph.links, function(d) {return d.weight; })])
         .range([1,50])
         .clamp(true);
-   
-    var reScaleLinks = d3.scaleLinear()
-  	    .domain([1,50])
-  	    .range([d3.min(graph.links, function(d) {return d.weight; }),d3.max(graph.links, function(d) {return d.weight; })])
-        .clamp(true);
+        
+    simulation.force("collide", d3.forceCollide().radius( function (d) { return d.Size; }));
+    //simulation.force("collide", d3.forceCollide().radius( function (d) { return defaultSize(d[Object.keys(params.node_size_scale)[0]]); }));
     
     update();
 
@@ -307,7 +459,8 @@ def getJSnetwork():
         node.exit().remove();
     
         var newNode = node.enter().append("circle")
-				.attr('r', function(d, i) { return defaultSize(d['Pvalue']); })
+				.attr('r', function(d, i) { return d.Size; })
+      		    //.attr('r', function(d, i) { return defaultSize(d[Object.keys(params.node_size_scale)[0]]); })
       		    .attr("fill", function(d) { return d.Color; })
       		    .attr('class', 'node')
       		    .on('mouseover.tooltip', function(d) {
@@ -355,7 +508,7 @@ def getJSnetwork():
         	    .style("text-anchor", "middle")
 					.style("fill", "#000")
 					.style("font-family", "Helvetica")
-					.style("font-size", 15)
+					.style("font-size", params.node_text_size)
       		    .attr('class', 'node')
       		    .on('mouseover.tooltip', function(d) {
       					tooltip.transition()
@@ -446,10 +599,8 @@ def getJSnetwork():
         label.attr("x", function(d){ return d.x; })
     		 .attr("y", function (d) {return d.y + 5; });        
     }
-     
-    var sliderString =  params.link_type;
-      
-    var slider = d3.select('body').append('p').text(sliderString + ' Threshold: ');
+         
+    var slider = d3.select('body').append('p').text(params.link_type + ' threshold: ');
 
     slider.append('label')
 		    .attr('for', 'threshold')
@@ -462,17 +613,17 @@ def getJSnetwork():
 		    .attr('id', 'threshold')
 		    .style('display', 'block')
 		    .on('input', function () { 
-				var threshold = reScaleLinks(this.value);
+				var threshold = scaleLinks.invert(this.value);
 
 				d3.select('label').text(threshold.toPrecision(5));
 
 				graph.links.splice(0, graph.links.length);
         
-                graphRec.links.forEach( function (d) { if (d.weight >= threshold) { graph.links.push(d); }});
+                graphRec.links.forEach( function (d) { if (d.weight $operator threshold) { graph.links.push(d); }});
               
                 linkedByIndex = {} 
 				graphRec.links.forEach( function (d) {
-					if (d.weight $threshOp threshold) {
+					if (d.weight $operator threshold) {
                           
                         var source = JSON.stringify(d.source.id);
                         var target = JSON.stringify(d.target.id);
@@ -498,17 +649,24 @@ def getJSnetwork():
 		.append('select')
 		.on('change', function() { 
 			var centrality = this.value;
-			var centralitySize = d3.scaleLinear()
-				.domain([d3.min(graph.nodes, function(d) { return d[centrality]; }), d3.max(graph.nodes, function(d) { return d[centrality]; })])
-				.range([8,25]);
-			node.attr('r', function(d) { return centralitySize(d[centrality]); } );  
 			
-			simulation.force("collide", d3.forceCollide().radius( function (d) { return centralitySize(d[centrality]); }));
+			updateNodeSize(centrality)
+			
+			//var initScale = scaleDict[centrality][0]
+			//var centralitySize = scaleDict[centrality][1]
+			
+			//var centralitySize = d3.scaleLinear()
+			//	.domain([d3.min(graph.nodes, function(d) { return d[centrality]; }), d3.max(graph.nodes, function(d) { return d[centrality]; })])
+			//	.range(params.node_size_scale[centrality].range);
+				
+			node.attr('r', function(d) { return d.Size; } );  
+			
+			simulation.force("collide", d3.forceCollide().radius( function (d) { return d.Size; }));
 			simulation.alphaTarget(0.1).restart();
 		});
 
     dropdown.selectAll('option')
-		.data(sizingScale)
+		.data(Object.keys(params.node_size_scale))
 		.enter().append('option')		
 		.text(function(d) { return d; });
 
@@ -548,7 +706,7 @@ def getJSnetwork():
     }
 
     function neighboring(a, b) {
-            return linkedByIndex[a.id + ',' + b.id] || linkedByIndex[b.id + ',' + a.id] || a.id === b.id;
+        return linkedByIndex[a.id + ',' + b.id] || linkedByIndex[b.id + ',' + a.id] || a.id === b.id;
     }
 
     function fade(opacity) {
@@ -1431,10 +1589,7 @@ def getHTMLnetwork2():
     
     return html
 
-def interactiveNetwork(g, prog, link_type, canvas_size, size_scales):#, fix_position, networkx_link_type, width, height, charge, node_text_size, size_range):
-
-    width = canvas_size[0]
-    height = canvas_size[1]
+def interactiveNetwork(g, prog, link_type, chargeStrength, canvas_size, node_text_size, node_size_scale):#, fix_position, networkx_link_type, width, height, charge, node_text_size, size_range):
 
     #if fix_position:
     #    fixed = "true";
@@ -1443,12 +1598,12 @@ def interactiveNetwork(g, prog, link_type, canvas_size, size_scales):#, fix_posi
 
     # > for filtering on Rho, < for filtering on Pval
 
-    paramDict = {"link_type": link_type, "size_scale": size_scales}
-
     if link_type == 'Pval':
-        threshOp = '<';
+        operator = '<';
     else:
-        threshOp = '>';
+        operator = '>';
+
+    paramDict = {"width": canvas_size[0], "height": canvas_size[1], "link_type": link_type, "node_text_size": node_text_size, "node_size_scale": node_size_scale, "chargeStrength": chargeStrength}
 
     pos = pygraphviz_layout(g, prog=prog)
 
@@ -1488,10 +1643,8 @@ def interactiveNetwork(g, prog, link_type, canvas_size, size_scales):#, fix_posi
     html_template_network = Template(getHTMLnetwork());
 
     js_text_network = js_text_template_network.substitute({'networkData': json.dumps(data)
-                                                              , 'paramDict': paramDict
-                                                              , 'threshOp': threshOp
-                                                              , 'width': width
-                                                              , 'height': height})
+                                                              , 'operator': operator
+                                                              , 'paramDict': paramDict})
 
     #js_text_network = js_text_template_network.substitute({'networkData': data
     #                                                       , 'fixed': fixed
