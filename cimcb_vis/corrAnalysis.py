@@ -8,7 +8,6 @@ def corrAnalysis(multi_peaks, multi_blocks, correlationType):
     if "Name" in multi_peaks.columns:
         X = multi_blocks[multi_peaks['Name']]
 
-
         df_corr = pd.DataFrame()
         df_pval = pd.DataFrame()
 

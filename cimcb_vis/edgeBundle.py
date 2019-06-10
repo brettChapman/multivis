@@ -302,7 +302,8 @@ class edgeBundle:
         js_text = '''
                 
         var pvalues = [];
-        var scores = [];
+        var p_scores = [];
+        var n_scores = [];
         var abs_scores = [];
     
         var diameter = $diameter,
@@ -566,12 +567,12 @@ class edgeBundle:
             return slider;
         }
     
-        var currValues = {'abs_score': -1
-                            , 's_abs_score': -1
+        var currValues = {'abs_score': 0
+                            , 's_abs_score': 0
                             , 'p_score': 0
                             , 's_p_score': 0
-                            , 'n_score': -1
-                            , 's_n_score': -1
+                            , 'n_score': 0
+                            , 's_n_score': 0
                             , 'pvalue': 1
                             , 's_pvalue': 1
                             , 'tension': 0.85};
@@ -588,8 +589,8 @@ class edgeBundle:
                 currValues['pvalue'] = 1;
                 
                 d3.select('#abs_scoreValue').text(absScoreValue.toPrecision(5));
-          
-                var FlareData = filterData(absScoreValue, 1, 1, true);
+                
+                var FlareData = filterData(absScoreValue, 1, 'score_abs');
       
                 var linkLine = updateBundle(FlareData);
       
@@ -602,9 +603,9 @@ class edgeBundle:
     
         d3.select('#absScoreSlider').call(abs_scoreSlider); 
      
-        d3.select('#p_scoreValue').text(0.0.toPrecision(5));
+        d3.select('#p_scoreValue').text(d3.min(p_scores).toPrecision(5));
         
-        var p_scoreSlider = d3.slider().scale(d3.scale.linear().domain([0, d3.max(scores)]).clamp(true)).value(0).min(0).max(d3.max(scores)).step(1E-20).on("slide", function(evt, value) {
+        var p_scoreSlider = d3.slider().scale(d3.scale.linear().domain([d3.min(p_scores), d3.max(p_scores)]).clamp(true)).value(d3.min(p_scores)).min(d3.min(p_scores)).max(d3.max(p_scores)).step(1E-20).on("slide", function(evt, value) {
     
                 var p_scoreValue = value;
                 var tension = currValues.tension;
@@ -614,7 +615,7 @@ class edgeBundle:
     
                 d3.select('#p_scoreValue').text(p_scoreValue.toPrecision(5));
           
-                var FlareData = filterData(p_scoreValue, 1, 1, false);
+                var FlareData = filterData(p_scoreValue, 1, 'score_pos');
       
                 var linkLine = updateBundle(FlareData);
       
@@ -627,10 +628,9 @@ class edgeBundle:
      
         d3.select('#posScoreSlider').call(p_scoreSlider);
         
-        d3.select('#n_scoreValue').text(d3.min(scores).toPrecision(5));
+        d3.select('#n_scoreValue').text(d3.max(n_scores).toPrecision(5));
      
-        var n_scoreSlider = d3.slider().scale(d3.scale.linear().domain([d3.min(scores), 0]).clamp(true)).value(d3.min(scores)).min(d3.min(scores)).max(0).step(1E-20).on("slide", function(evt, value) {
-    
+        var n_scoreSlider = d3.slider().scale(d3.scale.linear().domain([d3.min(n_scores), d3.max(n_scores)]).clamp(true)).value(d3.max(n_scores)).min(d3.min(n_scores)).max(d3.max(n_scores)).step(1E-20).on("slide", function(evt, value) {
                 var n_scoreValue = value;
                 var tension = currValues.tension;
                 currValues['n_score'] = n_scoreValue;
@@ -639,7 +639,7 @@ class edgeBundle:
                 
                 d3.select('#n_scoreValue').text(n_scoreValue.toPrecision(5));
                 
-                var FlareData = filterData(n_scoreValue, 0, 1, false);
+                var FlareData = filterData(n_scoreValue, 1, 'score_neg');
       
                 var linkLine = updateBundle(FlareData);
       
@@ -666,7 +666,7 @@ class edgeBundle:
                 
                 d3.select('#pvalueValue').text(pvalueValue.toPrecision(5));
           
-                var FlareData = filterData(-1, 1, pvalueValue, false);
+                var FlareData = filterData(-1, pvalueValue, 'pvalue');
       
                 var linkLine = updateBundle(FlareData);
       
@@ -713,14 +713,14 @@ class edgeBundle:
                     }
       
                     if (score_form_val == "PosScoreRadio") {
-                        var FlareData = filterData(p_scoreValue, 1, 1, false);
+                        var FlareData = filterData(p_scoreValue, 1, 'score_pos');
                     } else if (score_form_val == "NegScoreRadio") {
-                        var FlareData = filterData(n_scoreValue, 0, 1, false);
+                        var FlareData = filterData(n_scoreValue, 1, 'score_neg');
                     } else if (score_form_val == "AbsScoreRadio") {
-                        var FlareData = filterData(abs_scoreValue, 1, 1, true);
+                        var FlareData = filterData(abs_scoreValue, 1, 'score_abs');
                     }
-                } else {
-                    var FlareData = filterData(-1, 1, pvalueValue, false);
+                } else if (form_val == "pvalueRadio") {
+                    var FlareData = filterData(-1, pvalueValue, 'pvalue');
                 }
                 
                 var linkLine = updateBundle(FlareData);
@@ -762,23 +762,35 @@ class edgeBundle:
                 }
       
                 if (form_val_score == "PosScoreRadio") {
-                    var FlareData = filterData(currValues.s_p_score, 1, 1, false);
+                    d3.select('#p_scoreHide').style("display", 'block');
+                    d3.select('#n_scoreHide').style("display", 'none');
+                    d3.select('#abs_scoreHide').style("display", 'none');
+                
+                    var FlareData = filterData(currValues.s_p_score, 1, 'score_pos');
                 } else if (form_val_score == "NegScoreRadio") {
-                    var FlareData = filterData(currValues.s_n_score, 0, 1, false);
+                    d3.select('#p_scoreHide').style("display", 'none');
+                    d3.select('#n_scoreHide').style("display", 'block');
+                    d3.select('#abs_scoreHide').style("display", 'none');
+                
+                    var FlareData = filterData(currValues.s_n_score, 1, 'score_neg');
                 } else if (form_val_score == "AbsScoreRadio") {
-                    var FlareData = filterData(currValues.s_abs_score, 1, 1, true);
+                    d3.select('#p_scoreHide').style("display", 'none');
+                    d3.select('#n_scoreHide').style("display", 'none');
+                    d3.select('#abs_scoreHide').style("display", 'block');
+                
+                    var FlareData = filterData(currValues.s_abs_score, 1, 'score_abs');
                 }  
     
                 var linkLine = updateBundle(FlareData);
         
-            } else {
+            } else if (form_val == "pvalueRadio") {
                 d3.select('#abs_scoreHide').style("display", 'none');
                 d3.select('#p_scoreHide').style("display", 'none');
                 d3.select('#n_scoreHide').style("display", 'none');
                 d3.select('#scoreSelect').style("display", 'none');
                 d3.select('#pvalueHide').style("display", 'block');
     
-                var FlareData = filterData(-1, 1, currValues.s_pvalue, false);
+                var FlareData = filterData(-1, currValues.s_pvalue, 'pvalue');
                 var linkLine = updateBundle(FlareData);
             }
       
@@ -807,7 +819,7 @@ class edgeBundle:
                 d3.select('#n_scoreHide').style("display", 'none');
                 d3.select('#abs_scoreHide').style("display", 'none');
        
-                var FlareData = filterData(currValues.s_p_score, 1, 1, false);
+                var FlareData = filterData(currValues.s_p_score, 1, 'score_pos');
                 var linkLine = updateBundle(FlareData);
         
             } else if (form_val == "NegScoreRadio") {
@@ -815,7 +827,7 @@ class edgeBundle:
                 d3.select('#n_scoreHide').style("display", 'block');
                 d3.select('#abs_scoreHide').style("display", 'none');
         
-                var FlareData = filterData(currValues.s_n_score, 0, 1, false);
+                var FlareData = filterData(currValues.s_n_score, 1, 'score_neg');
                 var linkLine = updateBundle(FlareData);
         
             } else if (form_val == "AbsScoreRadio") {
@@ -823,7 +835,7 @@ class edgeBundle:
                 d3.select('#n_scoreHide').style("display", 'none');
                 d3.select('#abs_scoreHide').style("display", 'block');
         
-                var FlareData = filterData(currValues.s_abs_score, 1, 1, true);
+                var FlareData = filterData(currValues.s_abs_score, 1, 'score_abs');
                 var linkLine = updateBundle(FlareData);
             }
       
@@ -845,7 +857,8 @@ class edgeBundle:
         function updateBundle(data) {
     
             pvalues = []
-            scores = []
+            p_scores = []
+            n_scores = []
             abs_scores = []
     
             var line = d3.svg.line.radial()
@@ -865,11 +878,20 @@ class edgeBundle:
             link.each(function(d) { d.source = d[0]
                                 , d.target = d[d.length - 1]
                                 , d.link_color = d.source.imports[d.target.id]["link_color"]
-                                , d.link_score = d.source.imports[d.target.id]["link_score"]
-                                , scores.push(d.source.imports[d.target.id]["link_score"])
+                                , d.link_score = d.source.imports[d.target.id]["link_score"]                               
                                 , abs_scores.push(Math.abs(d.source.imports[d.target.id]["link_score"]))
                                 , pvalues.push(d.source.imports[d.target.id]["link_pvalue"])              
-                                , d.link_pvalue = d.source.imports[d.target.id]["link_pvalue"];  								
+                                , d.link_pvalue = d.source.imports[d.target.id]["link_pvalue"];
+                                
+                                if (d.source.imports[d.target.id]["link_score"] >= 0) {
+                                    
+                                    p_scores.push(d.source.imports[d.target.id]["link_score"]);
+                                     
+                                } else {
+                                
+                                    n_scores.push(d.source.imports[d.target.id]["link_score"]);
+                                    
+                                }  								
                 })
                 .attr("class", "link")
                 .attr("d", line)
@@ -977,7 +999,7 @@ class edgeBundle:
             return linkLine;
         }   
     
-        function filterData(lower_scoreThresh, upper_scoreThresh, pvalueThresh, abs) {
+        function filterData(scoreThresh, pvalueThresh, filtType) {
     
             const data = $flareData.map(a => ({...a}));
       
@@ -996,27 +1018,36 @@ class edgeBundle:
                     var link_pvalue = value["link_pvalue"];
                     var link_color = value["link_color"];
                     
-                    if (abs == true) {
+                    if (filtType == 'score_abs') {
                     
-                        if (Math.abs(link_score) > lower_scoreThresh) {
-                            if (link_pvalue <= pvalueThresh) {
+                        if (Math.abs(link_score) > scoreThresh) {
                                 newLinks[key] = {"link_score": link_score
                                             , "link_pvalue": link_pvalue
                                             , "link_color": link_color};
-                            }
                         }
                             
-                    } else {
+                    } else if (filtType == 'score_neg') {
                     
-                        if (link_score > lower_scoreThresh && link_score < upper_scoreThresh) {
-                            if (link_pvalue <= pvalueThresh) {
+                         if (link_score < scoreThresh) {
                                 newLinks[key] = {"link_score": link_score
                                         , "link_pvalue": link_pvalue
                                         , "link_color": link_color};
-                            }
+                        }
+                        
+                    } else if (filtType == 'score_pos') {
+                        if (link_score > scoreThresh) {
+                                newLinks[key] = {"link_score": link_score
+                                        , "link_pvalue": link_pvalue
+                                        , "link_color": link_color};
+                        }
+                        
+                    } else if (filtType == 'pvalue') {
+                        if (link_pvalue <= pvalueThresh) {
+                            newLinks[key] = {"link_score": link_score
+                                        , "link_pvalue": link_pvalue
+                                        , "link_color": link_color};
                         }
                     }
-                    
                 }
         
                 flare.imports = newLinks;
