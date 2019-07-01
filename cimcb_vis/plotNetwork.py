@@ -1,5 +1,7 @@
+import sys
 import networkx as nx
 import numpy as np
+import pandas as pd
 from networkx.drawing.nx_agraph import pygraphviz_layout
 import matplotlib.pyplot as plt
 import copy
@@ -15,28 +17,33 @@ class plotNetwork:
         self.__g = self.__checkData(copy.deepcopy(g))
 
         self.set_params()
+        self.__set_node_params()
+        self.__set_filter_params()
 
     def __checkData(self, g):
 
         if not isinstance(g, nx.classes.graph.Graph):
-            raise ValueError("A networkx graph was not entered. Please check your data.")
+            print("Error: A networkx graph was not entered. Please check your data.")
+            sys.exit()
 
         return g
 
-    def set_params(self, node_params={}, filter_params={}, imageFileName='networkPlot.jpg', saveImage=True, graphviz_prog='neato', figSize=(30,20)):
+    def set_params(self, node_params={}, filter_params={}, imageFileName='networkPlot.jpg', saveImage=True, graphviz_layout='neato', figSize=(30,20)):
 
-        self.__set_node_params(**node_params)
+        if node_params:
+            self.__set_node_params(**node_params)
 
-        self.__set_filter_params(**filter_params)
+        if filter_params:
+            self.__set_filter_params(**filter_params)
 
-        imageFileName, saveImage, graphviz_prog, figSize = self.__paramCheck(imageFileName, saveImage, graphviz_prog, figSize)
+        imageFileName, saveImage, graphviz_layout, figSize = self.__paramCheck(imageFileName, saveImage, graphviz_layout, figSize)
 
         self.__imageFileName = imageFileName;
         self.__saveImage = saveImage;
-        self.__graphviz_prog = graphviz_prog;
+        self.__graphviz_layout = graphviz_layout;
         self.__figSize = figSize;
 
-    def __set_node_params(self, sizing_column='Pvalue', sizeScale='reverse_linear', size_range=(150,2000), alpha=0.5, addLabels=True, fontSize=15, keepSingletons=True):
+    def __set_node_params(self, sizing_column='none', sizeScale='reverse_linear', size_range=(150,2000), alpha=0.5, addLabels=True, fontSize=15, keepSingletons=True):
 
         sizing_column, sizeScale, size_range, alpha, addLabels, fontSize, keepSingletons = self.__node_paramCheck(sizing_column, sizeScale, size_range, alpha, addLabels, fontSize, keepSingletons)
 
@@ -48,7 +55,7 @@ class plotNetwork:
         self.__fontSize = fontSize;
         self.__keepSingletons = keepSingletons;
 
-    def __set_filter_params(self, column='Pvalue', threshold=0.01, operator='>', sign='both'):
+    def __set_filter_params(self, column='none', threshold=0.01, operator='>', sign='both'):
 
         column, threshold, operator, sign = self.__filter_paramCheck(column, threshold, operator, sign)
 
@@ -57,98 +64,120 @@ class plotNetwork:
         self.__operator = operator;
         self.__sign = sign;
 
-    def __paramCheck(self, imageFileName, saveImage, graphviz_prog, figSize):
+    def __paramCheck(self, imageFileName, saveImage, graphviz_layout, figSize):
 
         if not isinstance(imageFileName, str):
-                raise ValueError("Image file name is not valid. Choose a string value.")
+            print("Error: Image file name is not valid. Choose a string value.")
+            sys.exit()
 
         if not type(saveImage) == bool:
-            raise ValueError("Save image is not valid. Choose either \"True\" or \"False\".")
+            print("Error: Save image is not valid. Choose either \"True\" or \"False\".")
+            sys.exit()
 
-        if graphviz_prog not in ["neato", "dot", "fdp", "sfdp", "twopi", "circo"]:
-            raise ValueError("Graphviz layout program not valid. Choose either \"neato\", \"dot\", \"fdp\", \"sfdp\", \"twopi\" or \"circo\".")
+        if graphviz_layout not in ["neato", "dot", "fdp", "sfdp", "twopi", "circo"]:
+            print("Error: Graphviz layout program not valid. Choose either \"neato\", \"dot\", \"fdp\", \"sfdp\", \"twopi\" or \"circo\".")
+            sys.exit()
 
         if not isinstance(figSize, tuple):
-            raise ValueError("Figure size is not valid. Choose a tuple of length 2.")
+            print("Error: Figure size is not valid. Choose a tuple of length 2.")
+            sys.exit()
         else:
             for length in figSize:
                 if not isinstance(length, float):
                     if not isinstance(length, int):
-                        raise ValueError("Figure size items not valid. Choose a float or integer value.")
+                        print("Error: Figure size items not valid. Choose a float or integer value.")
+                        sys.exit()
 
-        return imageFileName, saveImage, graphviz_prog, figSize
+        return imageFileName, saveImage, graphviz_layout, figSize
 
     def __node_paramCheck(self, sizing_column, sizeScale, size_range, alpha, addLabels, fontSize, keepSingletons):
 
         g = self.__g
-        col_list = list(g.nodes[0].keys())
+        col_list = list(g.nodes[list(g.nodes.keys())[0]].keys()) + ['none']
 
         if sizing_column not in col_list:
-            raise ValueError("Sizing column not valid. Choose one of {}.".format(', '.join(col_list)))
+            print("Error: Sizing column not valid. Choose one of {}.".format(', '.join(col_list)))
+            sys.exit()
         else:
-            for idx, node in enumerate(g.nodes()):
-                try:
-                    float(g.node[node][sizing_column])
-                except ValueError:
-                    raise ValueError(
-                        "Sizing column contains invalid values. Choose a sizing column containing float or integer values.")
+
+            if sizing_column != 'none':
+                for idx, node in enumerate(g.nodes()):
+                    try:
+                        float(g.node[node][sizing_column])
+                    except ValueError:
+                        print("Error: Sizing column contains invalid values. Choose a sizing column containing float or integer values.")
+                        sys.exit()
 
         if sizeScale.lower() not in ["linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume"]:
-            raise ValueError(
-                "Size scale type not valid. Choose either \"linear\", \"reverse_linear\", \"log\", \"reverse_log\", \"square\", \"reverse_square\", \"area\", \"reverse_area\", \"volume\", \"reverse_volume\".")
+            print("Error: Size scale type not valid. Choose either \"linear\", \"reverse_linear\", \"log\", \"reverse_log\", \"square\", \"reverse_square\", \"area\", \"reverse_area\", \"volume\", \"reverse_volume\".")
+            sys.exit()
 
         if not isinstance(size_range, tuple):
-            raise ValueError("Size range is not valid. Choose a tuple of length 2.")
+            print("Error: Size range is not valid. Choose a tuple of length 2.")
+            sys.exit()
         else:
             for size in size_range:
                 if not isinstance(size, float):
                     if not isinstance(size, int):
-                        raise ValueError("Size items not valid. Choose a float or integer value.")
+                        print("Error: Size values not valid. Choose a float or integer value.")
+                        sys.exit()
 
         if not isinstance(alpha, float):
             if not (alpha >= 0 and alpha <= 1):
-                raise ValueError("Alpha value is not valid. Choose a float between 0 and 1.")
+                print("Error: Alpha value is not valid. Choose a float between 0 and 1.")
+                sys.exit()
 
         if not type(addLabels) == bool:
-            raise ValueError("Add labels is not valid. Choose either \"True\" or \"False\".")
+            print("Error: Add labels is not valid. Choose either \"True\" or \"False\".")
+            sys.exit()
 
         if not isinstance(fontSize, float):
             if not isinstance(fontSize, int):
-                raise ValueError("Font size is not valid. Choose a float or integer value.")
+                print("Error: Font size is not valid. Choose a float or integer value.")
+                sys.exit()
 
         if not type(keepSingletons) == bool:
-            raise ValueError("Keep singletons is not valid. Choose either \"True\" or \"False\".")
+            print("Error: Keep singletons is not valid. Choose either \"True\" or \"False\".")
+            sys.exit()
 
         return sizing_column, sizeScale, size_range, alpha, addLabels, fontSize, keepSingletons
 
     def __filter_paramCheck(self, column, threshold, operator, sign):
 
         g = self.__g
-        col_list = list(g.nodes[0].keys())
+        col_list = list(g.nodes[list(g.nodes.keys())[0]].keys()) + ['none']
 
         if column not in col_list:
-            raise ValueError("Filter column not valid. Choose one of {}.".format(', '.join(col_list)))
+            print("Error: Filter column not valid. Choose one of {}.".format(', '.join(col_list)))
+            sys.exit()
         else:
-            for idx, node in enumerate(g.nodes()):
-                try:
-                    float(g.node[node][column])
-                except ValueError:
-                    raise ValueError(
-                        "Filter column contains invalid values. Choose a filter column containing float or integer values.")
+
+            if column != 'none':
+                for idx, node in enumerate(g.nodes()):
+                    try:
+                        float(g.node[node][column])
+                    except ValueError:
+                        print("Error: Filter column contains invalid values. Choose a filter column containing float or integer values.")
+                        sys.exit()
 
         if not isinstance(threshold, float):
             if not isinstance(threshold, int):
-                raise ValueError("Filter threshold is not valid. Choose a float or integer value.")
+                print("Error: Filter threshold is not valid. Choose a float or integer value.")
+                sys.exit()
             elif threshold == 0:
-                raise ValueError("Filter threshold should not be zero. Choose a value close to zero or above.")
+                print("Error: Filter threshold should not be zero. Choose a value close to zero or above.")
+                sys.exit()
         elif threshold == 0.0:
-            raise ValueError("Filter threshold should not be zero. Choose a value close to zero or above.")
+            print("Error: Filter threshold should not be zero. Choose a value close to zero or above.")
+            sys.exit()
 
         if operator not in ["<", ">", "<=", ">="]:
-            raise ValueError("Operator not valid. Choose either \"<\", \">\", \"<=\" or \">=\".")
+            print("Error: Operator not valid. Choose either \"<\", \">\", \"<=\" or \">=\".")
+            sys.exit()
 
         if sign.lower() not in ["pos", "neg", "both"]:
-            raise ValueError("Sign not valid. Choose either \"pos\", \"neg\", or \"both\".")
+            print("Error: Sign not valid. Choose either \"pos\", \"neg\", or \"both\".")
+            sys.exit()
 
         return column, threshold, operator, sign
 
@@ -172,26 +201,29 @@ class plotNetwork:
 
         g.remove_edges_from(edgeList)
 
-        nodeList = []
-        for idx, node in enumerate(g.nodes()):
+        if self.__filter_column != 'none':
+            nodeList = []
+            for idx, node in enumerate(g.nodes()):
 
-            value = float(g.node[node][self.__filter_column])
+                value = float(g.node[node][self.__filter_column])
+                if np.isnan(value):
+                    value = 0;
 
-            if self.__operator == ">":
-                if value > float(self.__filter_threshold):
-                    nodeList.append(node)
-            elif self.__operator == "<":
-                if value < float(self.__filter_threshold):
-                    nodeList.append(node)
-            elif self.__operator == "<=":
-                if value <= float(self.__filter_threshold):
-                    nodeList.append(node)
-            elif self.__operator == ">=":
-                if value >= float(self.__filter_threshold):
-                    nodeList.append(node)
+                if self.__operator == ">":
+                    if value > float(self.__filter_threshold):
+                        nodeList.append(node)
+                elif self.__operator == "<":
+                    if value < float(self.__filter_threshold):
+                        nodeList.append(node)
+                elif self.__operator == "<=":
+                    if value <= float(self.__filter_threshold):
+                        nodeList.append(node)
+                elif self.__operator == ">=":
+                    if value >= float(self.__filter_threshold):
+                        nodeList.append(node)
 
-        for node in nodeList:
-            g.remove_node(node)
+            for node in nodeList:
+                g.remove_node(node)
 
         if not self.__keepSingletons:
             edges = list(g.edges())
@@ -210,7 +242,16 @@ class plotNetwork:
             for node in singleNodes:
                 g.remove_node(node)
 
-        size_attr = np.array(list(nx.get_node_attributes(g, self.__sizing_column).values()))
+        if not g.nodes():
+            print("Error: All nodes have been removed. Please change the filter parameters.")
+            sys.exit()
+
+        if self.__sizing_column == 'none':
+            size_attr = np.ones(len(g.nodes()))
+        else:
+            size_attr = np.array(list(nx.get_node_attributes(g, str(self.__sizing_column)).values()))
+            df_size_attr = pd.Series(size_attr, dtype=np.float);
+            size_attr = np.array(list(df_size_attr.fillna(0).values))
 
         size = np.array([x for x in list(range_scale(size_attr, 1, 10))])
 
@@ -255,7 +296,7 @@ class plotNetwork:
             size = [np.multiply(x, 4 / 3) for x in list(map(float, size))]
             node_size = [round(x) for x in list(map(int, range_scale(size, self.__size_range[0], self.__size_range[1])))]
 
-        pos = pygraphviz_layout(g, prog=self.__graphviz_prog)
+        pos = pygraphviz_layout(g, prog=self.__graphviz_layout)
 
         nx.draw(g, pos=pos, labels=dict(zip(g.nodes(), list(nx.get_node_attributes(g, 'Label').values()))), node_size=node_size, font_size=self.__fontSize, node_color=list(nx.get_node_attributes(g, 'Color').values()), alpha=self.__alpha, with_labels=self.__addLabels)
 

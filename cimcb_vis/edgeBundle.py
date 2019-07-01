@@ -1,3 +1,4 @@
+import sys
 from string import Template
 import numpy as np
 import pandas as pd
@@ -28,50 +29,67 @@ class edgeBundle:
         self.color_scale = color_scale;
         self.edge_cmap = edge_cmap;
 
-    def __checkData(self, DF):
+    def __checkData(self, df):
 
-        if not isinstance(DF, pd.DataFrame):
-            raise ValueError("A dataframe was not entered. Please check your data.")
+        if not isinstance(df, pd.DataFrame):
+            print("Error: A dataframe was not entered. Please check your data.")
+            sys.exit()
 
-        return DF
+        return df
 
     def __paramCheck(self, diameter, innerRadiusOffset, groupSeparation, linkFadeOpacity, fontSize, backgroundColor, sliderTextColor, filterOffSet, color_scale, edge_cmap):
 
         if not isinstance(diameter, float):
             if not isinstance(diameter, int):
-                raise ValueError("Diameter is not valid. Choose a float or integer value.")
+                print("Error: Diameter is not valid. Choose a float or integer value.")
+                sys.exit()
 
         if not isinstance(innerRadiusOffset, float):
             if not isinstance(innerRadiusOffset, int):
-                raise ValueError("Inner radius offset is not valid. Choose a float or integer value.")
+                print("Error: Inner radius offset is not valid. Choose a float or integer value.")
+                sys.exit()
 
         if not isinstance(groupSeparation, float):
             if not isinstance(groupSeparation, int):
-                raise ValueError("Group separation is not valid. Choose a float or integer value.")
+                print("Error: Group separation is not valid. Choose a float or integer value.")
+                sys.exit()
 
         if not isinstance(linkFadeOpacity, float):
             if not isinstance(linkFadeOpacity, int):
-                raise ValueError("Link fade opacity is not valid. Choose a float or integer value.")
+                print("Error: Link fade opacity is not valid. Choose a float or integer value.")
+                sys.exit()
 
         if not isinstance(fontSize, float):
             if not isinstance(fontSize, int):
-                raise ValueError("Font size is not valid. Choose a float or integer value.")
+                print("Error: Font size is not valid. Choose a float or integer value.")
+                sys.exit()
 
-        if backgroundColor.lower() not in ["black", "white"]:
-            raise ValueError("Background colour is not valid. Choose either \"white\" or \"black\".")
+        if not matplotlib.colors.is_color_like(backgroundColor):
+            print("Error: Background colour is not valid. Choose a valid colour value.")
+            sys.exit()
 
-        if sliderTextColor.lower() not in ["black", "white"]:
-            raise ValueError("Slider text colour is not valid. Choose either \"white\" or \"black\".")
+        if not matplotlib.colors.is_color_like(sliderTextColor):
+            print("Error: Slider text colour is not valid. Choose a valid colour value.")
+            sys.exit()
 
         if not isinstance(filterOffSet, float):
             if not isinstance(filterOffSet, int):
-                raise ValueError("Filter position offset is not valid. Choose a float or integer value.")
+                print("Error: Filter position offset is not valid. Choose a float or integer value.")
+                sys.exit()
 
-        if color_scale not in ["Pval", "Score"]:
-            raise ValueError("Colour scale type not valid. Choose either \"Pval\" or \"Score\".")
+        if color_scale.lower() not in ["pvalue", "pcore"]:
+            print("Error: Colour scale type not valid. Choose either \"Pvalue\" or \"Score\".")
+            sys.exit()
 
         if not isinstance(edge_cmap, str):
-            raise ValueError("Edge Cmap is not valid. Choose a valid string option from https://matplotlib.org/users/colormaps.html.")
+            print("Error: Edge CMAP is not valid. Choose a string value.")
+            sys.exit()
+        else:
+            cmap_list = matplotlib.cm.cmap_d.keys()
+
+            if edge_cmap not in cmap_list:
+                print("Error: Edge CMAP is not valid. Choose one of the following: {}.".format(', '.join(cmap_list)))
+                sys.exit()
 
         return diameter, innerRadiusOffset, groupSeparation, linkFadeOpacity, fontSize, backgroundColor, sliderTextColor, filterOffSet, color_scale, edge_cmap
 
@@ -655,7 +673,7 @@ class edgeBundle:
         d3.select('#pvalueValue').text(d3.max(pvalues).toPrecision(5));
             
         var pvalueSlider = d3.slider().scale(d3.scale.log().domain([Math.log(d3.min(pvalues)), Math.log(d3.max(pvalues))]).clamp(true)).value(Math.log(d3.max(pvalues))).min(Math.log(d3.min(pvalues))).max(Math.log(d3.max(pvalues))).step(0.00001).on("slide", function(evt, value) {
-                                
+    
                 var pvalueValue = Math.exp(value);                       
                 var tension = currValues.tension;
                 currValues['abs_score'] = -1
@@ -1269,17 +1287,17 @@ class edgeBundle:
 
         signs = edges['Sign'].values
 
-        if "Pval" in edges.columns:
+        if "Pvalue" in edges.columns:
             if "start_block" in edges.columns:
-                edges_color = edges[['start_index', 'start_name', 'start_color', 'start_label', 'start_block', 'end_index', 'end_name', 'end_color', 'end_label', 'end_block', 'Score', 'Sign', 'Pval']]
+                edges_color = edges[['start_index', 'start_name', 'start_color', 'start_label', 'start_block', 'end_index', 'end_name', 'end_color', 'end_label', 'end_block', 'Score', 'Sign', 'Pvalue']]
             else:
-                edges_color = edges[['start_index', 'start_name', 'start_color', 'start_label', 'end_index', 'end_name', 'end_color', 'end_label', 'Score', 'Sign', 'Pval']]
+                edges_color = edges[['start_index', 'start_name', 'start_color', 'start_label', 'end_index', 'end_name', 'end_color', 'end_label', 'Score', 'Sign', 'Pvalue']]
         else:
 
             if "start_block" in edges.columns:
-                edges_color = df_edges[['start_index', 'start_name', 'start_color', 'start_label', 'start_block', 'end_index', 'end_name', 'end_color', 'end_label', 'end_block', 'Score', 'Sign']]
+                edges_color = edges[['start_index', 'start_name', 'start_color', 'start_label', 'start_block', 'end_index', 'end_name', 'end_color', 'end_label', 'end_block', 'Score', 'Sign']]
             else:
-                edges_color = df_edges[['start_index', 'start_name', 'start_color', 'start_label', 'end_index', 'end_name', 'end_color', 'end_label', 'Score', 'Sign']]
+                edges_color = edges[['start_index', 'start_name', 'start_color', 'start_label', 'end_index', 'end_name', 'end_color', 'end_label', 'Score', 'Sign']]
 
         if color_scale == "Score":
 
@@ -1294,10 +1312,10 @@ class edgeBundle:
                     signColors.append(colorsHEX[0])
 
             edges_color = edges_color.assign(color=pd.Series(signColors, index=edges_color.index))
-        elif color_scale == "Pval":
+        elif color_scale == "Pvalue":
 
-            if "Pval" in edges_color.columns:
-                colorsRGB = get_colors(edges_color['Pval'].values, edgeCmap)[:, :3]
+            if "Pvalue" in edges_color.columns:
+                colorsRGB = get_colors(edges_color['Pvalue'].values, edgeCmap)[:, :3]
 
                 for rgb in colorsRGB:
                     colorsHEX.append(matplotlib.colors.rgb2hex(rgb))
@@ -1305,7 +1323,7 @@ class edgeBundle:
                 edges_color = edges_color.assign(color=pd.Series(colorsHEX, index=edges_color.index))
 
             else:
-                print("Pval in not a column in this dataset. Now choosing Score as a color scale.")
+                print("Pvalue in not a column in this dataset. Now choosing Score as a color scale.")
 
                 for i in range(edgeCmap.N):
                     colorsHEX.append(matplotlib.colors.rgb2hex(edgeCmap(i)[:3]))
@@ -1337,12 +1355,12 @@ class edgeBundle:
 
         edgeCmap = plt.cm.get_cmap(edge_cmap)  # Sets the color pallete for the edges
 
-        if "Pval" in edges.columns:
+        if "Pvalue" in edges.columns:
             edges = self.__edge_color(edges, color_scale, edgeCmap)
         elif "Score" in edges.columns:
             edges = self.__edge_color(edges, 'Score', edgeCmap)
         else:
-            raise ValueError("Edges dataframe does not contain \"Pval\" or \"Score\".")
+            print("Error: Edges dataframe does not contain \"Pvalue\" or \"Score\".")
 
         bundleJson = self.__df_to_Json(edges);
 

@@ -1,3 +1,4 @@
+import sys
 import pandas as pd
 import numpy as np
 import networkx as nx
@@ -21,7 +22,7 @@ class Edge:
 
         self.runEdges()
 
-    def set_params(self, filterScoreType='Pval', hard_threshold=0.005, internalCorrelation=False, sign="both", verbose=0):
+    def set_params(self, filterScoreType='Pvalue', hard_threshold=0.005, internalCorrelation=False, sign="both", verbose=0):
 
         filterScoreType, hard_threshold, internalCorrelation, sign, verbose = self.__paramCheck(filterScoreType, hard_threshold, internalCorrelation, sign, verbose)
 
@@ -31,43 +32,51 @@ class Edge:
         self.__sign = sign;
         self.__verbose = verbose;
 
-    def __checkData(self, DF):
+    def __checkData(self, df):
 
-        if not isinstance(DF, pd.DataFrame):
-            raise ValueError("A dataframe was not entered. Please check your data.")
+        if not isinstance(df, pd.DataFrame):
+            print("Error: A dataframe was not entered. Please check your data.")
 
-        return DF
+        return df
 
     def __checkPeaks(self, Peaks):
 
         if "Name" not in Peaks.columns:
-            raise ValueError("Name column not in Peak Table. Please check your data.")
+            print("Error: \"Name\" column not in Peak Table. Please check your data.")
+            sys.exit()
 
         if "Label" not in Peaks.columns:
-            raise ValueError("Peak column not in Peak Table. Please check your data.")
+            print("Error: \"Label\" column not in Peak Table. Please check your data.")
+            sys.exit()
 
-        if "Color" not in Peaks.columns:
-            raise ValueError("Color column not in Peak Table. Please check your data.")
+        if "Color" in Peaks.columns or "Colour" in Peaks.columns:
+            print("Error: \"Color\" column not in Peak Table. Please check your data.")
+            sys.exit()
 
         return Peaks
 
     def __paramCheck(self, filterScoreType, hard_threshold, internalCorrelation, sign, verbose):
 
-        if filterScoreType.lower() not in ["pval", "score"]:
-            raise ValueError("Filter score type not valid. Choose either \"Pval\" or \"Score\".")
+        if filterScoreType.lower() not in ["pvalue", "score"]:
+            print("Error: Filter score type not valid. Choose either \"Pvalue\" or \"Score\".")
+            sys.exit()
 
         if not isinstance(hard_threshold, float):
             if not isinstance(hard_threshold, int):
-                raise ValueError("Hard threshold is not valid. Choose a float or integer value.")
+                print("Error: Hard threshold is not valid. Choose a float or integer value.")
+                sys.exit()
 
         if not type(internalCorrelation) == bool:
-            raise ValueError("Internal correlation not valid. Choose either \"True\" or \"False\".")
+            print("Error: Internal correlation not valid. Choose either \"True\" or \"False\".")
+            sys.exit()
 
         if sign.lower() not in ["pos", "neg", "both"]:
-            raise ValueError("Sign is not valid. Choose either \"pos\" or \"neg\" or \"both\".")
+            print("Error: Sign is not valid. Choose either \"pos\" or \"neg\" or \"both\".")
+            sys.exit()
 
         if verbose not in [0, 1]:
-            raise ValueError("Verbose not valid. Choose either 0 or 1.")
+            print("Error: Verbose not valid. Choose either 0 or 1.")
+            sys.exit()
 
         return filterScoreType, hard_threshold, internalCorrelation, sign, verbose
 
@@ -251,9 +260,9 @@ class Edge:
             else:
 
                 if len(blocks) > 1:
-                    score = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_color', 'start_label', 'start_block', 'end_index', 'end_name', 'end_color', 'end_label', 'end_block', 'Score', 'Sign', 'Pval'])
+                    score = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_color', 'start_label', 'start_block', 'end_index', 'end_name', 'end_color', 'end_label', 'end_block', 'Score', 'Sign', 'Pvalue'])
                 else:
-                    score = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_color', 'start_label', 'end_index', 'end_name', 'end_color', 'end_label', 'Score', 'Sign', 'Pval'])
+                    score = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_color', 'start_label', 'end_index', 'end_name', 'end_color', 'end_label', 'Score', 'Sign', 'Pvalue'])
 
             return score
 
@@ -318,20 +327,20 @@ class Edge:
             else:
 
                 if len(blocks) > 1:
-                    pval = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_color', 'start_label', 'start_block', 'end_index', 'end_name', 'end_color', 'end_label', 'end_block', 'Score', 'Sign', 'Pval'])
+                    pval = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_color', 'start_label', 'start_block', 'end_index', 'end_name', 'end_color', 'end_label', 'end_block', 'Score', 'Sign', 'Pvalue'])
                 else:
-                    pval = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_color', 'start_label', 'end_index', 'end_name', 'end_color', 'end_label', 'Score', 'Sign', 'Pval'])
+                    pval = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_color', 'start_label', 'end_index', 'end_name', 'end_color', 'end_label', 'Score', 'Sign', 'Pvalue'])
 
             return pval
 
-        options = {'Score': __score(block1_nodes, block2_nodes, SCORE, PVAL, block1, block2, blocks, hard_threshold), 'Pval': __pval(block1_nodes, block2_nodes, SCORE, PVAL, block1, block2, blocks, hard_threshold)}
+        options = {'Score': __score(block1_nodes, block2_nodes, SCORE, PVAL, block1, block2, blocks, hard_threshold), 'Pvalue': __pval(block1_nodes, block2_nodes, SCORE, PVAL, block1, block2, blocks, hard_threshold)}
 
         edges = pd.DataFrame()
 
         if filterScoreType in options:
             edges = options[filterScoreType];
         else:
-            print ("Error: wrong score type specified. Valid entries are 'Score' and 'Pval'.")
+            print ("Error: wrong score type specified. Valid entries are 'Score' and 'Pvalue'.")
 
         if sign.lower() == "pos":
             edges = edges[edges['Sign'] > 0].reset_index(drop=True)

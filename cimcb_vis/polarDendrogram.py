@@ -1,99 +1,226 @@
+import sys
 import copy
-import matplotlib
+#import matplotlib
 import matplotlib.pyplot as plt
-from scipy.spatial.distance import pdist
+#from scipy.spatial.distance import pdist
 from scipy.cluster.hierarchy import linkage, dendrogram
 import numpy as np
 import pandas as pd
 
-def smoothsegment(seg, Nsmooth=100):
-    return np.concatenate([[seg[0]], np.linspace(seg[1], seg[2], Nsmooth), [seg[3]]])
+class polarDendrogram:
 
-def cartesian_to_polar(x, y):
-    rho = np.sqrt(x ** 2 + y ** 2)
-    phi = np.arctan2(y, x)
-    return (rho, phi)
+    def __init__(self, dn):
 
-def generateDendrogram(matrix, peakLabels, distance_metric, linkage_method, color_threshold):
+        self.__dn = self.__checkData(dn)
 
-    Y = pdist(matrix, distance_metric)
-    Z = linkage(Y, linkage_method)
+        self.set_params()
+        self.__set_text_params()
+        #self.__set_heatmap_params(xLabels=list(matrix.columns), yLabels=list(matrix.index))
+        #self.__set_cluster_params()
 
-    dn = dendrogram(Z, labels=peakLabels, no_plot=True, color_threshold=color_threshold)
+    def __checkData(self, dn):
 
-    return dn
+        if not isinstance(dn, dict):
+            print("Error: A dendrogram dictionary was not entered. Please check your data.")
+            sys.exit()
 
-def polarDendrogram(imageFileName, saveImage, dendrogram, branch_offset, gap, grid, text_colors_dict, label_dict, fontSize, style_sheet, figsize):
+        return dn
 
-    icoord = np.array(dendrogram['icoord'], dtype=float)
-    dcoord = np.array(dendrogram['dcoord'], dtype=float)
-    idx_labels = np.array(dendrogram['ivl'])
-    colors = np.array(dendrogram['color_list'])
+    def set_params(self, imageFileName='polarDendrogram.png', saveImage=True, branch_scale='linear', gap=0.1, grid=False, style_sheet='seaborn-white', dpi=200, figSize=(10,10), text_params={}):
 
-    dcoord = -np.log(dcoord + branch_offset)
+        if text_params:
+            self.__set_text_params(**text_params)
 
-    imax = icoord.max()
-    imin = icoord.min()
+        #if cluster_params:
+        #    self.__set_cluster_params(**cluster_params)
 
-    icoord = ((icoord - imin) / (imax - imin) * (1 - gap) + gap / 2) * 2 * np.pi
+        imageFileName, saveImage, branch_scale, gap, grid, style_sheet, dpi, figSize = self.__paramCheck(imageFileName, saveImage, branch_scale, gap, grid, style_sheet, dpi, figSize)
 
-    with plt.style.context(style_sheet):
-        fig = plt.figure(figsize=figsize)
-        ax = fig.add_subplot(111, polar=True)
+        self.__imageFileName = imageFileName;
+        self.__saveImage = saveImage;
+        self.__branch_scale = branch_scale;
+        self.__gap = gap;
+        self.__grid = grid;
+        self.__style_sheet = style_sheet;
+        self.__dpi = dpi;
+        self.__figSize = figSize;
 
-        #ax.set_rmax(2)
-        #ax.set_rlabel_position(0)
+    def __set_text_params(self, fontSize=15, text_colors={}, labels={}):
 
-        angleRange = []
-        for xs, ys, c in zip(icoord, dcoord, colors):
+        fontSize, text_colors, labels = self.__text_paramCheck(fontSize, text_colors, labels)
 
-            xs = smoothsegment(xs)
-            ys = smoothsegment(ys)
+        self.__fontSize = fontSize;
+        self.__text_colors = text_colors;
+        self.__labels = labels;
 
-            angleRange.extend(xs)
+    def __paramCheck(self, imageFileName, saveImage, branch_scale, gap, grid, style_sheet, dpi, figSize):
 
-            ax.plot(xs, ys, color=c)
+        if not isinstance(imageFileName, str):
+            print("Error: Image file name is not valid. Choose a string value.")
+            sys.exit()
 
-        ax.spines['polar'].set_visible(False)
-        ax.set_yticklabels([])
+        if not type(saveImage) == bool:
+            print("Error: Save image is not valid. Choose either \"True\" or \"False\".")
+            sys.exit()
 
-        iimin = np.array(angleRange).min()
-        iimax = np.array(angleRange).max()
+        if branch_scale.lower() not in ["linear", "log", "square"]:
+            print("Error: Branch scale not valid. Choose either \"linear\", \"log\" or \"square\".")
 
-        Nxticks = len(idx_labels)
+        if not isinstance(gap, float):
+            if not isinstance(gap, int):
+                print("Error: Gap is not valid. Choose a float or integer value.")
+                sys.exit()
 
-        angles = np.linspace(iimin, iimax, Nxticks)
+        if not type(grid) == bool:
+            print("Error: Grid is not valid. Choose either \"True\" or \"False\".")
+            sys.exit()
 
-        xticks = copy.deepcopy(angles)
+        if not isinstance(style_sheet, str):
+            print("Error: Style sheet is not valid. Choose a string value.")
+        else:
+            styleList = list(plt.style.available)
 
-        angles[np.cos(angles) < 0] = angles[np.cos(angles) < 0] + np.pi
+            if style_sheet not in styleList:
+                print("Error: Chosen style sheet is not valid. Choose one of the following: {}.".format(', '.join(styleList)))
+                sys.exit()                
+                
+        if not isinstance(dpi, float):
+            if not isinstance(dpi, int):
+                print("Error: Dpi is not valid. Choose a float or integer value.")
+                sys.exit()
 
-        angles = np.rad2deg(angles)
+        if not isinstance(figSize, tuple):
+            print("Error: Figure size is not valid. Choose a tuple of length 2.")
+            sys.exit()
+        else:
+            for length in figSize:
+                if not isinstance(length, float):
+                    if not isinstance(length, int):
+                        print("Error: Figure size value is not valid. Choose a float or integer value.")
+                        sys.exit()
 
-        ax.set_xticks(xticks)
-        ax.set_xticklabels(idx_labels)
+        return imageFileName, saveImage, branch_scale, gap, grid, style_sheet, dpi, figSize
 
-        fig.canvas.draw()
+    def __text_paramCheck(self, fontSize, text_colors, labels):
 
-        xlabels = []
-        for label, theta, angle in zip(ax.get_xticklabels(), angles, np.rad2deg(xticks)):
-            x, y = label.get_position()
+        if not isinstance(fontSize, float):
+            if not isinstance(fontSize, int):
+                print("Error: Font size is not valid. Choose a float or integer value.")
+                sys.exit()
 
-            if angle <= 90:
-                ha = 'left'
-            elif angle <= 270:
-                ha = 'right'
-            else:
-                ha = 'left'
+        if not text_colors:
+            if not isinstance(text_colors, dict):
+                print("Error: Text colours is not valid. Use a dictionary with Peak Table indexes as keys and associated colours as values.")
+                sys.exit()
 
-            lab = ax.text(x, y, label_dict[int(label.get_text())], color=text_colors_dict[int(label.get_text())], fontsize=fontSize, rotation=theta, transform=label.get_transform(), rotation_mode="anchor", ha=ha, va="center")#, bbox=dict(facecolor = "none", edgecolor ="red"))
+        if not labels:
+            if not isinstance(labels, dict):
+                print("Error: Labels is not valid. Use a dictionary with Peak Table indexes as keys and associated labels as values.")
+                sys.exit()
 
-            xlabels.append(lab)
-        ax.set_xticklabels([])
+        return fontSize, text_colors, labels
 
-        ax.grid(grid)
+    def __smoothsegment(self, seg, Nsmooth=100):
+        return np.concatenate([[seg[0]], np.linspace(seg[1], seg[2], Nsmooth), [seg[3]]])
 
-        if saveImage:
-            plt.savefig(imageFileName, format="JPG");
+    def run(self):
 
-        plt.show()
+        imageFileName = self.__imageFileName
+        saveImage = self.__saveImage
+        dendrogram = self.__dn
+        branch_scale = self.__branch_scale
+        gap = self.__gap
+        grid = self.__grid
+        text_colors = self.__text_colors
+        labels = self.__labels
+        fontSize = self.__fontSize
+        style_sheet = self.__style_sheet
+        dpi = self.__dpi
+        figSize = self.__figSize
+
+        icoord = np.array(dendrogram['icoord'], dtype=float)
+        dcoord = np.array(dendrogram['dcoord'], dtype=float)
+        idx_labels = np.array(dendrogram['ivl'])
+        colors = np.array(dendrogram['color_list'])
+
+        if branch_scale.lower() == "log":
+            dcoord = -np.log(dcoord + 1)
+        elif branch_scale.lower() == "square":
+            dcoord = -np.square(dcoord + 1)
+        elif branch_scale.lower() == "linear":
+            dcoord = -np.array(dcoord + 1)
+
+        imax = icoord.max()
+        imin = icoord.min()
+
+        icoord = ((icoord - imin) / (imax - imin) * (1 - gap) + gap / 2) * 2 * np.pi
+
+        with plt.style.context(style_sheet):
+            fig = plt.figure(figsize=figSize)
+            ax = fig.add_subplot(111, polar=True)
+
+            #ax.set_rmax(2)
+            #ax.set_rlabel_position(0)
+
+            angleRange = []
+            for xs, ys, c in zip(icoord, dcoord, colors):
+
+                xs = self.__smoothsegment(xs)
+                ys = self.__smoothsegment(ys)
+
+                angleRange.extend(xs)
+
+                ax.plot(xs, ys, color=c)
+
+            ax.spines['polar'].set_visible(False)
+            ax.set_yticklabels([])
+
+            iimin = np.array(angleRange).min()
+            iimax = np.array(angleRange).max()
+
+            Nxticks = len(idx_labels)
+
+            angles = np.linspace(iimin, iimax, Nxticks)
+
+            xticks = copy.deepcopy(angles)
+
+            angles[np.cos(angles) < 0] = angles[np.cos(angles) < 0] + np.pi
+
+            angles = np.rad2deg(angles)
+
+            ax.set_xticks(xticks)
+            ax.set_xticklabels(idx_labels)
+
+            fig.canvas.draw()
+
+            xlabels = []
+            for label, theta, angle in zip(ax.get_xticklabels(), angles, np.rad2deg(xticks)):
+                x, y = label.get_position()
+
+                if angle <= 90:
+                    ha = 'left'
+                elif angle <= 270:
+                    ha = 'right'
+                else:
+                    ha = 'left'
+
+                if labels and text_colors:
+                    lab = ax.text(x, y, labels[int(label.get_text())], color=text_colors[int(label.get_text())], fontsize=fontSize, rotation=theta, transform=label.get_transform(), rotation_mode="anchor", ha=ha, va="center")
+                elif not labels and not text_colors:
+                    lab = ax.text(x, y, label.get_text(), color="black", fontsize=fontSize, rotation=theta, transform=label.get_transform(), rotation_mode="anchor", ha=ha, va="center")
+                    #lab = ax.text(x, y, label.get_text(), color=text_colors[int(label.get_text())], fontsize=fontSize, rotation=theta, transform=label.get_transform(), rotation_mode="anchor", ha=ha, va="center")
+                elif labels:
+                    lab = ax.text(x, y, labels[int(label.get_text())], color="black", fontsize=fontSize, rotation=theta, transform=label.get_transform(), rotation_mode="anchor", ha=ha, va="center")
+                elif text_colors:
+                    lab = ax.text(x, y, label.get_text(), color=text_colors[int(label.get_text())], fontsize=fontSize, rotation=theta, transform=label.get_transform(), rotation_mode="anchor", ha=ha, va="center")
+
+                xlabels.append(lab)
+
+            ax.set_xticklabels([])
+
+            ax.grid(grid)
+
+            if saveImage:
+                plt.savefig(imageFileName, dpi=dpi);
+
+            plt.show()

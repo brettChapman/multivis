@@ -1,0 +1,7 @@
+numpy>=1.12
+pandas
+matplotlib
+seaborn
+networkx
+scipy
+scikit-learn

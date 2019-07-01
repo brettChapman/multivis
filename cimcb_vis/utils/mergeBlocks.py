@@ -1,3 +1,4 @@
+import sys
 import pandas as pd
 import collections
 
@@ -16,12 +17,12 @@ def mergeBlocks(peak_blocks, data_blocks):
         data = data_blocks[block]
 
         if 'Name' not in peak.columns:
-            print("No \"Name\" column in {} peak block".format(block))
-            break;
+            print("Error: No \"Name\" column in {} peak block".format(block))
+            sys.exit()
 
         if 'Label' not in peak.columns:
-            print("No \"Label\" column in {} peak block".format(block))
-            break;
+            print("Error: No \"Label\" column in {} peak block".format(block))
+            sys.exit()
 
         if df_peaks.empty:
             df_peaks = peak.copy(deep=True)
@@ -37,8 +38,8 @@ def mergeBlocks(peak_blocks, data_blocks):
             if 'SampleID' in df_data.columns:
                 sampleIDcheck.append(list(df_data['SampleID'].values))
             else:
-                print("No \"SampleID\" column in {} data block".format(block))
-                break;
+                print("Error: No \"SampleID\" column in {} data block".format(block))
+                sys.exit()
         else:
             if 'SampleID' in data.columns:
 
@@ -46,8 +47,8 @@ def mergeBlocks(peak_blocks, data_blocks):
                     sampleIDcheck.append(list(data['SampleID'].values))
 
                     if not (compare(sampleIDcheck[0], sampleIDcheck[1])):
-                        print("SampleID order or values are not consistant across data blocks. Please check")
-                        break;
+                        print("Error: SampleID order or values are not consistant across data blocks. Please check")
+                        sys.exit()
 
                     sampleIDcheck = []
                     sampleIDcheck.append(list(data['SampleID'].values))
