@@ -77,7 +77,7 @@ class edgeBundle:
                 print("Error: Filter position offset is not valid. Choose a float or integer value.")
                 sys.exit()
 
-        if color_scale.lower() not in ["pvalue", "pcore"]:
+        if color_scale.lower() not in ["pvalue", "score"]:
             print("Error: Colour scale type not valid. Choose either \"Pvalue\" or \"Score\".")
             sys.exit()
 

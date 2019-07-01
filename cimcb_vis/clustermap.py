@@ -235,8 +235,6 @@ class clustermap:
 
         clusterCmap = plt.cm.get_cmap(cluster_cmap);
 
-        print(plt.cm.cmap_d.keys())
-
         clusterColors = []
         for i in range(clusterCmap.N):
             clusterColors.append(matplotlib.colors.rgb2hex(clusterCmap(i)[:3]))

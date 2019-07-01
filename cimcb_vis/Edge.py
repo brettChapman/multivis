@@ -49,7 +49,7 @@ class Edge:
             print("Error: \"Label\" column not in Peak Table. Please check your data.")
             sys.exit()
 
-        if "Color" in Peaks.columns or "Colour" in Peaks.columns:
+        if "Color" not in Peaks.columns:
             print("Error: \"Color\" column not in Peak Table. Please check your data.")
             sys.exit()
 
