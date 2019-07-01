@@ -39,7 +39,7 @@ For further detail on the usage refer to the docstring.
 - [Network](https://github.com/brettChapman//cimcb_vis/blob/master/cimcb_vis/Network.py) Generates dataframe of edges, with network parameters and a networkx graph prior to visualisation.
 - [edgeBundle](https://github.com/brettChapman/cimcb_vis/blob/master/cimcb_vis/edgeBundle.py): Generates necessary Json structure and produces Hierarchical edge bundle plot.
 - [plotNetwork](https://github.com/brettChapman/cimcb_vis/blob/master/cimcb_vis/plotNetwork.py): Static spring plot using pygraphviz and networkx.
-- [forceNetwork](https://github.com/brettChapman/cimcb_vis/blob/master/cimcb_vis/forceNetwork.py): Interactive spring plot which inherits data from the networkx graph
+- [forceNetwork](https://github.com/brettChapman/cimcb_vis/blob/master/cimcb_vis/forceNetwork.py): Interactive force-directed network which inherits data from the networkx graph
 - [clustermap](https://github.com/brettChapman/cimcb_vis/blob/master/cimcb_vis/clustermap.py): HCA with dendrograms.
 - [polarDendrogram](https://github.com/brettChapman/cimcb_vis/blob/master/cimcb_vis/polarDendrogram.py): Polar dendrogram
 
