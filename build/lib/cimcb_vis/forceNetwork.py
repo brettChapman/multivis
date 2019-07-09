@@ -200,7 +200,7 @@ class forceNetwork:
 
         graph_data = {'nodes': [], 'links': []}
 
-        key_list = list(G.nodes[list(G.nodes.keys())[0]].keys())
+        key_list = list(G.nodes[0].keys())
 
         #iterate over all attributes and add to dictionary before appending to graph
         for node in G.nodes():
@@ -832,7 +832,7 @@ class forceNetwork:
             });
     
         nodeColorDropdown.selectAll('option')
-            .data(['default','schemeCategory10','schemeAccent','schemeDark2','schemePaired','schemePastel1','schemePastel2','schemeSet1','schemeSet2','schemeSet3'])
+            .data(['default','schemeCategory10','schemeCategory20','schemeAccent','schemeDark2','schemePaired','schemePastel1','schemePastel2','schemeSet1','schemeSet2','schemeSet3'])
             .enter().append('option')		
             .text(function(d) { return d; });
             
@@ -978,7 +978,7 @@ class forceNetwork:
         
             <style> $css_text </style>
             
-            <script src="https://d3js.org/d3.v5.min.js"></script>
+            <script src="https://d3js.org/d3.v4.min.js"></script>
             <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
                     
             <script> $js_text </script>

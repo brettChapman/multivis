@@ -9,13 +9,13 @@ cimcb_vis package containing the necessary tools for the visualisation of correl
 cimcb_vis requires:
 - Python (>=3.5)
 - NumPy (>=1.12)
-- SciPy
-- scikit-learn
 - Pandas
-- matplotlib
-- seaborn
-- networks
-- cimcb
+- Matplotlib
+- Seaborn
+- Networkx
+- SciPy
+- Scikit-learn
+- tqdm
 
 ### User installation
 The recommend way to install cimcb_vis and dependencies is to using ``conda``:
@@ -40,7 +40,7 @@ For further detail on the usage refer to the docstring.
 - [edgeBundle](https://github.com/brettChapman/cimcb_vis/blob/master/cimcb_vis/edgeBundle.py): Generates necessary Json structure and produces Hierarchical edge bundle plot.
 - [plotNetwork](https://github.com/brettChapman/cimcb_vis/blob/master/cimcb_vis/plotNetwork.py): Static spring plot using pygraphviz and networkx.
 - [forceNetwork](https://github.com/brettChapman/cimcb_vis/blob/master/cimcb_vis/forceNetwork.py): Interactive force-directed network which inherits data from the networkx graph
-- [clustermap](https://github.com/brettChapman/cimcb_vis/blob/master/cimcb_vis/clustermap.py): HCA with dendrograms.
+- [clustermap](https://github.com/brettChapman/cimcb_vis/blob/master/cimcb_vis/clustermap.py): HCA with heatmap and dendrograms.
 - [polarDendrogram](https://github.com/brettChapman/cimcb_vis/blob/master/cimcb_vis/polarDendrogram.py): Polar dendrogram
 
 #### cimcb_vis.utils
