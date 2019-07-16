@@ -27,7 +27,7 @@ class forceNetwork:
 
         return g
 
-    def set_params(self, node_params={}, link_params={}, canvas_size=(1060,900), graphviz_layout='neato', chargeStrength=-120):
+    def set_params(self, node_params={}, link_params={}, canvas_size=(1060,900), layout='spring', chargeStrength=-120):
 
         if node_params:
             self.__set_node_params(**node_params)
@@ -35,30 +35,31 @@ class forceNetwork:
         if link_params:
             self.__set_link_params(**link_params)
 
-        canvas_size, graphviz_layout, chargeStrength = self.__paramCheck(canvas_size, graphviz_layout, chargeStrength)
+        canvas_size, layout, chargeStrength = self.__paramCheck(canvas_size, layout, chargeStrength)
 
         self.__canvas_size = canvas_size;
-        self.__graphviz_layout = graphviz_layout;
+        self.__layout = layout;
         self.__chargeStrength = chargeStrength;
 
-    def __set_node_params(self, node_text_size=15, fix_nodes=False, node_size_scale={}):
+    def __set_node_params(self, node_text_size=15, fix_nodes=False, displayLabel=False, node_size_scale={}):
 
-        node_text_size, fix_nodes, node_size_scale = self.__node_paramCheck(node_text_size, fix_nodes, node_size_scale)
+        node_text_size, fix_nodes, displayLabel, node_size_scale = self.__node_paramCheck(node_text_size, fix_nodes, displayLabel, node_size_scale)
 
         self.__node_text_size = node_text_size;
         self.__fix_nodes = fix_nodes;
+        self.__displayLabel = displayLabel;
         self.__node_size_scale = node_size_scale;
 
-    def __set_link_params(self, link_type='Score', link_width=0.5, restrict_link_distance=False, link_score_color={}):
+    def __set_link_params(self, link_type='Score', link_width=0.5, link_score_color={}):
 
-        link_type, link_width, restrict_link_distance, link_score_color = self.__link_paramCheck(link_type, link_width, restrict_link_distance, link_score_color)
+        link_type, link_width, link_score_color = self.__link_paramCheck(link_type, link_width, link_score_color)
 
         self.__link_type = link_type;
         self.__link_width = link_width;
-        self.__restrict_link_distance = restrict_link_distance;
+        #self.__restrict_link_distance = restrict_link_distance;
         self.__link_score_color = link_score_color;
 
-    def __paramCheck(self, canvas_size, graphviz_layout, chargeStrength):
+    def __paramCheck(self, canvas_size, layout, chargeStrength):
 
         if not isinstance(canvas_size, tuple):
             print("Error: Canvas size is not valid. Choose a tuple of length 2.")
@@ -68,8 +69,8 @@ class forceNetwork:
                     if not isinstance(length, int):
                         print("Error: Canvas size values not valid. Choose a float or integer value.")
 
-        if graphviz_layout not in ["neato", "dot", "fdp", "sfdp", "twopi", "circo"]:
-            print("Error: Graphviz layout program not valid. Choose either \"neato\", \"dot\", \"fdp\", \"sfdp\", \"twopi\" or \"circo\".")
+        if layout not in ["spring", "neato", "dot", "fdp", "sfdp", "twopi", "circo"]:
+            print("Error: Layout program not valid. Choose either \"spring\", or graphviz layout \"neato\", \"dot\", \"fdp\", \"sfdp\", \"twopi\" or \"circo\".")
             sys.exit()
 
         if not isinstance(chargeStrength, float):
@@ -77,9 +78,9 @@ class forceNetwork:
                 print("Error: Charge strength is not valid. Choose a float or integer value.")
                 sys.exit()
 
-        return canvas_size, graphviz_layout, chargeStrength
+        return canvas_size, layout, chargeStrength
 
-    def __node_paramCheck(self, node_text_size, fix_nodes, node_size_scale):
+    def __node_paramCheck(self, node_text_size, fix_nodes, displayLabel, node_size_scale):
 
         g = self.__g
         col_list = list(g.nodes[list(g.nodes.keys())[0]].keys())
@@ -91,6 +92,10 @@ class forceNetwork:
 
         if not type(fix_nodes) == bool:
             print("Error: Fix nodes is not valid. Choose either \"True\" or \"False\".")
+            sys.exit()
+
+        if not type(displayLabel) == bool:
+            print("Error: Display label is not valid. Choose either \"True\" or \"False\".")
             sys.exit()
 
         if node_size_scale:
@@ -132,22 +137,31 @@ class forceNetwork:
         else:
             node_size_scale = dict({}) #Default to an empty dict
 
-        return node_text_size, fix_nodes, node_size_scale
+        return node_text_size, fix_nodes, displayLabel, node_size_scale
 
-    def __link_paramCheck(self, link_type, link_width, restrict_link_distance, link_score_color):
+    def __link_paramCheck(self, link_type, link_width, link_score_color):
+
+        g = self.__g
+
+        min_weight = min(list(nx.get_edge_attributes(g, 'weight').values()))
 
         if link_type not in ["Pvalue", "Score"]:
             print("Error: Link type not valid. Choose either \"Pvalue\" or \"Score\".")
             sys.exit()
+        else:
+            if link_type == "Pvalue":
+                if min_weight < 0:
+                    print("Error: Link type invalid with edge values. Negative values present. Choose \"Score\" link type or change the edge values to p-values instead of scores.")
+                    sys.exit()
 
         if not isinstance(link_width, float):
             if not isinstance(link_width, int):
                 print("Error: Link width is not valid. Choose a float or integer value.")
                 sys.exit()
 
-        if not type(restrict_link_distance) == bool:
-            print("Error: Restrict maximum link distance is not valid. Choose either \"True\" or \"False\".")
-            sys.exit()
+        #if not type(restrict_link_distance) == bool:
+        #    print("Error: Restrict maximum link distance is not valid. Choose either \"True\" or \"False\".")
+        #    sys.exit()
 
         if link_score_color:
             if not isinstance(link_score_color, dict):
@@ -183,7 +197,7 @@ class forceNetwork:
         else:
             link_score_color = dict({'positive': 'red', 'negative': 'black'}) #Default to red and black
 
-        return link_type, link_width, restrict_link_distance, link_score_color
+        return link_type, link_width, link_score_color
 
     class __graphEncoder(json.JSONEncoder):
         def default(self, obj):
@@ -216,8 +230,8 @@ class forceNetwork:
             graph_data['links'].append({
                 "source": source,
                 "target": target,
-                "weight": G.edges[source, target]['weight'],
-                "length": G.edges[source, target]['len']})
+                "weight": G.edges[source, target]['weight']})
+                #"length": G.edges[source, target]['len']})
 
         return graph_data
 
@@ -260,8 +274,8 @@ class forceNetwork:
         
         select.nodeColorDropDown {
             position: relative;
-            left: 80px;
-            top: -18px;
+            left: 0px;
+            top: 10px;
         }
         
         text {
@@ -298,13 +312,7 @@ class forceNetwork:
             .on("dblclick.zoom", null);
     
         var simulation = d3.forceSimulation()
-            .force("link", d3.forceLink().id(d => d.id))
-            //.force("charge", d3.forceManyBody())
-            //.force("collide", d3.forceCollide())
-            //.force("forceX",d3.forceX(width / 2))
-            //.force("forceY",d3.forceY(height / 2))
-            //.force('x', d3.forceX().x(d => d.node_x / 4))
-            //.force('y', d3.forceY().y(d => d.node_y / 4))
+            .force("link", d3.forceLink().id(d => d.id))            
             .force("center", d3.forceCenter(width / 2, height / 2));        
     
         var container = svg.append('g');
@@ -329,8 +337,6 @@ class forceNetwork:
             .style("opacity", 0);
     
         var graph = JSON.parse(networkData);
-    
-        //graph.nodes.forEach(function(d) { d.x = d.node_x; d.y = d.node_y });
         
         if (params.link_type == "Score") {
             graph.links.forEach( function(d) {
@@ -364,8 +370,6 @@ class forceNetwork:
             linkedByIndex[d.source + ',' + d.target] = 1;
             linkedByIndex[d.target + ',' + d.source] = 1;
         });
-                
-        //graph.nodes.forEach(function(d) { hasLinks(d) ? document.write("yes") : document.write("no") });
         
         if (Object.keys(params.node_size_scale).length === 0) {
         
@@ -514,24 +518,22 @@ class forceNetwork:
             .range([1,1000])
             .clamp(true);       
         
-        if (params.restrict_link_distance == "true") {
-            simulation            
-                .force("charge", d3.forceManyBody().strength(params.chargeStrength).distanceMax(function (d) { return d.length; }))
-                .force("collide", d3.forceCollide().radius( function (d) { return d.Size; }));
+        //if (params.restrict_link_distance == "true") {
+        //    simulation            
+        //        .force("charge", d3.forceManyBody().strength(params.chargeStrength).distanceMax(function (d) { return d.length; }))
+        //        .force("collide", d3.forceCollide().radius( function (d) { return d.Size; }));
              
-        } else {
-            simulation
-                .force("charge", d3.forceManyBody().strength(params.chargeStrength).distanceMax(500))
-                .force("collide", d3.forceCollide().radius( function (d) { return d.Size; }));
-        }
-    
-        graph.nodes.forEach(function(d) { d.x = d.x_position; d.y = d.y_position; if (typeof d.Group !== 'undefined') { groups.push(d.Group); } });
+        //} else {
+            
+        //}
         
-        if (groups.length == 0) {
-            groups.push('default')
-        } else {
-            var groups = Array.from(new Set(groups))    
-        }
+        simulation
+            .force("charge", d3.forceManyBody().strength(params.chargeStrength).distanceMax(500))
+            .force("collide", d3.forceCollide().radius( function (d) { return d.Size; }));
+    
+        graph.nodes.forEach(function(d) { d.x = d.x_position; d.y = d.y_position; if (typeof d.Group !== 'undefined') { groups.push(d.Group); } else if (typeof d.Color !== 'undefined') { groups.push(d.Color); } else { groups.push(1); } });
+        
+        var groups = Array.from(new Set(groups)) 
        
         update();
     
@@ -584,9 +586,9 @@ class forceNetwork:
             label = label.data(graph.nodes, d => d.id);
         
             label.exit().remove();
-        
+           
             var newLabel = label.enter().append("text")
-                    .text(function (d) { return d.Name; })
+                    .text(function (d) { if (params.displayLabel == "true") { return d.Label; } else { return d.Name; } })
                     .style("text-anchor", "middle")
                         .style("fill", "#000")
                         .style("font-family", "Helvetica")
@@ -635,7 +637,7 @@ class forceNetwork:
             var newLink = link.enter().append("line")
                         .attr("class", "link")
                         .attr("stroke-width", params.link_width)
-                        .style("stroke", function(d) { return d.Color; }) //color(d.group); });
+                        .style("stroke", function(d) { return d.Color; })
                         .on('mouseover.tooltip', function(d) {
                                 tooltip.transition()
                                         .duration(300)
@@ -663,26 +665,8 @@ class forceNetwork:
                 .on("tick", ticked);
                        
             simulation.force("link")
-                .links(graph.links)
-                .distance(function(d) { return d.length; });
-            
-            //simulation.force("charge", null)
-            
-            //simulation
-            //	.force("charge", d3.forceManyBody().strength(params.chargeStrength)
-            //	.distanceMin(function(d) { return d.length; })
-            //    .distanceMax(function(d) { return d.length; }));
-            
-            //simulation
-            //    .force("charge", d3.forceManyBody().strength(params.chargeStrength)).distanceMax(function (d) { return hasLinks(d) ? d.length : 500; }));            
-            //    .force("collide", d3.forceCollide().radius( function (d) { return d.Size; }))        
-            //    .force("charge", d3.forceManyBody().strength(params.chargeStrength)
-            //    .distanceMin(function(d) { return d.length; })
-            //    .distanceMax(function(d) { return d.length; }));
-            
-            //simulation
-            //    .force("forceX",d3.forceX(width / 2).strength(function(d){ return hasLinks(d) ? 0 : 0.05; }) )
-            //    .force("forceY",d3.forceY(height / 2).strength(function(d){ return hasLinks(d) ? 0 : 0.05; }) );
+                .links(graph.links);
+                //.distance(function(d) { return d.length; });
                     
             simulation.alphaTarget(0.1).restart();
         }
@@ -692,24 +676,15 @@ class forceNetwork:
                 .attr("x1", function(d) { return d.source.x; })
                 .attr("y1", function(d) { return d.source.y; })
                 .attr("x2", function(d) { return d.target.x; })
-                .attr("y2", function(d) { return d.target.y; });
-    
-            //node       
-            //    .attr("fx", function(d) { return d.node_x; })
-            //	.attr("fy", function(d) { return d.node_y; });
+                .attr("y2", function(d) { return d.target.y; });    
             
             node       
                 .attr("cx", function(d) { return d.x = Math.max(d3.select(this).attr("r"), Math.min(width - d3.select(this).attr("r"), d.x)); })
-                .attr("cy", function(d) { return d.y = Math.max(d3.select(this).attr("r"), Math.min(height - d3.select(this).attr("r"), d.y)); });
-    
-            //node.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
-          
+                .attr("cy", function(d) { return d.y = Math.max(d3.select(this).attr("r"), Math.min(height - d3.select(this).attr("r"), d.y)); });    
+                      
             label.attr("x", function(d){ return d.x; })
-                 .attr("y", function (d) {return d.y + 5; });
+                 .attr("y", function (d) {return d.y + 5; });            
             
-            //node       
-            //    .attr("x", d.node })
-            //	.attr("y", function(d) { return d.y = Math.max(d3.select(this).attr("r"), Math.min(height - d3.select(this).attr("r"), d.y)); });
         }
              
         var slider = d3.select('body').append('p').text(params.link_type + ' threshold: ');
@@ -823,9 +798,9 @@ class forceNetwork:
                     node.attr("fill", function(d) { return d.Color; })
                 } else {
                     var color_palette = d3.scaleOrdinal().domain(groups)
-                                    .range(d3[colorScheme]);
-                    
-                    node.attr("fill", function(d) { if (typeof d.Group !== 'undefined') { return color_palette(d.Group) } else { return color_palette('default'); } });
+                                                    .range(d3[colorScheme]);
+                                   
+                    node.attr("fill", function(d) { if (typeof d.Group !== 'undefined') { return color_palette(d.Group); } else if (typeof d.Color !== 'undefined') { return color_palette(d.Color); } else { return color_palette(1); } });
                 }
     
                 simulation.alphaTarget(0.1).restart();
@@ -873,44 +848,7 @@ class forceNetwork:
     
         function neighboring(a, b) {
             return linkedByIndex[a.id + ',' + b.id] || linkedByIndex[b.id + ',' + a.id] || a.id === b.id;
-        }
-        
-        //function hasLinks(node) {
-          //  return graph.links.reduce((neighbors, link) => {
-         //       if (link.target.id === node.id) {
-          //          neighbors.push(link.source.id)
-          //      } else if (link.source.id === node.id) {
-           //         neighbors.push(link.target.id)
-          //      }
-                
-           //     if (neighbors === undefined || neighbors.length === 0) { 
-           //         return false
-           //     } else {
-           //         return true
-           //     }
-                
-          //  }, [node.id])
-        //}
-    
-        
-        //function hasLinks(d) {
-        
-            
-        
-        //    return graph.nodes.reduce((accumulator, node) => {            
-         //       return neighboring(node, d)
-         //   })
-        //}
-        
-        //function hasLinks(o) {
-        
-        //    links = graph.links
-        
-        //    var linked = false;
-        //    graph.nodes.forEach( var linked = function(d) { if (neighboring(d, o)) { return neighboring(d, o) }}; if (linked) { return linked; }}) ;
-                          
-        //    return linked;
-        //}    
+        }          
     
         function fade(opacity) {
             return d => {
@@ -951,8 +889,7 @@ class forceNetwork:
                     toggle = 0;
                 }
             };
-        }
-         
+        }         
         
         function searchNodes() {
             var term = document.getElementById('searchTerm').value;
@@ -978,8 +915,7 @@ class forceNetwork:
         
             <style> $css_text </style>
             
-            <script src="https://d3js.org/d3.v5.min.js"></script>
-            <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+            <script src="https://d3js.org/d3.v5.min.js"></script>            
                     
             <script> $js_text </script>
                 
@@ -991,7 +927,7 @@ class forceNetwork:
     def run(self):
 
         g = self.__g
-        graphviz_layout = self.__graphviz_layout
+        layout = self.__layout
         link_type = self.__link_type
         link_score_color = self.__link_score_color
         link_width = self.__link_width
@@ -1000,28 +936,38 @@ class forceNetwork:
         node_text_size = self.__node_text_size
         node_size_scale = self.__node_size_scale
         fix_nodes = self.__fix_nodes
-        restrict_link_distance = self.__restrict_link_distance
+        displayLabel = self.__displayLabel
+        #restrict_link_distance = self.__restrict_link_distance
 
         if fix_nodes:
             fixed = "true";
         else:
             fixed = "false";
 
-        if restrict_link_distance:
-            max_link = "true";
-        else:
-            max_link = "false";
+        #if restrict_link_distance:
+        #    max_link = "true";
+        #else:
+        #    max_link = "false";
 
         if link_type == 'Pvalue':
             operator = '<';
         else:
             operator = '>';
 
-        paramDict = {"width": canvas_size[0], "height": canvas_size[1], "link_type": link_type
-                    , "link_score_color": link_score_color, "link_width": link_width, "node_text_size": node_text_size, "node_size_scale": node_size_scale
-                    , "chargeStrength": chargeStrength, "fix_nodes": fixed, "restrict_link_distance": max_link}
+        if displayLabel:
+            dispLabel = "true";
+        else:
+            dispLabel = "false";
 
-        pos = pygraphviz_layout(g, prog=graphviz_layout)
+        paramDict = dict({"width": canvas_size[0], "height": canvas_size[1], "link_type": link_type
+                    , "link_score_color": link_score_color, "link_width": link_width, "node_text_size": node_text_size, "displayLabel": dispLabel, "node_size_scale": node_size_scale
+                    , "chargeStrength": chargeStrength, "fix_nodes": fixed})
+        #, "restrict_link_distance": max_link})
+
+        if layout == "spring":
+            pos = nx.spring_layout(g)
+        else:
+            pos = pygraphviz_layout(g, prog=layout)
 
         for idx, node in enumerate(g.nodes()):
             g.node[node]['x_position'] = pos[node][0]

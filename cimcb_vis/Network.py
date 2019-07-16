@@ -20,37 +20,41 @@ class Network(Edge):
 
         self.__networkXEdges()
 
-    def set_params(self, filterScoreType='Pvalue', hard_threshold=0.005, link_type='Score', lengthScale='linear', length_range=(1,10), internalCorrelation=False, sign="both", verbose=0):
+    #def set_params(self, filterScoreType='Pvalue', hard_threshold=0.005, link_type='Score', lengthScale='linear', length_range=(1,10), internalCorrelation=False, sign="both", verbose=0):
+    def set_params(self, filterScoreType='Pvalue', hard_threshold=0.005, link_type='Score', internalCorrelation=False, sign="both", verbose=0):
 
         Edge.set_params(self, filterScoreType, hard_threshold, internalCorrelation, sign, verbose)
 
-        lengthScale, length_range, link_type = self.__paramCheck(lengthScale, length_range, link_type)
+        #lengthScale, length_range, link_type = self.__paramCheck(lengthScale, length_range, link_type)
+        link_type = self.__paramCheck(link_type)
 
-        self.__lengthScale = lengthScale
-        self.__length_range = length_range
+        #self.__lengthScale = lengthScale
+        #self.__length_range = length_range
         self.__setLinkType(link_type)
 
-    def __paramCheck(self, lengthScale, length_range, link_type):
+    #def __paramCheck(self, lengthScale, length_range, link_type):
+    def __paramCheck(self, link_type):
 
-        if lengthScale.lower() not in ["linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square"]:
-            print("Error: Length scale type not valid. Choose either \"linear\", \"reverse_linear\", \"log\", \"reverse_log\", \"square\", \"reverse_square\".")
-            sys.exit()
+        #if lengthScale.lower() not in ["linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square"]:
+        #    print("Error: Length scale type not valid. Choose either \"linear\", \"reverse_linear\", \"log\", \"reverse_log\", \"square\", \"reverse_square\".")
+        #    sys.exit()
 
-        if not isinstance(length_range, tuple):
-            print("Error: Length range is not valid. Choose a list of length 2.")
-            sys.exit()
-        else:
-            for length in length_range:
-                if not isinstance(length, float):
-                    if not isinstance(length, int):
-                        print("Error: Length range items not valid. Choose a float or integer value.")
-                        sys.exit()
+        #if not isinstance(length_range, tuple):
+        #    print("Error: Length range is not valid. Choose a list of length 2.")
+        #    sys.exit()
+        #else:
+        #    for length in length_range:
+        #        if not isinstance(length, float):
+        #            if not isinstance(length, int):
+        #                print("Error: Length range items not valid. Choose a float or integer value.")
+        #                sys.exit()
 
         if link_type.lower() not in ["pvalue", "score"]:
             print("Error: Link type not valid. Choose either \"Pvalue\" or \"Score\".")
             sys.exit()
 
-        return lengthScale, length_range, link_type
+        #return lengthScale, length_range, link_type
+        return link_type
 
     def __networkXEdges(self):
 
@@ -64,55 +68,63 @@ class Network(Edge):
 
         g = nx.Graph()
 
-        edge_dist = np.array(list(edges[self.getLinkType()].values))
-        edge_dist = np.array([x for x in list(range_scale(edge_dist, 1, 10))])
+        #edge_dist = np.array(list(edges[self.getLinkType()].values))
+        #edge_dist = np.array([x for x in list(range_scale(edge_dist, 1, 10))])
 
-        if self.__lengthScale.lower() == 'linear':
-            edge_distance = [x for x in list(range_scale(edge_dist, self.__length_range[0], self.__length_range[1]))]
-        if self.__lengthScale.lower() == 'reverse_linear':
-            edge_dist = np.divide(1, edge_dist)
-            edge_distance = [x for x in list(range_scale(edge_dist, self.__length_range[0], self.__length_range[1]))]
-        elif self.__lengthScale.lower() == 'log':
-            edge_dist = np.log(edge_dist)
-            edge_distance = [x for x in list(range_scale(edge_dist, self.__length_range[0], sellf.__length_range[1]))]
-        elif self.__lengthScale.lower() == 'reverse_log':
-            edge_dist = np.divide(1, edge_dist)
-            edge_dist = np.log(edge_dist)
-            edge_distance = [x for x in list(range_scale(edge_dist, self.__length_range[0], self.__length_range[1]))]
-        elif self.__lengthScale.lower() == 'square':
-            edge_dist = np.square(edge_dist)
-            edge_distance = [x for x in list(range_scale(edge_dist, self.__length_range[0], self.__length_range[1]))]
-        elif self.__lengthScale.lower() == 'reverse_square':
-            edge_dist = np.divide(1, edge_dist)
-            edge_dist = np.square(edge_dist)
-            edge_distance = [x for x in list(range_scale(edge_dist, self.__length_range[0], self.__length_range[1]))]
+        #if self.__lengthScale.lower() == 'linear':
+        #    edge_distance = [x for x in list(range_scale(edge_dist, self.__length_range[0], self.__length_range[1]))]
+        #if self.__lengthScale.lower() == 'reverse_linear':
+        #    edge_dist = np.divide(1, edge_dist)
+        #    edge_distance = [x for x in list(range_scale(edge_dist, self.__length_range[0], self.__length_range[1]))]
+        #elif self.__lengthScale.lower() == 'log':
+        #    edge_dist = np.log(edge_dist)
+        #    edge_distance = [x for x in list(range_scale(edge_dist, self.__length_range[0], sellf.__length_range[1]))]
+        #elif self.__lengthScale.lower() == 'reverse_log':
+        #    edge_dist = np.divide(1, edge_dist)
+        #    edge_dist = np.log(edge_dist)
+        #    edge_distance = [x for x in list(range_scale(edge_dist, self.__length_range[0], self.__length_range[1]))]
+        #elif self.__lengthScale.lower() == 'square':
+        #    edge_dist = np.square(edge_dist)
+        #    edge_distance = [x for x in list(range_scale(edge_dist, self.__length_range[0], self.__length_range[1]))]
+        #elif self.__lengthScale.lower() == 'reverse_square':
+        #    edge_dist = np.divide(1, edge_dist)
+        #    edge_dist = np.square(edge_dist)
+        #    edge_distance = [x for x in list(range_scale(edge_dist, self.__length_range[0], self.__length_range[1]))]
 
-        edges = edges.assign(length=edge_distance)
+        #edges = edges.assign(length=edge_distance)
 
         if "Pvalue" in edges.columns:
 
             if len(blocks) > 1:
-                for source_index, _, _, source, source_block, target_index, _, _, target, target_block, score, _, pvalue, length in edges.values:
+                #for source_index, _, _, source, source_block, target_index, _, _, target, target_block, score, _, pvalue, length in edges.values:
+                for source_index, _, _, source, source_block, target_index, _, _, target, target_block, score, _, pvalue in edges.values:
 
                     if self.getLinkType().lower() == "pvalue":
-                        g.add_edge(source_index, target_index, weight=pvalue, len=length)
+                        #g.add_edge(source_index, target_index, weight=pvalue, len=length)
+                        g.add_edge(source_index, target_index, weight=pvalue)
                     elif self.getLinkType().lower() == "score":
-                        g.add_edge(source_index, target_index, weight=score, len=length)
+                        #g.add_edge(source_index, target_index, weight=score, len=length)
+                        g.add_edge(source_index, target_index, weight=score)
             else:
-                for source_index, _, _, source, target_index, _, _, target, score, _, pvalue, length in edges.values:
+                #for source_index, _, _, source, target_index, _, _, target, score, _, pvalue, length in edges.values:
+                for source_index, _, _, source, target_index, _, _, target, score, _, pvalue in edges.values:
 
                     if self.getLinkType().lower() == "pvalue":
-                        g.add_edge(source_index, target_index, weight=pvalue, len=length)
+                        #g.add_edge(source_index, target_index, weight=pvalue, len=length)
+                        g.add_edge(source_index, target_index, weight=pvalue)
                     elif self.getLinkType().lower() == "score":
-                        g.add_edge(source_index, target_index, weight=score, len=length)
+                        #g.add_edge(source_index, target_index, weight=score, len=length)
+                        g.add_edge(source_index, target_index, weight=score)
         else:
 
             if len(blocks) > 1:
-                for source_index, _, _, source, source_block, target_index, _, _, target, target_block, score, _, length in edges.values:
-                    g.add_edge(source_index, target_index, weight=score, len=length)
+                #for source_index, _, _, source, source_block, target_index, _, _, target, target_block, score, _, length in edges.values:
+                for source_index, _, _, source, source_block, target_index, _, _, target, target_block, score, _ in edges.values:
+                    g.add_edge(source_index, target_index, weight=score)
             else:
-                for source_index, _, _, source, target_index, _, _, target, score, _, length in edges.values:
-                    g.add_edge(source_index, target_index, weight=score, len=length)
+                #for source_index, _, _, source, target_index, _, _, target, score, _, length in edges.values:
+                for source_index, _, _, source, target_index, _, _, target, score, _ in edges.values:
+                    g.add_edge(source_index, target_index, weight=score)
 
         nodes['x_position'] = 0
         nodes['y_position'] = 0
