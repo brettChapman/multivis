@@ -311,7 +311,7 @@ class plotNetwork:
             pos = nx.spring_layout(g)
         else:
             pos = pygraphviz_layout(g, prog=self.__layout)
-            
+
         nx.draw(g, pos=pos, labels=dict(zip(g.nodes(), list(nx.get_node_attributes(g, 'Label').values()))), node_size=node_size, font_size=self.__fontSize, node_color=list(nx.get_node_attributes(g, 'Color').values()), alpha=self.__alpha, with_labels=self.__nodeLabels)
 
         if self.__edgeLabels:

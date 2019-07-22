@@ -27,7 +27,7 @@ class forceNetwork:
 
         return g
 
-    def set_params(self, node_params={}, link_params={}, canvas_size=(1060,900), layout='spring', chargeStrength=-120):
+    def set_params(self, node_params={}, link_params={}, backgroundColor='white', foregroundColor='black', canvas_size=(1060,900), layout='spring', chargeStrength=-120):
 
         if node_params:
             self.__set_node_params(**node_params)
@@ -35,8 +35,10 @@ class forceNetwork:
         if link_params:
             self.__set_link_params(**link_params)
 
-        canvas_size, layout, chargeStrength = self.__paramCheck(canvas_size, layout, chargeStrength)
+        backgroundColor, foregroundColor, canvas_size, layout, chargeStrength = self.__paramCheck(backgroundColor, foregroundColor, canvas_size, layout, chargeStrength)
 
+        self.__backgroundColor = backgroundColor;
+        self.__foregroundColor = foregroundColor;
         self.__canvas_size = canvas_size;
         self.__layout = layout;
         self.__chargeStrength = chargeStrength;
@@ -59,15 +61,25 @@ class forceNetwork:
         #self.__restrict_link_distance = restrict_link_distance;
         self.__link_score_color = link_score_color;
 
-    def __paramCheck(self, canvas_size, layout, chargeStrength):
+    def __paramCheck(self, backgroundColor, foregroundColor, canvas_size, layout, chargeStrength):
+
+        if not matplotlib.colors.is_color_like(backgroundColor):
+            print("Error: Background colour is not valid. Choose a valid colour value.")
+            sys.exit()
+
+        if not matplotlib.colors.is_color_like(foregroundColor):
+            print("Error: Slider text colour is not valid. Choose a valid colour value.")
+            sys.exit()
 
         if not isinstance(canvas_size, tuple):
             print("Error: Canvas size is not valid. Choose a tuple of length 2.")
+            sys.exit()
         else:
             for length in canvas_size:
                 if not isinstance(length, float):
                     if not isinstance(length, int):
                         print("Error: Canvas size values not valid. Choose a float or integer value.")
+                        sys.exit()
 
         if layout not in ["spring", "neato", "dot", "fdp", "sfdp", "twopi", "circo"]:
             print("Error: Layout program not valid. Choose either \"spring\", or graphviz layout \"neato\", \"dot\", \"fdp\", \"sfdp\", \"twopi\" or \"circo\".")
@@ -78,7 +90,7 @@ class forceNetwork:
                 print("Error: Charge strength is not valid. Choose a float or integer value.")
                 sys.exit()
 
-        return canvas_size, layout, chargeStrength
+        return backgroundColor, foregroundColor, canvas_size, layout, chargeStrength
 
     def __node_paramCheck(self, node_text_size, fix_nodes, displayLabel, node_size_scale):
 
@@ -239,6 +251,8 @@ class forceNetwork:
 
         css_text = '''
         
+        body {background-color: $backgroundColor;}
+        
         .links line {
             stroke-opacity: 0.6;
         }
@@ -278,7 +292,14 @@ class forceNetwork:
             top: 10px;
         }
         
+        button.save {
+            position: relative;
+            left: 0px;
+            top: 15px;            
+        }
+        
         text {
+                    
             font-family: sans-serif;
                 -webkit-touch-callout: none; /* iOS Safari */
                 -webkit-user-select: none; /* Safari */
@@ -348,7 +369,7 @@ class forceNetwork:
             });
         } else if (params.link_type == "Pvalue") {
             graph.links.forEach(function(d) {
-                d.Color = "#999";
+                d.Color = "$foregroundColor";
             });
         }
         
@@ -590,7 +611,7 @@ class forceNetwork:
             var newLabel = label.enter().append("text")
                     .text(function (d) { if (params.displayLabel == "true") { return d.Label; } else { return d.Name; } })
                     .style("text-anchor", "middle")
-                        .style("fill", "#000")
+                        .style("fill", "$foregroundColor")
                         .style("font-family", "Helvetica")
                         .style("font-size", params.node_text_size)
                     .attr('class', 'node')
@@ -687,7 +708,10 @@ class forceNetwork:
             
         }
              
-        var slider = d3.select('body').append('p').text(params.link_type + ' threshold: ');
+        var slider = d3.select('body')
+                            .append('p')
+                            .style('color', '$foregroundColor')
+                            .text(params.link_type + ' threshold: ');
     
         var sliderInitValue = '';
         var sliderMin = '';
@@ -790,7 +814,6 @@ class forceNetwork:
         var nodeColorDropdown = d3.select('body').append('div')
             .append('select')
             .attr("class","nodeColorDropdown")
-            .text("button")
             .on('change', function() { 
                 var colorScheme = this.value;
                             
@@ -810,7 +833,27 @@ class forceNetwork:
             .data(['default','schemeCategory10','schemeAccent','schemeDark2','schemePaired','schemePastel1','schemePastel2','schemeSet1','schemeSet2','schemeSet3'])
             .enter().append('option')		
             .text(function(d) { return d; });
-            
+        
+        d3.select('body').append('div')
+            .append('button')
+            .attr("class","save")
+            .text("Save")
+            .on('click', function(){
+		        
+                var options = {
+                    canvg: window.canvg,
+                    backgroundColor: "$backgroundColor",
+                    height: height+100,
+                    width: width+100,
+                    left: -50,
+                    scale: 10,
+                    encoderOptions: 1,
+                    ignoreMouse : true,
+                    ignoreAnimation : true,
+                }
+		        
+                saveSvgAsPng(d3.select('svg').node(), "networkPlot.png", options);
+            })
     
         function dragstarted(d) {
         
@@ -836,8 +879,7 @@ class forceNetwork:
             }
         }
             
-        function releaseNode(d) {
-        
+        function releaseNode(d) {        
             d.fx = null;
             d.fy = null;
         }
@@ -915,8 +957,11 @@ class forceNetwork:
         
             <style> $css_text </style>
             
-            <script src="https://d3js.org/d3.v5.min.js"></script>            
-                    
+            <script src="https://d3js.org/d3.v5.min.js"></script>
+            <script src="https://unpkg.com/d3-simple-slider"></script>
+            <script src="https://github.com/canvg/canvg/blob/master/src/canvg.js"></script>
+            <script src="https://exupero.org/saveSvgAsPng/src/saveSvgAsPng.js"></script>
+             
             <script> $js_text </script>
                 
         </body>
@@ -932,12 +977,13 @@ class forceNetwork:
         link_score_color = self.__link_score_color
         link_width = self.__link_width
         chargeStrength = self.__chargeStrength
+        backgroundColor = self.__backgroundColor
+        foregroundColor = self.__foregroundColor
         canvas_size = self.__canvas_size
         node_text_size = self.__node_text_size
         node_size_scale = self.__node_size_scale
         fix_nodes = self.__fix_nodes
         displayLabel = self.__displayLabel
-        #restrict_link_distance = self.__restrict_link_distance
 
         if fix_nodes:
             fixed = "true";
@@ -960,9 +1006,8 @@ class forceNetwork:
             dispLabel = "false";
 
         paramDict = dict({"width": canvas_size[0], "height": canvas_size[1], "link_type": link_type
-                    , "link_score_color": link_score_color, "link_width": link_width, "node_text_size": node_text_size, "displayLabel": dispLabel, "node_size_scale": node_size_scale
-                    , "chargeStrength": chargeStrength, "fix_nodes": fixed})
-        #, "restrict_link_distance": max_link})
+                    , "link_score_color": link_score_color, "link_width": link_width, "node_text_size": node_text_size
+                    , "displayLabel": dispLabel, "node_size_scale": node_size_scale, "chargeStrength": chargeStrength, "fix_nodes": fixed})
 
         if layout == "spring":
             pos = nx.spring_layout(g)
@@ -975,11 +1020,15 @@ class forceNetwork:
 
         data = json.dumps(self.__generateJson(g), cls=self.__graphEncoder)
 
-        css_text_network = self.__getCSSnetwork();
+        css_text_template_network = Template(self.__getCSSnetwork());
         js_text_template_network = Template(self.__getJSnetwork());
         html_template_network = Template(self.__getHTMLnetwork());
 
+        css_text_network = css_text_template_network.substitute({'backgroundColor': backgroundColor, 'foregroundColor': foregroundColor})
+
         js_text_network = js_text_template_network.substitute({'networkData': json.dumps(data)
+                                                                  , 'backgroundColor': backgroundColor
+                                                                  , 'foregroundColor': foregroundColor
                                                                   , 'operator': operator
                                                                   , 'paramDict': paramDict})
 

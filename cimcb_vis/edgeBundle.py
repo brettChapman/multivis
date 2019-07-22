@@ -10,24 +10,24 @@ class edgeBundle:
 
     def __init__(self, edges):
 
-        self.edges = self.__checkData(edges);
+        self.__edges = self.__checkData(edges);
 
         self.set_params()
 
-    def set_params(self, diameter=960, innerRadiusOffset=120, groupSeparation=1, linkFadeOpacity=0.05, fontSize=10, backgroundColor='white', sliderTextColor='black', filterOffSet=-60, color_scale='Score', edge_cmap="brg"):
+    def set_params(self, diameter=960, innerRadiusOffset=120, groupSeparation=1, linkFadeOpacity=0.05, fontSize=10, backgroundColor='white', foregroundColor='black', filterOffSet=-60, color_scale='Score', edge_cmap="brg"):
 
-        diameter, innerRadiusOffset, groupSeparation, linkFadeOpacity, fontSize, backgroundColor, sliderTextColor, filterOffSet, color_scale, edge_cmap = self.__paramCheck(diameter, innerRadiusOffset, groupSeparation, linkFadeOpacity, fontSize, backgroundColor, sliderTextColor, filterOffSet, color_scale, edge_cmap)
+        diameter, innerRadiusOffset, groupSeparation, linkFadeOpacity, fontSize, backgroundColor, foregroundColor, filterOffSet, color_scale, edge_cmap = self.__paramCheck(diameter, innerRadiusOffset, groupSeparation, linkFadeOpacity, fontSize, backgroundColor, foregroundColor, filterOffSet, color_scale, edge_cmap)
 
-        self.diameter = diameter;
-        self.innerRadiusOffset = innerRadiusOffset;
-        self.groupSeparation = groupSeparation;
-        self.linkFadeOpacity = linkFadeOpacity;
-        self.fontSize = fontSize;
-        self.backgroundColor = backgroundColor;
-        self.sliderTextColor = sliderTextColor;
-        self.filterOffSet = filterOffSet;
-        self.color_scale = color_scale;
-        self.edge_cmap = edge_cmap;
+        self.__diameter = diameter;
+        self.__innerRadiusOffset = innerRadiusOffset;
+        self.__groupSeparation = groupSeparation;
+        self.__linkFadeOpacity = linkFadeOpacity;
+        self.__fontSize = fontSize;
+        self.__backgroundColor = backgroundColor;
+        self.__foregroundColor = foregroundColor;
+        self.__filterOffSet = filterOffSet;
+        self.__color_scale = color_scale;
+        self.__edge_cmap = edge_cmap;
 
     def __checkData(self, df):
 
@@ -37,7 +37,7 @@ class edgeBundle:
 
         return df
 
-    def __paramCheck(self, diameter, innerRadiusOffset, groupSeparation, linkFadeOpacity, fontSize, backgroundColor, sliderTextColor, filterOffSet, color_scale, edge_cmap):
+    def __paramCheck(self, diameter, innerRadiusOffset, groupSeparation, linkFadeOpacity, fontSize, backgroundColor, foregroundColor, filterOffSet, color_scale, edge_cmap):
 
         if not isinstance(diameter, float):
             if not isinstance(diameter, int):
@@ -68,7 +68,7 @@ class edgeBundle:
             print("Error: Background colour is not valid. Choose a valid colour value.")
             sys.exit()
 
-        if not matplotlib.colors.is_color_like(sliderTextColor):
+        if not matplotlib.colors.is_color_like(foregroundColor):
             print("Error: Slider text colour is not valid. Choose a valid colour value.")
             sys.exit()
 
@@ -91,12 +91,12 @@ class edgeBundle:
                 print("Error: Edge CMAP is not valid. Choose one of the following: {}.".format(', '.join(cmap_list)))
                 sys.exit()
 
-        return diameter, innerRadiusOffset, groupSeparation, linkFadeOpacity, fontSize, backgroundColor, sliderTextColor, filterOffSet, color_scale, edge_cmap
+        return diameter, innerRadiusOffset, groupSeparation, linkFadeOpacity, fontSize, backgroundColor, foregroundColor, filterOffSet, color_scale, edge_cmap
 
     def __getCSSbundle(self):
 
         css_text = '''
-            .node {
+        .node {
             font: "Helvetica Neue", Helvetica, Arial, sans-serif;
             font-size: $fontSize;
         }
@@ -173,21 +173,21 @@ class edgeBundle:
             position: absolute;
             bottom: $radioOffSet;
             left: 0px; 
-            color: $sliderTextColor;
+            color: $foregroundColor;
         }
        
         #scoreSelect {
             position: absolute;
             bottom: $radioOffSet;
             left: 160px;
-            color: $sliderTextColor;
+            color: $foregroundColor;
         }
      
         #abs_score, #p_score, #n_score, #pvalue {
             position: absolute;
             bottom: $filterSliderOffSet;
             left: 0px;
-            color: $sliderTextColor;
+            color: $foregroundColor;
         }
         
         #absScoreSlider, #posScoreSlider, #negScoreSlider, #pvalueSlider {
@@ -200,7 +200,7 @@ class edgeBundle:
             position: absolute;
             bottom: $tensionSliderOffSet;
             left: 0px;
-            color: $sliderTextColor;
+            color: $foregroundColor;
         }
         
         #tensionSlider {
@@ -213,7 +213,7 @@ class edgeBundle:
             position: absolute;
             bottom: 0px;
             left: 315px;
-            color: $sliderTextColor;
+            color: $foregroundColor;
         }
        
         #abs_scoreHide {
@@ -232,6 +232,13 @@ class edgeBundle:
             display: none;
         }
         
+        #save {
+            position: absolute;
+            bottom: $saveButtonOffSet;
+            left: 0px;
+            color: $foregroundColor;     
+        }   
+                
         h3, text {
             font-family: sans-serif;
                 -webkit-touch-callout: none; /* iOS Safari */
@@ -266,6 +273,7 @@ class edgeBundle:
         
         var canvas = d3.select("#wrapper")
 		                .append("svg")
+		                .attr("id", "edgeBundle")
     	                .attr("width", diameter)
     	                .attr("height", diameter)
                         .append("g")
@@ -275,6 +283,24 @@ class edgeBundle:
         var node = canvas.selectAll(".node");
         var link = canvas.selectAll(".link");
         
+        d3.select("#save")
+                .on('click', function(){
+		        
+                    var options = {
+                            canvg: window.canvg,
+                            backgroundColor: '$backgroundColor',
+                            height: diameter+100,
+                            width: diameter+100,
+                            left: -50,
+                            scale: 10,
+                            encoderOptions: 1,
+                            ignoreMouse : true,
+                            ignoreAnimation : true,
+                    }
+		    
+                    saveSvgAsPng(d3.select('svg#edgeBundle').node(), "edgeBundle.png", options);
+                })
+                
         var linkLine = updateBundle(flareData);    //Initial generation of bundle to populate arrays
                                 
         var currValues = {'abs_score': 0               
@@ -956,10 +982,14 @@ class edgeBundle:
                 </div>
                 
                 <h3 id="tension">Tension: <div id="tensionSlider"></div><span style="white-space: nowrap;" id="tensionValue"></span></h3>
+                
+                <button id='save'>Save</button>
             </div>
             
             <script src="https://d3js.org/d3.v5.min.js"></script>
             <script src="https://unpkg.com/d3-simple-slider"></script>
+            <script src="https://github.com/canvg/canvg/blob/master/src/canvg.js"></script>
+            <script src="https://exupero.org/saveSvgAsPng/src/saveSvgAsPng.js"></script>
     
             <script> $js_text </script>
     
@@ -1182,17 +1212,17 @@ class edgeBundle:
 
     def run(self):
 
-        edges = self.edges
-        diameter = self.diameter
-        innerRadiusOffset = self.innerRadiusOffset
-        groupSeparation = self.groupSeparation
-        linkFadeOpacity = self.linkFadeOpacity
-        fontSize = self.fontSize
-        backgroundColor = self.backgroundColor
-        sliderTextColor = self.sliderTextColor
-        filterOffSet = self.filterOffSet
-        color_scale = self.color_scale
-        edge_cmap = self.edge_cmap
+        edges = self.__edges
+        diameter = self.__diameter
+        innerRadiusOffset = self.__innerRadiusOffset
+        groupSeparation = self.__groupSeparation
+        linkFadeOpacity = self.__linkFadeOpacity
+        fontSize = self.__fontSize
+        backgroundColor = self.__backgroundColor
+        foregroundColor = self.__foregroundColor
+        filterOffSet = self.__filterOffSet
+        color_scale = self.__color_scale
+        edge_cmap = self.__edge_cmap
 
         edgeCmap = plt.cm.get_cmap(edge_cmap)  # Sets the color pallete for the edges
 
@@ -1219,14 +1249,16 @@ class edgeBundle:
                                                          , 'diameter': diameter
                                                          , 'innerRadiusOffset': innerRadiusOffset
                                                          , 'groupSeparation': groupSeparation
-                                                         , 'linkFadeOpacity': linkFadeOpacity})
+                                                         , 'linkFadeOpacity': linkFadeOpacity
+                                                         , 'backgroundColor': backgroundColor})
 
         css_text = css_text_template_bundle.substitute({'fontSize': str(fontSize) + 'px'
                                                            , 'backgroundColor': backgroundColor
-                                                           , 'sliderTextColor': sliderTextColor
+                                                           , 'foregroundColor': foregroundColor
                                                            , 'radioOffSet': str(filterOffSet) + 'px'
                                                            , 'filterSliderOffSet': str(filterOffSet - 40) + 'px'
-                                                           , 'tensionSliderOffSet': str(filterOffSet - 70) + 'px'})
+                                                           , 'tensionSliderOffSet': str(filterOffSet - 70) + 'px'
+                                                           , 'saveButtonOffSet': str(filterOffSet - 90) + 'px'})
 
         html = html_template_bundle.substitute({'css_text': css_text, 'js_text': js_text})
 
