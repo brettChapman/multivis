@@ -20,11 +20,11 @@ multi-vis requires:
 ### User installation
 The recommend way to install cimcb_vis and dependencies is to using ``conda``:
 ```console
-conda install -c brett.chapman cimcb_vis
+conda install -c brett.chapman multi-vis
 ```
 or ``pip``:
 ```console
-pip install cimcb_vis
+pip install multi-vis
 ```
 Alternatively, to install directly from github:
 ```console
