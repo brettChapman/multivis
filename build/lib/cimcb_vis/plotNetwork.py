@@ -28,7 +28,7 @@ class plotNetwork:
 
         return g
 
-    def set_params(self, node_params={}, filter_params={}, imageFileName='networkPlot.jpg', saveImage=True, graphviz_layout='neato', figSize=(30,20)):
+    def set_params(self, node_params={}, filter_params={}, imageFileName='networkPlot.jpg', edgeLabels=True, saveImage=True, layout='neato', dpi=200, figSize=(30,20)):
 
         if node_params:
             self.__set_node_params(**node_params)
@@ -36,22 +36,24 @@ class plotNetwork:
         if filter_params:
             self.__set_filter_params(**filter_params)
 
-        imageFileName, saveImage, graphviz_layout, figSize = self.__paramCheck(imageFileName, saveImage, graphviz_layout, figSize)
+        imageFileName, edgeLabels, saveImage, layout, dpi, figSize = self.__paramCheck(imageFileName, edgeLabels, saveImage, layout, dpi, figSize)
 
         self.__imageFileName = imageFileName;
+        self.__edgeLabels = edgeLabels;
         self.__saveImage = saveImage;
-        self.__graphviz_layout = graphviz_layout;
+        self.__layout = layout;
+        self.__dpi = dpi
         self.__figSize = figSize;
 
-    def __set_node_params(self, sizing_column='none', sizeScale='reverse_linear', size_range=(150,2000), alpha=0.5, addLabels=True, fontSize=15, keepSingletons=True):
+    def __set_node_params(self, sizing_column='none', sizeScale='reverse_linear', size_range=(150,2000), alpha=0.5, nodeLabels=True, fontSize=15, keepSingletons=True):
 
-        sizing_column, sizeScale, size_range, alpha, addLabels, fontSize, keepSingletons = self.__node_paramCheck(sizing_column, sizeScale, size_range, alpha, addLabels, fontSize, keepSingletons)
+        sizing_column, sizeScale, size_range, alpha, nodeLabels, fontSize, keepSingletons = self.__node_paramCheck(sizing_column, sizeScale, size_range, alpha, nodeLabels, fontSize, keepSingletons)
 
         self.__sizing_column = sizing_column;
         self.__sizeScale = sizeScale;
         self.__size_range = size_range;
         self.__alpha = alpha
-        self.__addLabels = addLabels
+        self.__nodeLabels = nodeLabels
         self.__fontSize = fontSize;
         self.__keepSingletons = keepSingletons;
 
@@ -64,19 +66,28 @@ class plotNetwork:
         self.__operator = operator;
         self.__sign = sign;
 
-    def __paramCheck(self, imageFileName, saveImage, graphviz_layout, figSize):
+    def __paramCheck(self, imageFileName, edgeLabels, saveImage, layout, dpi, figSize):
 
         if not isinstance(imageFileName, str):
             print("Error: Image file name is not valid. Choose a string value.")
+            sys.exit()
+
+        if not type(edgeLabels) == bool:
+            print("Error: Edge labels is not valid. Choose either \"True\" or \"False\".")
             sys.exit()
 
         if not type(saveImage) == bool:
             print("Error: Save image is not valid. Choose either \"True\" or \"False\".")
             sys.exit()
 
-        if graphviz_layout not in ["neato", "dot", "fdp", "sfdp", "twopi", "circo"]:
-            print("Error: Graphviz layout program not valid. Choose either \"neato\", \"dot\", \"fdp\", \"sfdp\", \"twopi\" or \"circo\".")
+        if layout not in ["spring", "neato", "dot", "fdp", "sfdp", "twopi", "circo"]:
+            print("Error: Layout program not valid. Choose either \"spring\", or graphviz layout \"neato\", \"dot\", \"fdp\", \"sfdp\", \"twopi\" or \"circo\".")
             sys.exit()
+
+        if not isinstance(dpi, float):
+            if not isinstance(dpi, int):
+                print("Error: Dpi is not valid. Choose a float or integer value.")
+                sys.exit()
 
         if not isinstance(figSize, tuple):
             print("Error: Figure size is not valid. Choose a tuple of length 2.")
@@ -88,12 +99,12 @@ class plotNetwork:
                         print("Error: Figure size items not valid. Choose a float or integer value.")
                         sys.exit()
 
-        return imageFileName, saveImage, graphviz_layout, figSize
+        return imageFileName, edgeLabels, saveImage, layout, dpi, figSize
 
-    def __node_paramCheck(self, sizing_column, sizeScale, size_range, alpha, addLabels, fontSize, keepSingletons):
+    def __node_paramCheck(self, sizing_column, sizeScale, size_range, alpha, nodeLabels, fontSize, keepSingletons):
 
         g = self.__g
-        col_list = list(g.nodes[list(g.nodes.keys())[0]].keys()) + ['none']
+        col_list = list(g.nodes[list(g.nodes.keys())[0]].keys())[:-2] + ['none']
 
         if sizing_column not in col_list:
             print("Error: Sizing column not valid. Choose one of {}.".format(', '.join(col_list)))
@@ -127,7 +138,7 @@ class plotNetwork:
                 print("Error: Alpha value is not valid. Choose a float between 0 and 1.")
                 sys.exit()
 
-        if not type(addLabels) == bool:
+        if not type(nodeLabels) == bool:
             print("Error: Add labels is not valid. Choose either \"True\" or \"False\".")
             sys.exit()
 
@@ -140,12 +151,12 @@ class plotNetwork:
             print("Error: Keep singletons is not valid. Choose either \"True\" or \"False\".")
             sys.exit()
 
-        return sizing_column, sizeScale, size_range, alpha, addLabels, fontSize, keepSingletons
+        return sizing_column, sizeScale, size_range, alpha, nodeLabels, fontSize, keepSingletons
 
     def __filter_paramCheck(self, column, threshold, operator, sign):
 
         g = self.__g
-        col_list = list(g.nodes[list(g.nodes.keys())[0]].keys()) + ['none']
+        col_list = list(g.nodes[list(g.nodes.keys())[0]].keys())[:-2] + ['none']
 
         if column not in col_list:
             print("Error: Filter column not valid. Choose one of {}.".format(', '.join(col_list)))
@@ -296,11 +307,24 @@ class plotNetwork:
             size = [np.multiply(x, 4 / 3) for x in list(map(float, size))]
             node_size = [round(x) for x in list(map(int, range_scale(size, self.__size_range[0], self.__size_range[1])))]
 
-        pos = pygraphviz_layout(g, prog=self.__graphviz_layout)
+        if self.__layout == "spring":
+            pos = nx.spring_layout(g)
+        else:
+            pos = pygraphviz_layout(g, prog=self.__layout)
 
-        nx.draw(g, pos=pos, labels=dict(zip(g.nodes(), list(nx.get_node_attributes(g, 'Label').values()))), node_size=node_size, font_size=self.__fontSize, node_color=list(nx.get_node_attributes(g, 'Color').values()), alpha=self.__alpha, with_labels=self.__addLabels)
+        nx.draw(g, pos=pos, labels=dict(zip(g.nodes(), list(nx.get_node_attributes(g, 'Label').values()))), node_size=node_size, font_size=self.__fontSize, node_color=list(nx.get_node_attributes(g, 'Color').values()), alpha=self.__alpha, with_labels=self.__nodeLabels)
+
+        if self.__edgeLabels:
+
+            edge_labels = dict({})
+            for idx, (source, target) in enumerate(g.edges()):
+                weight = g.edges[source, target]['weight']
+
+                edge_labels.update({(source, target): float("{0:.2f}".format(weight))})
+
+            nx.draw_networkx_edge_labels(g, pos=pos, edge_labels=edge_labels)
 
         if self.__saveImage:
-            plt.savefig(self.__imageFileName, format="JPG");
+            plt.savefig(self.__imageFileName, dpi=self.__dpi)
 
         plt.show()

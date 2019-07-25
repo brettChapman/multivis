@@ -5,3 +5,4 @@ seaborn
 networkx
 scipy
 scikit-learn
+tqdm

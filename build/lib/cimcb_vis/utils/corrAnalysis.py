@@ -19,6 +19,8 @@ def corrAnalysis(X, correlationType):
                 corr, pval = stats.pearsonr(X[i].values, X[a].values)
             elif correlationType == "spearman":
                 corr, pval = stats.spearmanr(X[i].values, X[a].values)
+            elif correlationType == "kendalltau":
+                corr, pval = stats.kendalltau(X[i].values, X[a].values)
 
             corrList.append(corr)
             pvalList.append(pval)

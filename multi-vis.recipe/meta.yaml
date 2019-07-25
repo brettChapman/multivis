@@ -1,5 +1,5 @@
 package:
-  name: cimcb_vis
+  name: multi-vis
   version: 0.1.4
 
 source:
@@ -14,7 +14,7 @@ requirements:
   build:
     - setuptools
     - python >=3.5
-    - numpy >=1.12
+    - numpy
     - pandas
     - matplotlib
     - seaborn
@@ -25,7 +25,7 @@ requirements:
 
   run:
     - python >=3.5
-    - numpy >=1.12
+    - numpy
     - pandas
     - matplotlib
     - seaborn
@@ -36,6 +36,6 @@ requirements:
 
 about:
   home: https://github.com/brettChapman
-  license: http://www.apache.org/licenses/LICENSE-2.0.html
-  summary: "This is a pre-release."
+  license: MIT License
+  summary: "multi-vis is a data visualisation package that produces both static and interactive visualisations targeted towards the Omics community."
 

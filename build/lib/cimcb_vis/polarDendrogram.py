@@ -1,8 +1,6 @@
 import sys
 import copy
-#import matplotlib
 import matplotlib.pyplot as plt
-#from scipy.spatial.distance import pdist
 from scipy.cluster.hierarchy import linkage, dendrogram
 import numpy as np
 import pandas as pd
@@ -15,8 +13,6 @@ class polarDendrogram:
 
         self.set_params()
         self.__set_text_params()
-        #self.__set_heatmap_params(xLabels=list(matrix.columns), yLabels=list(matrix.index))
-        #self.__set_cluster_params()
 
     def __checkData(self, dn):
 
@@ -30,9 +26,6 @@ class polarDendrogram:
 
         if text_params:
             self.__set_text_params(**text_params)
-
-        #if cluster_params:
-        #    self.__set_cluster_params(**cluster_params)
 
         imageFileName, saveImage, branch_scale, gap, grid, style_sheet, dpi, figSize = self.__paramCheck(imageFileName, saveImage, branch_scale, gap, grid, style_sheet, dpi, figSize)
 
@@ -205,14 +198,13 @@ class polarDendrogram:
                     ha = 'left'
 
                 if labels and text_colors:
-                    lab = ax.text(x, y, labels[int(label.get_text())], color=text_colors[int(label.get_text())], fontsize=fontSize, rotation=theta, transform=label.get_transform(), rotation_mode="anchor", ha=ha, va="center")
+                    lab = ax.text(x, y+0.05, labels[int(label.get_text())], color=text_colors[int(label.get_text())], fontsize=fontSize, rotation=theta, transform=label.get_transform(), rotation_mode="anchor", ha=ha, va="center")
                 elif not labels and not text_colors:
-                    lab = ax.text(x, y, label.get_text(), color="black", fontsize=fontSize, rotation=theta, transform=label.get_transform(), rotation_mode="anchor", ha=ha, va="center")
-                    #lab = ax.text(x, y, label.get_text(), color=text_colors[int(label.get_text())], fontsize=fontSize, rotation=theta, transform=label.get_transform(), rotation_mode="anchor", ha=ha, va="center")
+                    lab = ax.text(x, y+0.05, label.get_text(), color="black", fontsize=fontSize, rotation=theta, transform=label.get_transform(), rotation_mode="anchor", ha=ha, va="center")
                 elif labels:
-                    lab = ax.text(x, y, labels[int(label.get_text())], color="black", fontsize=fontSize, rotation=theta, transform=label.get_transform(), rotation_mode="anchor", ha=ha, va="center")
+                    lab = ax.text(x, y+0.05, labels[int(label.get_text())], color="black", fontsize=fontSize, rotation=theta, transform=label.get_transform(), rotation_mode="anchor", ha=ha, va="center")
                 elif text_colors:
-                    lab = ax.text(x, y, label.get_text(), color=text_colors[int(label.get_text())], fontsize=fontSize, rotation=theta, transform=label.get_transform(), rotation_mode="anchor", ha=ha, va="center")
+                    lab = ax.text(x, y+0.05, label.get_text(), color=text_colors[int(label.get_text())], fontsize=fontSize, rotation=theta, transform=label.get_transform(), rotation_mode="anchor", ha=ha, va="center")
 
                 xlabels.append(lab)
 

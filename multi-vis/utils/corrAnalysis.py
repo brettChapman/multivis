@@ -15,12 +15,16 @@ def corrAnalysis(X, correlationType):
 
         for a in X.columns:
 
+            mask = ~np.isnan(X[i].values) & ~np.isnan(X[a].values)
+            x = X[i].values[mask]
+            y = X[a].values[mask]
+
             if correlationType == "pearson":
-                corr, pval = stats.pearsonr(X[i].values, X[a].values)
+                corr, pval = stats.pearsonr(x, y)
             elif correlationType == "spearman":
-                corr, pval = stats.spearmanr(X[i].values, X[a].values)
+                corr, pval = stats.spearmanr(x, y)
             elif correlationType == "kendalltau":
-                corr, pval = stats.kendalltau(X[i].values, X[a].values)
+                corr, pval = stats.kendalltau(x, y)
 
             corrList.append(corr)
             pvalList.append(pval)

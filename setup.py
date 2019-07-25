@@ -4,13 +4,13 @@ with open("README.md", "r") as f:
     long_description = f.read()
 
 setup(
-    name="cimcb_vis",
+    name="multi-vis",
     version="0.1.4",
-    description="This is a pre-release.",
+    description="multi-vis is a data visualisation package that produces both static and interactive visualisations targeted towards the Omics community.",
     long_description=long_description,
-    license="http://www.apache.org/licenses/LICENSE-2.0.html",
-    url="https://github.com/brettChapman/cimcb_vis",
-    packages=["cimcb_vis", "cimcb_vis.utils"],
+    license="MIT License",
+    url="https://github.com/brettChapman/multi-vis",
+    packages=["multi-vis", "multi-vis.utils"],
     python_requires=">=3.5",
     install_requires=["numpy>=1.12",
                       "pandas",
