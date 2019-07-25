@@ -846,7 +846,7 @@ class forceNetwork:
                     height: height+100,
                     width: width+100,
                     left: -50,
-                    scale: 10,
+                    scale: 5/window.devicePixelRatio,
                     encoderOptions: 1,
                     ignoreMouse : true,
                     ignoreAnimation : true,

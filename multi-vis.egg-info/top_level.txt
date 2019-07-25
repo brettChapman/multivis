@@ -1,1 +1,1 @@
-cimcb_vis
+multi-vis

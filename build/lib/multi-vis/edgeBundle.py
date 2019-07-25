@@ -14,14 +14,15 @@ class edgeBundle:
 
         self.set_params()
 
-    def set_params(self, diameter=960, innerRadiusOffset=120, groupSeparation=1, linkFadeOpacity=0.05, fontSize=10, backgroundColor='white', foregroundColor='black', filterOffSet=-60, color_scale='Score', edge_cmap="brg"):
+    def set_params(self, diameter=960, innerRadiusOffset=120, groupSeparation=1, linkFadeOpacity=0.05, mouseOver=True, fontSize=10, backgroundColor='white', foregroundColor='black', filterOffSet=-60, color_scale='Score', edge_cmap="brg"):
 
-        diameter, innerRadiusOffset, groupSeparation, linkFadeOpacity, fontSize, backgroundColor, foregroundColor, filterOffSet, color_scale, edge_cmap = self.__paramCheck(diameter, innerRadiusOffset, groupSeparation, linkFadeOpacity, fontSize, backgroundColor, foregroundColor, filterOffSet, color_scale, edge_cmap)
+        diameter, innerRadiusOffset, groupSeparation, linkFadeOpacity, mouseOver, fontSize, backgroundColor, foregroundColor, filterOffSet, color_scale, edge_cmap = self.__paramCheck(diameter, innerRadiusOffset, groupSeparation, linkFadeOpacity, mouseOver, fontSize, backgroundColor, foregroundColor, filterOffSet, color_scale, edge_cmap)
 
         self.__diameter = diameter;
         self.__innerRadiusOffset = innerRadiusOffset;
         self.__groupSeparation = groupSeparation;
         self.__linkFadeOpacity = linkFadeOpacity;
+        self.__mouseOver = mouseOver;
         self.__fontSize = fontSize;
         self.__backgroundColor = backgroundColor;
         self.__foregroundColor = foregroundColor;
@@ -37,7 +38,7 @@ class edgeBundle:
 
         return df
 
-    def __paramCheck(self, diameter, innerRadiusOffset, groupSeparation, linkFadeOpacity, fontSize, backgroundColor, foregroundColor, filterOffSet, color_scale, edge_cmap):
+    def __paramCheck(self, diameter, innerRadiusOffset, groupSeparation, linkFadeOpacity, mouseOver, fontSize, backgroundColor, foregroundColor, filterOffSet, color_scale, edge_cmap):
 
         if not isinstance(diameter, float):
             if not isinstance(diameter, int):
@@ -58,6 +59,10 @@ class edgeBundle:
             if not isinstance(linkFadeOpacity, int):
                 print("Error: Link fade opacity is not valid. Choose a float or integer value.")
                 sys.exit()
+
+        if not type(mouseOver) == bool:
+            print("Error: Mouse over is not valid. Choose either \"True\" or \"False\".")
+            sys.exit()
 
         if not isinstance(fontSize, float):
             if not isinstance(fontSize, int):
@@ -91,7 +96,7 @@ class edgeBundle:
                 print("Error: Edge CMAP is not valid. Choose one of the following: {}.".format(', '.join(cmap_list)))
                 sys.exit()
 
-        return diameter, innerRadiusOffset, groupSeparation, linkFadeOpacity, fontSize, backgroundColor, foregroundColor, filterOffSet, color_scale, edge_cmap
+        return diameter, innerRadiusOffset, groupSeparation, linkFadeOpacity, mouseOver, fontSize, backgroundColor, foregroundColor, filterOffSet, color_scale, edge_cmap
 
     def __getCSSbundle(self):
 
@@ -105,7 +110,7 @@ class edgeBundle:
 
         .node:hover {
             stroke-opacity: 1.0;
-            font-weight: 800;
+            font-weight: bold;
         }
     
         .link {
@@ -118,9 +123,9 @@ class edgeBundle:
         .node--source,
         .node--target {
             stroke-opacity: 1.0;
-            font-weight: 800;
+            font-weight: bold;
         }
-       
+               
         .node:hover,
         .link--source,
         .link--target {
@@ -130,19 +135,19 @@ class edgeBundle:
         .node--source {
             stroke-opacity: 1.0;
             stroke-width: 2px;
-            font-weight: 800;
+            font-weight: bold;
         }
     
         .node--target {
             stroke-opacity: 1.0;
             stroke-width: 2px;
-            font-weight: 800;
+            font-weight: bold;
         }
        
         .node--both {
             stroke-opacity: 1.0;
             stroke-width: 2px;
-            font-weight: 800;
+            font-weight: bold;
         }
        
         .link--source,
@@ -292,7 +297,7 @@ class edgeBundle:
                             height: diameter+100,
                             width: diameter+100,
                             left: -50,
-                            scale: 10,
+                            scale: 5/window.devicePixelRatio,
                             encoderOptions: 1,
                             ignoreMouse : true,
                             ignoreAnimation : true,
@@ -763,15 +768,30 @@ class edgeBundle:
             
             node.exit().remove();
             
-            var newNode = node.enter().append("text")
-                  	            .attr("class", "node")
-    							.attr("dy", ".31em")
-    							.attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + (d.y + 8) + ",0)" + (d.x < 180 ? "" : "rotate(180)"); })
-    							.style("text-anchor", function(d) { return d.x < 180 ? "start" : "end"; })
-      							.text(function(d) { return d.data.name; })
-      							.style("fill", function(d) { return d.node_color; })
-    							.on("mouseover", mouseovered)
-    							.on("mouseout", mouseouted);
+            if ("$mouseOver" == "true") {
+            
+                var newNode = node.enter().append("text")
+                      	            .attr("class", "node")
+    				    			.attr("dy", ".31em")
+    					    		.attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + (d.y + 8) + ",0)" + (d.x < 180 ? "" : "rotate(180)"); })
+    						    	.style("text-anchor", function(d) { return d.x < 180 ? "start" : "end"; })
+      							    .text(function(d) { return d.data.name; })
+      							    .style("fill", function(d) { return d.node_color; })
+    							    .on("mouseover", mouseovered)
+    							    .on("mouseout", mouseouted);
+    	    } else {
+    	    
+    	        var newNode = node.enter().append("text")
+                      	            .attr("class", "node")
+    				    			.attr("dy", ".31em")
+    					    		.attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + (d.y + 8) + ",0)" + (d.x < 180 ? "" : "rotate(180)"); })
+    						    	.style("text-anchor", function(d) { return d.x < 180 ? "start" : "end"; })
+      							    .text(function(d) { return d.data.name; })
+      							    .style("fill", function(d) { return d.node_color; })
+    							    .on("click", mouseovered)
+    							    .on("dblclick", mouseouted);
+    	    }
+    							
             
             node = node.merge(newNode);
             
@@ -810,6 +830,9 @@ class edgeBundle:
             var linkLine = {"line": line, "link": link}            
             
 	        function mouseovered(d) {
+	        
+	            //d3.select(this).style('font-weight', 'bold');
+	        	            
   	            node
       	            .each(function(n) { n.target = n.source = false; });
                 
@@ -823,11 +846,12 @@ class edgeBundle:
       	            .classed("node--both", function(n) { return n.source && n.target; })
       	            .classed("node--target", function(n) { return n.target; })
       	            .classed("node--source", function(n) { return n.source; });
-                
+                                
                 link.style('opacity', o => (o.source === d || o.target === d ? 1 : $linkFadeOpacity))
 	        }
             
 	        function mouseouted(d) {
+	        
   	            link
       	            .classed("link--target", false)
       	            .classed("link--source", false);
@@ -839,6 +863,7 @@ class edgeBundle:
                         
                 link.style('opacity', 1);
                 node.style('opacity', 1);
+                //node.style('font-weight', 'normal');
 	        }
             
 	        function packageHierarchy(classes) {
@@ -1217,6 +1242,7 @@ class edgeBundle:
         innerRadiusOffset = self.__innerRadiusOffset
         groupSeparation = self.__groupSeparation
         linkFadeOpacity = self.__linkFadeOpacity
+        mouseOver = self.__mouseOver
         fontSize = self.__fontSize
         backgroundColor = self.__backgroundColor
         foregroundColor = self.__foregroundColor
@@ -1234,6 +1260,11 @@ class edgeBundle:
             print("Error: Edges dataframe does not contain \"Pvalue\" or \"Score\".")
             sys.exit()
 
+        if mouseOver:
+            mouse = "true";
+        else:
+            mouse = "false";
+
         bundleJson = self.__df_to_Json(edges);
 
         #with open('test.json', 'w') as file:
@@ -1250,6 +1281,7 @@ class edgeBundle:
                                                          , 'innerRadiusOffset': innerRadiusOffset
                                                          , 'groupSeparation': groupSeparation
                                                          , 'linkFadeOpacity': linkFadeOpacity
+                                                         , 'mouseOver': mouse
                                                          , 'backgroundColor': backgroundColor})
 
         css_text = css_text_template_bundle.substitute({'fontSize': str(fontSize) + 'px'
