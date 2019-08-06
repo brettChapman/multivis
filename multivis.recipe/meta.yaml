@@ -1,5 +1,5 @@
 package:
-  name: multi-vis
+  name: multivis
   version: 0.1.4
 
 source:
@@ -37,5 +37,5 @@ requirements:
 about:
   home: https://github.com/brettChapman
   license: MIT License
-  summary: "multi-vis is a data visualisation package that produces both static and interactive visualisations targeted towards the Omics community."
+  summary: "multivis is a data visualisation package that produces both static and interactive visualisations targeted towards the Omics community."
 
