@@ -1,5 +1,5 @@
-# multivis
-multivis package containing the necessary tools for the visualisation of correlated data.
+# MultiVis
+MultiVis package containing the necessary tools for the visualisation of correlated data.
 
 ## Installation
 
