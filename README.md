@@ -1,5 +1,3 @@
-<img src="cimcb_logo.png" alt="drawing" width="400"/>
-
 # multivis
 multivis package containing the necessary tools for the visualisation of correlated data.
 
