@@ -7,6 +7,18 @@ import matplotlib.pyplot as plt
 import json
 
 class edgeBundle:
+    """Class for edgeBundle to produce a hierarchical edge bundle.
+
+        Parameters
+        ----------
+        edges : Pandas dataframe containing edges generated from Edge.
+
+        Methods
+        -------
+        set_params : Set parameters - diameter, inner radius offset, group separation, link fade opacity, mouse over flag, font size, background colour, foreground colour, filter offset
+                        , colour scale (value to colour edges by: 'Score' or 'Pvalue') and CMAP colour palette for edges.
+        run : Generates and outputs the hierarchical edge bundle.
+    """
 
     def __init__(self, edges):
 
@@ -29,6 +41,62 @@ class edgeBundle:
         self.__filterOffSet = filterOffSet;
         self.__color_scale = color_scale;
         self.__edge_cmap = edge_cmap;
+
+    def run(self):
+
+        edges = self.__edges
+        diameter = self.__diameter
+        innerRadiusOffset = self.__innerRadiusOffset
+        groupSeparation = self.__groupSeparation
+        linkFadeOpacity = self.__linkFadeOpacity
+        mouseOver = self.__mouseOver
+        fontSize = self.__fontSize
+        backgroundColor = self.__backgroundColor
+        foregroundColor = self.__foregroundColor
+        filterOffSet = self.__filterOffSet
+        color_scale = self.__color_scale
+        edge_cmap = self.__edge_cmap
+
+        edgeCmap = plt.cm.get_cmap(edge_cmap)  # Sets the color palette for the edges
+
+        if "Pvalue" in edges.columns:
+            edges = self.__edge_color(edges, color_scale, edgeCmap)
+        elif "Score" in edges.columns:
+            edges = self.__edge_color(edges, 'Score', edgeCmap)
+        else:
+            print("Error: Edges dataframe does not contain \"Pvalue\" or \"Score\".")
+            sys.exit()
+
+        if mouseOver:
+            mouse = "true";
+        else:
+            mouse = "false";
+
+        bundleJson = self.__df_to_Json(edges);
+
+        css_text_template_bundle = Template(self.__getCSSbundle());
+        js_text_template_bundle = Template(self.__getJSbundle())
+        html_template_bundle = Template(self.__getHTMLbundle());
+
+        js_text = js_text_template_bundle.substitute({'flareData': bundleJson
+                                                         , 'diameter': diameter
+                                                         , 'innerRadiusOffset': innerRadiusOffset
+                                                         , 'groupSeparation': groupSeparation
+                                                         , 'linkFadeOpacity': linkFadeOpacity
+                                                         , 'mouseOver': mouse
+                                                         , 'backgroundColor': backgroundColor})
+
+        css_text = css_text_template_bundle.substitute({'fontSize': str(fontSize) + 'px'
+                                                           , 'backgroundColor': backgroundColor
+                                                           , 'foregroundColor': foregroundColor
+                                                           , 'radioOffSet': str(filterOffSet) + 'px'
+                                                           , 'filterSliderOffSet': str(filterOffSet - 40) + 'px'
+                                                           , 'tensionSliderOffSet': str(filterOffSet - 70) + 'px'
+                                                           , 'saveButtonOffSet': str(filterOffSet - 90) + 'px'})
+
+        html = html_template_bundle.substitute({'css_text': css_text, 'js_text': js_text})
+
+        return html
 
     def __checkData(self, df):
 
@@ -1234,64 +1302,3 @@ class edgeBundle:
                 edges_color = edges_color.assign(color=pd.Series(signColors, index=edges_color.index))
 
         return edges_color
-
-    def run(self):
-
-        edges = self.__edges
-        diameter = self.__diameter
-        innerRadiusOffset = self.__innerRadiusOffset
-        groupSeparation = self.__groupSeparation
-        linkFadeOpacity = self.__linkFadeOpacity
-        mouseOver = self.__mouseOver
-        fontSize = self.__fontSize
-        backgroundColor = self.__backgroundColor
-        foregroundColor = self.__foregroundColor
-        filterOffSet = self.__filterOffSet
-        color_scale = self.__color_scale
-        edge_cmap = self.__edge_cmap
-
-        edgeCmap = plt.cm.get_cmap(edge_cmap)  # Sets the color pallete for the edges
-
-        if "Pvalue" in edges.columns:
-            edges = self.__edge_color(edges, color_scale, edgeCmap)
-        elif "Score" in edges.columns:
-            edges = self.__edge_color(edges, 'Score', edgeCmap)
-        else:
-            print("Error: Edges dataframe does not contain \"Pvalue\" or \"Score\".")
-            sys.exit()
-
-        if mouseOver:
-            mouse = "true";
-        else:
-            mouse = "false";
-
-        bundleJson = self.__df_to_Json(edges);
-
-        #with open('test.json', 'w') as file:
-
-        #    file.write(json.dumps(bundleJson))
-
-
-        css_text_template_bundle = Template(self.__getCSSbundle());
-        js_text_template_bundle = Template(self.__getJSbundle())
-        html_template_bundle = Template(self.__getHTMLbundle());
-
-        js_text = js_text_template_bundle.substitute({'flareData': bundleJson
-                                                         , 'diameter': diameter
-                                                         , 'innerRadiusOffset': innerRadiusOffset
-                                                         , 'groupSeparation': groupSeparation
-                                                         , 'linkFadeOpacity': linkFadeOpacity
-                                                         , 'mouseOver': mouse
-                                                         , 'backgroundColor': backgroundColor})
-
-        css_text = css_text_template_bundle.substitute({'fontSize': str(fontSize) + 'px'
-                                                           , 'backgroundColor': backgroundColor
-                                                           , 'foregroundColor': foregroundColor
-                                                           , 'radioOffSet': str(filterOffSet) + 'px'
-                                                           , 'filterSliderOffSet': str(filterOffSet - 40) + 'px'
-                                                           , 'tensionSliderOffSet': str(filterOffSet - 70) + 'px'
-                                                           , 'saveButtonOffSet': str(filterOffSet - 90) + 'px'})
-
-        html = html_template_bundle.substitute({'css_text': css_text, 'js_text': js_text})
-
-        return html

@@ -1,13 +1,15 @@
 from setuptools import setup
 
-with open("README.md", "r") as f:
-    long_description = f.read()
+def readme():
+    with open('README.md', encoding='utf-8') as f:
+        return f.read()
 
 setup(
     name="multivis",
     version="0.1.5",
     description="MultiVis is a data visualisation package that produces both static and interactive visualisations targeted towards the Omics community.",
-    long_description=long_description,
+    long_description=readme(),
+    long_description_content_type='text/markdown',
     license="MIT License",
     url="https://github.com/brettChapman/multivis",
     packages=["multivis", "multivis.utils"],

@@ -5,11 +5,25 @@ import networkx as nx
 from .utils import *
 
 class Edge:
-    """Class for edgeBundle and base class for network."""
+    """ Class for edgeBundle and base class for network.
 
-    def __init__(self, peaks, scores, pvalues):
+        Parameters
+        ----------
+        peaktable : Pandas dataframe containing peak data
+        scores : Pandas dataframe containing correlation coefficients
+        pvalues : Pandas dataframe containing correlation pvalues
 
-        self.__peaks = self.__checkPeaks(self.__checkData(peaks));
+        Methods
+        -------
+        set_params : Set parameters - filter score type, hard threshold, internal correlation flag and sign type.
+        run : Builds the nodes and edges.
+        getNodes : Returns a Pandas dataframe of all nodes.
+        getEdges : Returns a Pandas dataframe of all edges.
+    """
+
+    def __init__(self, peaktable, scores, pvalues):
+
+        self.__peaks = self.__checkPeaks(self.__checkData(peaktable));
         self.__scores = self.__checkData(scores);
         self.__pvalues = self.__checkData(pvalues);
 
@@ -18,19 +32,76 @@ class Edge:
 
         self.set_params()
 
-    def run(self):
+    def set_params(self, filterScoreType='Pvalue', hard_threshold=0.005, internalCorrelation=False, sign="both"):
 
-        self.runEdges()
-
-    def set_params(self, filterScoreType='Pvalue', hard_threshold=0.005, internalCorrelation=False, sign="both", verbose=0):
-
-        filterScoreType, hard_threshold, internalCorrelation, sign, verbose = self.__paramCheck(filterScoreType, hard_threshold, internalCorrelation, sign, verbose)
+        filterScoreType, hard_threshold, internalCorrelation, sign = self.__paramCheck(filterScoreType, hard_threshold, internalCorrelation, sign)
 
         self.__filterScoreType = filterScoreType;
         self.__hard_threshold = hard_threshold;
         self.__internalCorrelation = internalCorrelation;
         self.__sign = sign;
-        self.__verbose = verbose;
+
+    def run(self):
+
+        peaks = self.__peaks
+        scores = self.__scores
+        pvalues = self.__pvalues
+
+        filterScoreType = self.__filterScoreType
+        hard_threshold = self.__hard_threshold
+        sign = self.__sign
+
+        if 'Block' in peaks.columns:
+            blocks = list(peaks['Block'].unique())
+        else:
+            blocks = [1]
+
+        nodes = pd.DataFrame();
+        edges = pd.DataFrame();
+
+        for idx, block1 in enumerate(blocks):
+
+            nodes, scoreBlocks_blocked1, pvalBlocks_blocked1, block1_labels = self.__scoreBlock1(nodes, peaks, scores, pvalues, blocks, block1)
+
+            for block2 in blocks[idx:]:
+
+                if pvalues is None:
+                    filterScoreType = 'Score';
+
+                if self.__internalCorrelation:
+
+                    nodes, scoreBlocks_blocked2, pvalBlocks_blocked2 = self.__scoreBlock2(nodes, peaks, scoreBlocks_blocked1, pvalBlocks_blocked1, blocks, block2, block1_labels);
+
+                    if edges.empty:
+                        edges = self.__buildEdges(nodes, scoreBlocks_blocked2, pvalBlocks_blocked2, block1, block2, filterScoreType, hard_threshold, sign)
+                    else:
+                        dat_edges = self.__buildEdges(nodes, scoreBlocks_blocked2, pvalBlocks_blocked2, block1, block2, filterScoreType, hard_threshold, sign)
+                        edges = pd.concat([edges, dat_edges], sort=False).reset_index(drop=True)
+                else:
+
+                    if block1 != block2:
+
+                        nodes, scoreBlocks_blocked2, pvalBlocks_blocked2 = self.__scoreBlock2(nodes, peaks, scoreBlocks_blocked1, pvalBlocks_blocked1, blocks, block2, block1_labels);
+
+                        if edges.empty:
+                            edges = self.__buildEdges(nodes, scoreBlocks_blocked2, pvalBlocks_blocked2, block1, block2, filterScoreType, hard_threshold, sign)
+                        else:
+                            dat_edges = self.__buildEdges(nodes, scoreBlocks_blocked2, pvalBlocks_blocked2, block1, block2, filterScoreType, hard_threshold, sign)
+                            edges = pd.concat([edges, dat_edges], sort=False).reset_index(drop=True)
+                    else:
+                        if len(blocks) == 1:
+                            edges = self.__buildEdges(nodes, scoreBlocks_blocked1, pvalBlocks_blocked1, block1, block2, filterScoreType, hard_threshold, sign)
+
+        self.__setNodes(nodes)
+        self.__setEdges(edges)
+
+    def getNodes(self):
+
+        return self.__nodes
+
+    def getEdges(self):
+
+        return self.__edges
 
     def __checkData(self, df):
 
@@ -55,7 +126,7 @@ class Edge:
 
         return Peaks
 
-    def __paramCheck(self, filterScoreType, hard_threshold, internalCorrelation, sign, verbose):
+    def __paramCheck(self, filterScoreType, hard_threshold, internalCorrelation, sign):
 
         if filterScoreType.lower() not in ["pvalue", "score"]:
             print("Error: Filter score type not valid. Choose either \"Pvalue\" or \"Score\".")
@@ -74,11 +145,7 @@ class Edge:
             print("Error: Sign is not valid. Choose either \"pos\" or \"neg\" or \"both\".")
             sys.exit()
 
-        if verbose not in [0, 1]:
-            print("Error: Verbose not valid. Choose either 0 or 1.")
-            sys.exit()
-
-        return filterScoreType, hard_threshold, internalCorrelation, sign, verbose
+        return filterScoreType, hard_threshold, internalCorrelation, sign
 
     def __scoreBlock1(self, nodes, peaks, scores, pvalues, blocks, block1):
 
@@ -349,60 +416,6 @@ class Edge:
 
         return edges
 
-    def runEdges(self):
-
-        peaks = self.__peaks
-        scores = self.__scores
-        pvalues = self.__pvalues
-
-        filterScoreType = self.__filterScoreType
-        hard_threshold = self.__hard_threshold
-        sign = self.__sign
-
-        if 'Block' in peaks.columns:
-            blocks = list(peaks['Block'].unique())
-        else:
-            blocks = [1]
-
-        nodes = pd.DataFrame();
-        edges = pd.DataFrame();
-
-        for idx, block1 in enumerate(blocks):
-
-            nodes, scoreBlocks_blocked1, pvalBlocks_blocked1, block1_labels = self.__scoreBlock1(nodes, peaks, scores, pvalues, blocks, block1)
-
-            for block2 in blocks[idx:]:
-
-                if pvalues is None:
-                    filterScoreType = 'Score';
-
-                if self.__internalCorrelation:
-
-                    nodes, scoreBlocks_blocked2, pvalBlocks_blocked2 = self.__scoreBlock2(nodes, peaks, scoreBlocks_blocked1, pvalBlocks_blocked1, blocks, block2, block1_labels);
-
-                    if edges.empty:
-                        edges = self.__buildEdges(nodes, scoreBlocks_blocked2, pvalBlocks_blocked2, block1, block2, filterScoreType, hard_threshold, sign)
-                    else:
-                        dat_edges = self.__buildEdges(nodes, scoreBlocks_blocked2, pvalBlocks_blocked2, block1, block2, filterScoreType, hard_threshold, sign)
-                        edges = pd.concat([edges, dat_edges], sort=False).reset_index(drop=True)
-                else:
-
-                    if block1 != block2:
-
-                        nodes, scoreBlocks_blocked2, pvalBlocks_blocked2 = self.__scoreBlock2(nodes, peaks, scoreBlocks_blocked1, pvalBlocks_blocked1, blocks, block2, block1_labels);
-
-                        if edges.empty:
-                            edges = self.__buildEdges(nodes, scoreBlocks_blocked2, pvalBlocks_blocked2, block1, block2, filterScoreType, hard_threshold, sign)
-                        else:
-                            dat_edges = self.__buildEdges(nodes, scoreBlocks_blocked2, pvalBlocks_blocked2, block1, block2, filterScoreType, hard_threshold, sign)
-                            edges = pd.concat([edges, dat_edges], sort=False).reset_index(drop=True)
-                    else:
-                        if len(blocks) == 1:
-                            edges = self.__buildEdges(nodes, scoreBlocks_blocked1, pvalBlocks_blocked1, block1, block2, filterScoreType, hard_threshold, sign)
-
-        self.__setNodes(nodes)
-        self.__setEdges(edges)
-
     def __setNodes(self, nodes):
 
         self.__nodes = nodes
@@ -410,11 +423,3 @@ class Edge:
     def __setEdges(self, edges):
 
         self.__edges = edges
-
-    def getNodes(self):
-
-        return self.__nodes
-
-    def getEdges(self):
-
-        return self.__edges

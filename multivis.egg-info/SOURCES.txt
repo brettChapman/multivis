@@ -6,9 +6,9 @@ multivis/__init__.py
 multivis/__version__.py
 multivis/clustermap.py
 multivis/edgeBundle.py
-multivis/forceNetwork.py
 multivis/plotNetwork.py
 multivis/polarDendrogram.py
+multivis/springNetwork.py
 multivis.egg-info/PKG-INFO
 multivis.egg-info/SOURCES.txt
 multivis.egg-info/dependency_links.txt
@@ -17,5 +17,6 @@ multivis.egg-info/top_level.txt
 multivis/utils/__init__.py
 multivis/utils/cluster.py
 multivis/utils/corrAnalysis.py
+multivis/utils/loadData.py
 multivis/utils/mergeBlocks.py
 multivis/utils/range_scale.py
