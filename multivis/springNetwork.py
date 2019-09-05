@@ -4,12 +4,26 @@ import networkx as nx
 import matplotlib
 from string import Template
 from ast import literal_eval
-from networkx.drawing.nx_agraph import pygraphviz_layout
 import json
 
-from .utils import *
+class springNetwork:
+    """Class for springNetwork to produce an interactive Spring-embedded Network (SEN) plot.
 
-class forceNetwork:
+        Parameters
+        ----------
+        g : NetworkX graph.
+
+        Methods
+        -------
+        set_params : Set parameters - node parameters dictionary(node text size, fix node when moved flag, display node label flag
+                                                        , node size scale dictionary(peak table columns as index: {index as "scale": values ("linear", "reverse_linear", "log", "reverse_log"
+                                                                                                                            , "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume"),
+                                                                                                                    index as "range": a number array of length 2})
+                                    , link parameters dictionary(link type used in building the network, link width
+                                                        , link score colour dictionary("positive": colour value, "negative": colour value)) #Colour values can be HTML/CSS name, hex code, and (R,G,B) tuples
+                                                        , background colour, foreground colour, canvas size, charge strength)
+        run: : Generates and returns JavaScript embedded HTML code for writing to HTML and displaying.
+    """
 
     def __init__(self, g):
 
@@ -19,15 +33,7 @@ class forceNetwork:
         self.__set_node_params()
         self.__set_link_params()
 
-    def __checkData(self, g):
-
-        if not isinstance(g, nx.classes.graph.Graph):
-            print("Error: A networkx graph was not entered. Please check your data.")
-            sys.exit()
-
-        return g
-
-    def set_params(self, node_params={}, link_params={}, backgroundColor='white', foregroundColor='black', canvas_size=(1060,900), layout='spring', chargeStrength=-120):
+    def set_params(self, node_params={}, link_params={}, backgroundColor='white', foregroundColor='black', canvas_size=(1060,900), chargeStrength=-120):
 
         if node_params:
             self.__set_node_params(**node_params)
@@ -35,13 +41,64 @@ class forceNetwork:
         if link_params:
             self.__set_link_params(**link_params)
 
-        backgroundColor, foregroundColor, canvas_size, layout, chargeStrength = self.__paramCheck(backgroundColor, foregroundColor, canvas_size, layout, chargeStrength)
+        backgroundColor, foregroundColor, canvas_size, chargeStrength = self.__paramCheck(backgroundColor, foregroundColor, canvas_size, chargeStrength)
 
         self.__backgroundColor = backgroundColor;
         self.__foregroundColor = foregroundColor;
         self.__canvas_size = canvas_size;
-        self.__layout = layout;
         self.__chargeStrength = chargeStrength;
+
+    def run(self):
+
+        g = self.__g
+        link_type = self.__link_type
+        link_score_color = self.__link_score_color
+        link_width = self.__link_width
+        chargeStrength = self.__chargeStrength
+        backgroundColor = self.__backgroundColor
+        foregroundColor = self.__foregroundColor
+        canvas_size = self.__canvas_size
+        node_text_size = self.__node_text_size
+        node_size_scale = self.__node_size_scale
+        fix_nodes = self.__fix_nodes
+        displayLabel = self.__displayLabel
+
+        if fix_nodes:
+            fixed = "true";
+        else:
+            fixed = "false";
+
+        if link_type == 'Pvalue':
+            operator = '<';
+        else:
+            operator = '>';
+
+        if displayLabel:
+            dispLabel = "true";
+        else:
+            dispLabel = "false";
+
+        paramDict = dict({"width": canvas_size[0], "height": canvas_size[1], "link_type": link_type
+                    , "link_score_color": link_score_color, "link_width": link_width, "node_text_size": node_text_size
+                    , "displayLabel": dispLabel, "node_size_scale": node_size_scale, "chargeStrength": chargeStrength, "fix_nodes": fixed})
+
+        data = json.dumps(self.__generateJson(g), cls=self.__graphEncoder)
+
+        css_text_template_network = Template(self.__getCSSnetwork());
+        js_text_template_network = Template(self.__getJSnetwork());
+        html_template_network = Template(self.__getHTMLnetwork());
+
+        css_text_network = css_text_template_network.substitute({'backgroundColor': backgroundColor, 'foregroundColor': foregroundColor})
+
+        js_text_network = js_text_template_network.substitute({'networkData': json.dumps(data)
+                                                                  , 'backgroundColor': backgroundColor
+                                                                  , 'foregroundColor': foregroundColor
+                                                                  , 'operator': operator
+                                                                  , 'paramDict': paramDict})
+
+        html = html_template_network.substitute({'css_text': css_text_network, 'js_text': js_text_network})
+
+        return html
 
     def __set_node_params(self, node_text_size=15, fix_nodes=False, displayLabel=False, node_size_scale={}):
 
@@ -58,10 +115,17 @@ class forceNetwork:
 
         self.__link_type = link_type;
         self.__link_width = link_width;
-        #self.__restrict_link_distance = restrict_link_distance;
         self.__link_score_color = link_score_color;
 
-    def __paramCheck(self, backgroundColor, foregroundColor, canvas_size, layout, chargeStrength):
+    def __checkData(self, g):
+
+        if not isinstance(g, nx.classes.graph.Graph):
+            print("Error: A NetworkX graph was not entered. Please check your data.")
+            sys.exit()
+
+        return g
+
+    def __paramCheck(self, backgroundColor, foregroundColor, canvas_size, chargeStrength):
 
         if not matplotlib.colors.is_color_like(backgroundColor):
             print("Error: Background colour is not valid. Choose a valid colour value.")
@@ -81,16 +145,12 @@ class forceNetwork:
                         print("Error: Canvas size values not valid. Choose a float or integer value.")
                         sys.exit()
 
-        if layout not in ["spring", "neato", "dot", "fdp", "sfdp", "twopi", "circo"]:
-            print("Error: Layout program not valid. Choose either \"spring\", or graphviz layout \"neato\", \"dot\", \"fdp\", \"sfdp\", \"twopi\" or \"circo\".")
-            sys.exit()
-
         if not isinstance(chargeStrength, float):
             if not isinstance(chargeStrength, int):
                 print("Error: Charge strength is not valid. Choose a float or integer value.")
                 sys.exit()
 
-        return backgroundColor, foregroundColor, canvas_size, layout, chargeStrength
+        return backgroundColor, foregroundColor, canvas_size, chargeStrength
 
     def __node_paramCheck(self, node_text_size, fix_nodes, displayLabel, node_size_scale):
 
@@ -171,10 +231,6 @@ class forceNetwork:
                 print("Error: Link width is not valid. Choose a float or integer value.")
                 sys.exit()
 
-        #if not type(restrict_link_distance) == bool:
-        #    print("Error: Restrict maximum link distance is not valid. Choose either \"True\" or \"False\".")
-        #    sys.exit()
-
         if link_score_color:
             if not isinstance(link_score_color, dict):
                 print("Error: Link score color is not a valid data type. Choose a dictionary.")
@@ -243,7 +299,6 @@ class forceNetwork:
                 "source": source,
                 "target": target,
                 "weight": G.edges[source, target]['weight']})
-                #"length": G.edges[source, target]['len']})
 
         return graph_data
 
@@ -539,20 +594,11 @@ class forceNetwork:
             .range([1,1000])
             .clamp(true);       
         
-        //if (params.restrict_link_distance == "true") {
-        //    simulation            
-        //        .force("charge", d3.forceManyBody().strength(params.chargeStrength).distanceMax(function (d) { return d.length; }))
-        //        .force("collide", d3.forceCollide().radius( function (d) { return d.Size; }));
-             
-        //} else {
-            
-        //}
-        
         simulation
-            .force("charge", d3.forceManyBody().strength(params.chargeStrength).distanceMax(500))
+            .force("charge", d3.forceManyBody().strength(params.chargeStrength).distanceMax(500))            
             .force("collide", d3.forceCollide().radius( function (d) { return d.Size; }));
     
-        graph.nodes.forEach(function(d) { d.x = d.x_position; d.y = d.y_position; if (typeof d.Group !== 'undefined') { groups.push(d.Group); } else if (typeof d.Color !== 'undefined') { groups.push(d.Color); } else { groups.push(1); } });
+        graph.nodes.forEach(function(d) { if (typeof d.Group !== 'undefined') { groups.push(d.Group); } else if (typeof d.Color !== 'undefined') { groups.push(d.Color); } else { groups.push(1); } });
         
         var groups = Array.from(new Set(groups)) 
        
@@ -687,7 +733,6 @@ class forceNetwork:
                        
             simulation.force("link")
                 .links(graph.links);
-                //.distance(function(d) { return d.length; });
                     
             simulation.alphaTarget(0.1).restart();
         }
@@ -966,72 +1011,5 @@ class forceNetwork:
                 
         </body>
         '''
-
-        return html
-
-    def run(self):
-
-        g = self.__g
-        layout = self.__layout
-        link_type = self.__link_type
-        link_score_color = self.__link_score_color
-        link_width = self.__link_width
-        chargeStrength = self.__chargeStrength
-        backgroundColor = self.__backgroundColor
-        foregroundColor = self.__foregroundColor
-        canvas_size = self.__canvas_size
-        node_text_size = self.__node_text_size
-        node_size_scale = self.__node_size_scale
-        fix_nodes = self.__fix_nodes
-        displayLabel = self.__displayLabel
-
-        if fix_nodes:
-            fixed = "true";
-        else:
-            fixed = "false";
-
-        #if restrict_link_distance:
-        #    max_link = "true";
-        #else:
-        #    max_link = "false";
-
-        if link_type == 'Pvalue':
-            operator = '<';
-        else:
-            operator = '>';
-
-        if displayLabel:
-            dispLabel = "true";
-        else:
-            dispLabel = "false";
-
-        paramDict = dict({"width": canvas_size[0], "height": canvas_size[1], "link_type": link_type
-                    , "link_score_color": link_score_color, "link_width": link_width, "node_text_size": node_text_size
-                    , "displayLabel": dispLabel, "node_size_scale": node_size_scale, "chargeStrength": chargeStrength, "fix_nodes": fixed})
-
-        if layout == "spring":
-            pos = nx.spring_layout(g)
-        else:
-            pos = pygraphviz_layout(g, prog=layout)
-
-        for idx, node in enumerate(g.nodes()):
-            g.node[node]['x_position'] = pos[node][0]
-            g.node[node]['y_position'] = pos[node][1]
-
-        data = json.dumps(self.__generateJson(g), cls=self.__graphEncoder)
-
-        css_text_template_network = Template(self.__getCSSnetwork());
-        js_text_template_network = Template(self.__getJSnetwork());
-        html_template_network = Template(self.__getHTMLnetwork());
-
-        css_text_network = css_text_template_network.substitute({'backgroundColor': backgroundColor, 'foregroundColor': foregroundColor})
-
-        js_text_network = js_text_template_network.substitute({'networkData': json.dumps(data)
-                                                                  , 'backgroundColor': backgroundColor
-                                                                  , 'foregroundColor': foregroundColor
-                                                                  , 'operator': operator
-                                                                  , 'paramDict': paramDict})
-
-        html = html_template_network.substitute({'css_text': css_text_network, 'js_text': js_text_network})
 
         return html

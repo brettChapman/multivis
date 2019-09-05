@@ -2,15 +2,25 @@ import sys
 import networkx as nx
 import numpy as np
 import pandas as pd
-from networkx.drawing.nx_agraph import pygraphviz_layout
 import matplotlib.pyplot as plt
 import copy
 from .utils import *
-
 import warnings
-warnings.filterwarnings("ignore")
 
 class plotNetwork:
+    """Class for plotNetwork to produce a static spring-embedded network.
+
+        Parameters
+        ----------
+        g : NetworkX graph.
+
+        Methods
+        -------
+        set_params : Set parameters - node parameters dictionary(node sizing columnn, node size scale, node size range, alpha opacity value, node labelling flag, font size and keep single nodes flag)
+                                    , filter parameters dictionary(filter column, filter threshold, filter operator and sign)
+                                    , image filename, label edges flag, save image flag, NetworkX layout type, dpi, figure size.
+        run : Generates and displays the NetworkX graph.
+    """
 
     def __init__(self, g):
 
@@ -20,15 +30,7 @@ class plotNetwork:
         self.__set_node_params()
         self.__set_filter_params()
 
-    def __checkData(self, g):
-
-        if not isinstance(g, nx.classes.graph.Graph):
-            print("Error: A networkx graph was not entered. Please check your data.")
-            sys.exit()
-
-        return g
-
-    def set_params(self, node_params={}, filter_params={}, imageFileName='networkPlot.jpg', edgeLabels=True, saveImage=True, layout='neato', dpi=200, figSize=(30,20)):
+    def set_params(self, node_params={}, filter_params={}, imageFileName='networkPlot.jpg', edgeLabels=True, saveImage=True, layout='spring', dpi=200, figSize=(30,20)):
 
         if node_params:
             self.__set_node_params(**node_params)
@@ -44,6 +46,158 @@ class plotNetwork:
         self.__layout = layout;
         self.__dpi = dpi
         self.__figSize = figSize;
+
+    def run(self):
+
+        warnings.filterwarnings("ignore")
+
+        g = self.__g
+
+        plt.subplots(figsize=self.__figSize);
+
+        edgeList = []
+        for idx, (source, target) in enumerate(g.edges()):
+
+            weight = g.edges[source, target]['weight']
+
+            if self.__sign == "pos":
+                if weight < 0:
+                    edgeList.append((source, target))
+            elif self.__sign == "neg":
+                if weight >= 0:
+                    edgeList.append((source, target))
+
+        g.remove_edges_from(edgeList)
+
+        if self.__filter_column != 'none':
+            nodeList = []
+            for idx, node in enumerate(g.nodes()):
+
+                value = float(g.node[node][self.__filter_column])
+                if np.isnan(value):
+                    value = 0;
+
+                if self.__operator == ">":
+                    if value > float(self.__filter_threshold):
+                        nodeList.append(node)
+                elif self.__operator == "<":
+                    if value < float(self.__filter_threshold):
+                        nodeList.append(node)
+                elif self.__operator == "<=":
+                    if value <= float(self.__filter_threshold):
+                        nodeList.append(node)
+                elif self.__operator == ">=":
+                    if value >= float(self.__filter_threshold):
+                        nodeList.append(node)
+
+            for node in nodeList:
+                g.remove_node(node)
+
+        if not self.__keepSingletons:
+            edges = list(g.edges())
+            edgeList = []
+            for edge in edges:
+                source = edge[0]
+                target = edge[1]
+
+                edgeList.append(source)
+                edgeList.append(target)
+
+            edgeNodes = np.unique(edgeList)
+
+            singleNodes = list(set(edgeNodes).symmetric_difference(set(list(g.nodes()))))
+
+            for node in singleNodes:
+                g.remove_node(node)
+
+        if not g.nodes():
+            print("Error: All nodes have been removed. Please change the filter parameters.")
+            sys.exit()
+
+        if self.__sizing_column == 'none':
+            size_attr = np.ones(len(g.nodes()))
+        else:
+            size_attr = np.array(list(nx.get_node_attributes(g, str(self.__sizing_column)).values()))
+            df_size_attr = pd.Series(size_attr, dtype=np.float);
+            size_attr = np.array(list(df_size_attr.fillna(0).values))
+
+        size = np.array([x for x in list(range_scale(size_attr, 1, 10))])
+
+        if self.__sizeScale == 'linear':
+            node_size = [x for x in list(range_scale(size, self.__size_range[0], self.__size_range[1]))]
+        if self.__sizeScale == 'reverse_linear':
+            size = np.divide(1, size)
+            node_size = [x for x in list(range_scale(size, self.__size_range[0], self.__size_range[1]))]
+        elif self.__sizeScale == 'log':
+            size = np.log(size)
+            node_size = [x for x in list(range_scale(size, self.__size_range[0], sellf.__size_range[1]))]
+        elif self.__sizeScale == 'reverse_log':
+            size = np.divide(1, size)
+            size = np.log(size)
+            node_size = [x for x in list(range_scale(size, self.__size_range[0], self.__size_range[1]))]
+        elif self.__sizeScale == 'square':
+            size = np.square(size)
+            node_size = [x for x in list(range_scale(size, self.__size_range[0], self.__size_range[1]))]
+        elif self.__sizeScale == 'reverse_square':
+            size = np.divide(1, size)
+            size = np.square(size)
+            node_size = [x for x in list(range_scale(size, self.__size_range[0], self.__size_range[1]))]
+        elif self.__sizeScale == 'area':
+            size = np.square(size)
+            size = [np.multiply(x, np.pi) for x in list(map(float, size))]
+            node_size = [round(x) for x in list(map(int, range_scale(size, self.__size_range[0], self.__size_range[1])))]
+        elif self.__sizeScale == 'reverse_area':
+            size = np.divide(1, size)
+            size = np.square(size)
+            size = [np.multiply(x, np.pi) for x in list(map(float, size))]
+            node_size = [round(x) for x in list(map(int, range_scale(size, self.__size_range[0], self.__size_range[1])))]
+        elif self.__sizeScale == 'volume':
+            size = [np.power(x, 3) for x in list(map(float, size))]
+            size = [np.multiply(x, np.pi) for x in list(map(float, size))]
+            size = [np.multiply(x, 4 / 3) for x in list(map(float, size))]
+            node_size = [round(x) for x in list(map(int, range_scale(size, self.__size_range[0], self.__size_range[1])))]
+        elif self.__sizeScale == 'reverse_volumn':
+            size = np.divide(1, size)
+            size = [np.power(x, 3) for x in list(map(float, size))]
+            size = [np.multiply(x, np.pi) for x in list(map(float, size))]
+            size = [np.multiply(x, 4 / 3) for x in list(map(float, size))]
+            node_size = [round(x) for x in list(map(int, range_scale(size, self.__size_range[0], self.__size_range[1])))]
+
+        if self.__layout == "circular":
+            pos = nx.circular_layout(g)
+        elif self.__layout == "kamada_kawai":
+            pos = nx.kamada_kawai_layout(g)
+        elif self.__layout == "random":
+            pos = nx.random_layout(g)
+        elif self.__layout == "spring":
+            pos = nx.spring_layout(g)
+        elif self.__layout == "spectral":
+            pos = nx.spectral_layout(g)
+
+        nx.draw(g, pos=pos, labels=dict(zip(g.nodes(), list(nx.get_node_attributes(g, 'Label').values()))), node_size=node_size, font_size=self.__fontSize, node_color=list(nx.get_node_attributes(g, 'Color').values()), alpha=self.__alpha, with_labels=self.__nodeLabels)
+
+        if self.__edgeLabels:
+
+            edge_labels = dict({})
+            for idx, (source, target) in enumerate(g.edges()):
+                weight = g.edges[source, target]['weight']
+
+                edge_labels.update({(source, target): float("{0:.2f}".format(weight))})
+
+            nx.draw_networkx_edge_labels(g, pos=pos, edge_labels=edge_labels)
+
+        if self.__saveImage:
+            plt.savefig(self.__imageFileName, dpi=self.__dpi)
+
+        plt.show()
+
+    def __checkData(self, g):
+
+        if not isinstance(g, nx.classes.graph.Graph):
+            print("Error: A networkx graph was not entered. Please check your data.")
+            sys.exit()
+
+        return g
 
     def __set_node_params(self, sizing_column='none', sizeScale='reverse_linear', size_range=(150,2000), alpha=0.5, nodeLabels=True, fontSize=15, keepSingletons=True):
 
@@ -80,8 +234,8 @@ class plotNetwork:
             print("Error: Save image is not valid. Choose either \"True\" or \"False\".")
             sys.exit()
 
-        if layout not in ["spring", "neato", "dot", "fdp", "sfdp", "twopi", "circo"]:
-            print("Error: Layout program not valid. Choose either \"spring\", or graphviz layout \"neato\", \"dot\", \"fdp\", \"sfdp\", \"twopi\" or \"circo\".")
+        if layout not in ["circular", "kamada_kawai", "random", "spring", "spectral"]:
+            print("Error: Layout program not valid. Choose either \"circular\", \"kamada_kawai\", \"random\", \"spring\", \"spectral\".")
             sys.exit()
 
         if not isinstance(dpi, float):
@@ -191,140 +345,3 @@ class plotNetwork:
             sys.exit()
 
         return column, threshold, operator, sign
-
-    def run(self):
-
-        g = self.__g
-
-        plt.subplots(figsize=self.__figSize);
-
-        edgeList = []
-        for idx, (source, target) in enumerate(g.edges()):
-
-            weight = g.edges[source, target]['weight']
-
-            if self.__sign == "pos":
-                if weight < 0:
-                    edgeList.append((source, target))
-            elif self.__sign == "neg":
-                if weight >= 0:
-                    edgeList.append((source, target))
-
-        g.remove_edges_from(edgeList)
-
-        if self.__filter_column != 'none':
-            nodeList = []
-            for idx, node in enumerate(g.nodes()):
-
-                value = float(g.node[node][self.__filter_column])
-                if np.isnan(value):
-                    value = 0;
-
-                if self.__operator == ">":
-                    if value > float(self.__filter_threshold):
-                        nodeList.append(node)
-                elif self.__operator == "<":
-                    if value < float(self.__filter_threshold):
-                        nodeList.append(node)
-                elif self.__operator == "<=":
-                    if value <= float(self.__filter_threshold):
-                        nodeList.append(node)
-                elif self.__operator == ">=":
-                    if value >= float(self.__filter_threshold):
-                        nodeList.append(node)
-
-            for node in nodeList:
-                g.remove_node(node)
-
-        if not self.__keepSingletons:
-            edges = list(g.edges())
-            edgeList = []
-            for edge in edges:
-                source = edge[0]
-                target = edge[1]
-
-                edgeList.append(source)
-                edgeList.append(target)
-
-            edgeNodes = np.unique(edgeList)
-
-            singleNodes = list(set(edgeNodes).symmetric_difference(set(list(g.nodes()))))
-
-            for node in singleNodes:
-                g.remove_node(node)
-
-        if not g.nodes():
-            print("Error: All nodes have been removed. Please change the filter parameters.")
-            sys.exit()
-
-        if self.__sizing_column == 'none':
-            size_attr = np.ones(len(g.nodes()))
-        else:
-            size_attr = np.array(list(nx.get_node_attributes(g, str(self.__sizing_column)).values()))
-            df_size_attr = pd.Series(size_attr, dtype=np.float);
-            size_attr = np.array(list(df_size_attr.fillna(0).values))
-
-        size = np.array([x for x in list(range_scale(size_attr, 1, 10))])
-
-        if self.__sizeScale == 'linear':
-            node_size = [x for x in list(range_scale(size, self.__size_range[0], self.__size_range[1]))]
-        if self.__sizeScale == 'reverse_linear':
-            size = np.divide(1, size)
-            node_size = [x for x in list(range_scale(size, self.__size_range[0], self.__size_range[1]))]
-        elif self.__sizeScale == 'log':
-            size = np.log(size)
-            node_size = [x for x in list(range_scale(size, self.__size_range[0], sellf.__size_range[1]))]
-        elif self.__sizeScale == 'reverse_log':
-            size = np.divide(1, size)
-            size = np.log(size)
-            node_size = [x for x in list(range_scale(size, self.__size_range[0], self.__size_range[1]))]
-        elif self.__sizeScale == 'square':
-            size = np.square(size)
-            node_size = [x for x in list(range_scale(size, self.__size_range[0], self.__size_range[1]))]
-        elif self.__sizeScale == 'reverse_square':
-            size = np.divide(1, size)
-            size = np.square(size)
-            node_size = [x for x in list(range_scale(size, self.__size_range[0], self.__size_range[1]))]
-        elif self.__sizeScale == 'area':
-            #size = [np.square(x) for x in list(map(float, size))]
-            size = np.square(size)
-            size = [np.multiply(x, np.pi) for x in list(map(float, size))]
-            node_size = [round(x) for x in list(map(int, range_scale(size, self.__size_range[0], self.__size_range[1])))]
-        elif self.__sizeScale == 'reverse_area':
-            size = np.divide(1, size)
-            size = np.square(size)
-            size = [np.multiply(x, np.pi) for x in list(map(float, size))]
-            node_size = [round(x) for x in list(map(int, range_scale(size, self.__size_range[0], self.__size_range[1])))]
-        elif self.__sizeScale == 'volume':
-            size = [np.power(x, 3) for x in list(map(float, size))]
-            size = [np.multiply(x, np.pi) for x in list(map(float, size))]
-            size = [np.multiply(x, 4 / 3) for x in list(map(float, size))]
-            node_size = [round(x) for x in list(map(int, range_scale(size, self.__size_range[0], self.__size_range[1])))]
-        elif self.__sizeScale == 'reverse_volumn':
-            size = np.divide(1, size)
-            size = [np.power(x, 3) for x in list(map(float, size))]
-            size = [np.multiply(x, np.pi) for x in list(map(float, size))]
-            size = [np.multiply(x, 4 / 3) for x in list(map(float, size))]
-            node_size = [round(x) for x in list(map(int, range_scale(size, self.__size_range[0], self.__size_range[1])))]
-
-        if self.__layout == "spring":
-            pos = nx.spring_layout(g)
-        else:
-            pos = pygraphviz_layout(g, prog=self.__layout)
-
-        nx.draw(g, pos=pos, labels=dict(zip(g.nodes(), list(nx.get_node_attributes(g, 'Label').values()))), node_size=node_size, font_size=self.__fontSize, node_color=list(nx.get_node_attributes(g, 'Color').values()), alpha=self.__alpha, with_labels=self.__nodeLabels)
-
-        if self.__edgeLabels:
-
-            edge_labels = dict({})
-            for idx, (source, target) in enumerate(g.edges()):
-                weight = g.edges[source, target]['weight']
-
-                edge_labels.update({(source, target): float("{0:.2f}".format(weight))})
-
-            nx.draw_networkx_edge_labels(g, pos=pos, edge_labels=edge_labels)
-
-        if self.__saveImage:
-            plt.savefig(self.__imageFileName, dpi=self.__dpi)
-
-        plt.show()

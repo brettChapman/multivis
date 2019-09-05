@@ -5,8 +5,8 @@ with open("README.md", "r") as f:
 
 setup(
     name="multivis",
-    version="0.1.4",
-    description="multivis is a data visualisation package that produces both static and interactive visualisations targeted towards the Omics community.",
+    version="0.1.5",
+    description="MultiVis is a data visualisation package that produces both static and interactive visualisations targeted towards the Omics community.",
     long_description=long_description,
     license="MIT License",
     url="https://github.com/brettChapman/multivis",
