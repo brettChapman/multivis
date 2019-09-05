@@ -1,5 +1,5 @@
 # MultiVis
-The MultiVis package contains the necessary tools for visualisation of multivariate data111.
+The MultiVis package contains the necessary tools for visualisation of multivariate data.
 
 ## Installation
 
