@@ -15,7 +15,7 @@ class edgeBundle:
 
         Methods
         -------
-        set_params : Set parameters - diameter, inner radius offset, group separation, link fade opacity, mouse over flag, font size, background colour, foreground colour, filter offset
+        set_params : Set parameters - diameter, inner radius offset, group separation, link fade opacity, mouse over flag, font size, background colour, foreground colour, filter slider position offset
                         , colour scale (value to colour edges by: 'Score' or 'Pvalue') and CMAP colour palette for edges.
         run : Generates and outputs the hierarchical edge bundle.
     """

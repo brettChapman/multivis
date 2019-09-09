@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: multivis
-Version: 0.1.6
+Version: 0.1.7
 Summary: MultiVis is a data visualisation package that produces both static and interactive visualisations targeted towards the Omics community.
 Home-page: https://github.com/brettChapman/multivis
 Author: Brett Chapman
@@ -67,7 +67,7 @@ Description: # MultiVis
         	- [init_parameters](https://github.com/brettChapman/multivis/blob/master/multivis/edgeBundle.py#L23-27)
         		- [edges] : Pandas dataframe containing edges generated from Edge.
         	- [methods](https://github.com/brettChapman/multivis/blob/master/multivis/edgeBundle.py#L29-L99)
-        		- [set_params] : Set parameters - diameter, inner radius offset, group separation, link fade opacity, mouse over flag, font size, background colour, foreground colour, filter offset, colour scale (value to colour edges by: 'Score' or 'Pvalue') and CMAP colour palette for edges.
+        		- [set_params] : Set parameters - diameter, inner radius offset, group separation, link fade opacity, mouse over flag, font size, background colour, foreground colour, filter slider position offset, colour scale (value to colour edges by: 'Score' or 'Pvalue') and CMAP colour palette for edges.
         		- [run] : Generates and outputs the hierarchical edge bundle.
         		
         - [plotNetwork](https://github.com/brettChapman/multivis/blob/master/multivis/plotNetwork.py#L12-L346): Generates and displays a static NetworkX graph given a user defined layout.

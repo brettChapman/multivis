@@ -1,6 +1,6 @@
 package:
   name: multivis
-  version: 0.1.6
+  version: 0.1.7
 
 source:
   path: ../
@@ -22,6 +22,7 @@ requirements:
     - scipy
     - scikit-learn
     - tqdm
+    - xlrd
 
   run:
     - python >=3.5
@@ -33,6 +34,7 @@ requirements:
     - scipy
     - scikit-learn
     - tqdm
+    - xlrd
 
 about:
   home: https://github.com/brettChapman

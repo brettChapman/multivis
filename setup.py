@@ -6,7 +6,7 @@ def readme():
 
 setup(
     name="multivis",
-    version="0.1.6",
+    version="0.1.7",
     description="MultiVis is a data visualisation package that produces both static and interactive visualisations targeted towards the Omics community.",
     long_description=readme(),
     long_description_content_type='text/markdown',
@@ -21,7 +21,8 @@ setup(
 	 	      "networkx",
                       "scipy",
                       "scikit-learn",
-		      "tqdm"],
+		      "tqdm",
+		      "xlrd"],
     author="Brett Chapman",
     author_email="brett.chapman@ecu.edu.au, brett.chapman78@gmail.com"
 )
