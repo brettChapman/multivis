@@ -14,6 +14,7 @@ multivis requires:
 - SciPy
 - Scikit-learn
 - tqdm
+- xlrd
 
 ### User installation
 The recommend way to install cimcb_vis and dependencies is to using ``conda``:
