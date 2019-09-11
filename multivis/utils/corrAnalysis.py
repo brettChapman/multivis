@@ -1,3 +1,4 @@
+import sys
 from scipy import stats
 from tqdm import tqdm
 import numpy as np
@@ -28,7 +29,7 @@ def corrAnalysis(df_data, correlationType):
         corrList = []
         pvalList = []
 
-        for a in X.columns:
+        for a in df_data.columns:
 
             mask = ~np.isnan(df_data[i].values) & ~np.isnan(df_data[a].values)
             x = df_data[i].values[mask]

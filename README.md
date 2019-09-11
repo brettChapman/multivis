@@ -211,8 +211,8 @@ For further detail on the usage refer to the docstring.
 		- [matrix] : A Pandas dataframe matrix of values (may or may not be a matrix of correlation coefficients)
 		- [transpose_non_correlated] : Setting to 'True' will transpose the matrix if it is not correlated data
 		- [is_correlated] : Setting to 'True' will treat the matrix as if it contains correlation coefficients
-		- distance_metric : Set the distance metric. Used if the matrix does not contain correlation coefficients.
-		- linkage_method : Set the linkage method for the clustering.
+		- [distance_metric] : Set the distance metric. Used if the matrix does not contain correlation coefficients.
+		- [linkage_method] : Set the linkage method for the clustering.
 	- [Returns]
 		- [matrix] : The original matrix, transposed if transpose_non_correlated is 'True' and is_correlated is 'False'.
 		- [row_linkage] : linkage matrix for the rows from a linkage clustered scores matrix

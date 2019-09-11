@@ -1,3 +1,4 @@
+import sys
 import numpy as np
 import pandas as pd
 import scipy.spatial as sp, scipy.cluster.hierarchy as hc
@@ -70,16 +71,18 @@ def __checkData(matrix, transpose_non_correlated, is_correlated, distance_metric
         print("Error: is_correlated is not valid. Choose either \"True\" or \"False\".")
         sys.exit()
 
-    if distance_metric.lower() not in VALID_METRICS:
-        print("Error: Distance metric not valid. Choose one of the following: {}.".format(', '.join(VALID_METRICS)))
-        sys.exit()
+    if distance_metric.lower() != 'none':
+        if distance_metric.lower() not in VALID_METRICS:
+            print("Error: Distance metric not valid. Choose one of the following: {}.".format(', '.join(VALID_METRICS)))
+            sys.exit()
 
     if linkage_method.lower() not in LINKAGE_METHODS:
         print("Error: Linkage method not valid. Choose one of the following: {}.".format(', '.join(LINKAGE_METHODS)))
         sys.exit()
 
-    if linkage_method.lower() in EUCLIDEAN_LINKAGE_METHODS and distance_metric.lower() != 'euclidean':
-        print("Error: Method {} requires the distance metric to be Euclidean.".format(linkage_method.lower()))
-        sys.exit()
+    if distance_metric.lower() != 'none':
+        if linkage_method.lower() in EUCLIDEAN_LINKAGE_METHODS and distance_metric.lower() != 'euclidean':
+            print("Error: Method {} requires the distance metric to be Euclidean.".format(linkage_method.lower()))
+            sys.exit()
 
     return matrix, transpose_non_correlated, is_correlated, distance_metric, linkage_method
