@@ -30,7 +30,7 @@ class plotNetwork:
                                                                             - operator: The comparison operator to use when filtering
                                                                             - sign: The sign of the correlation to filter on ("pos", "neg" or "both"))
                                     - imageFileName: file name to save image to
-                                    - edgeLabels - Setting to 'True' labels all edges with the correlation value
+                                    - edgeLabels - Setting to 'True' labels all edges with the correlation coefficient
                                     - saveImage - Setting to 'True' will save the image to file
                                     - layout = Set the NetworkX layout type ("circular", "kamada_kawai", "random", "spring", "spectral")
                                     - dpi : The number of Dots Per Inch (DPI) for the image

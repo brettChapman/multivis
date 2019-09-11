@@ -93,7 +93,7 @@ For further detail on the usage refer to the docstring.
 				- [operator] : The comparison operator to use when filtering
 				- [sign] : The sign of the correlation to filter on ("pos", "neg" or "both"))
 			- [imageFileName] : file name to save image to
-			- [edgeLabels] : Setting to 'True' labels all edges with the correlation value
+			- [edgeLabels] : Setting to 'True' labels all edges with the correlation coefficient
 			- [saveImage] : Setting to 'True' will save the image to file
 			- [layout] : Set the NetworkX layout type ("circular", "kamada_kawai", "random", "spring", "spectral")
 			- [dpi] : The number of Dots Per Inch (DPI) for the image
@@ -104,24 +104,25 @@ For further detail on the usage refer to the docstring.
 	- [init_parameters](https://github.com/brettChapman/multivis/blob/master/multivis/springNetwork.py#L9-L1015)
 		- [g] : NetworkX graph.
 	- [methods](https://github.com/brettChapman/multivis/blob/master/multivis/springNetwork.py#L36-L101)
-		- [set_params] : Set parameters - node_params: node parameters dictionary(
-											- node_text_size: The text size for each node
-											- fix_nodes: Setting to 'True' will fix nodes in place when manually moved
-											- displayLabel: Setting to 'True' will set the node labels to the 'Label' column, otherwise it will set the labels to the 'Name' column from the Peak Table
-											- node_size_scale: node size scale dictionary(
-																- Peak Table columns as index: dictionary(
-																					- scale: ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume")
-																					- range: a number array of length 2 - minimum size to maximum size))
-						- link_params: link parameters dictionary(
-											- link_type: The link type used in building the network
-											- link_width: The width of the links
-											- link_score_color: dictionary(
-															- positive: Colour values. Can be HTML/CSS name, hex code, and (R,G,B) tuples
-															- negative: Colour values. Can be HTML/CSS name, hex code, and (R,G,B) tuples)
-											- backgroundColor: Set the background colour of the plot
-											- foregroundColor: Set the foreground colour of the plot
-											- canvas_size: The canvas size as a tuple (width,height)
-											- chargeStrength: The charge strength of the spring-embedded network (charged directed-force)
+		- [set_params] : Set parameters -
+			- [node_params]: node parameters dictionary(
+				- [node_text_size] : The text size for each node
+				- [fix_nodes] : Setting to 'True' will fix nodes in place when manually moved
+				- [displayLabel] : Setting to 'True' will set the node labels to the 'Label' column, otherwise it will set the labels to the 'Name' column from the Peak Table
+				- [node_size_scale] : node size scale dictionary(
+					- [Peak Table column names as index] : dictionary(
+						- [scale] : ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume")
+						- [range] : a number array of length 2 - minimum size to maximum size))
+			- [link_params] : link parameters dictionary(
+				- [link_type] : The link type used in building the network
+				- [link_width] : The width of the links
+				- [link_score_color] : dictionary(
+					- [positive] : Colour values. Can be HTML/CSS name, hex code, and (R,G,B) tuples
+					- [negative] : Colour values. Can be HTML/CSS name, hex code, and (R,G,B) tuples)
+			- [backgroundColor] : Set the background colour of the plot
+			- [foregroundColor] : Set the foreground colour of the plot
+			- [canvas_size] : The canvas size as a tuple (width,height)
+			- [chargeStrength] : The charge strength of the spring-embedded network (charged directed-force)
 		- [run] : Generates and returns JavaScript embedded HTML code for writing to HTML and displaying the Spring-embededded network (SEN) plot.
 
 - [clustermap](https://github.com/brettChapman//multivis/blob/master/multivis/clustermap.py): Hierarchical Clustered Heatmap.
@@ -130,40 +131,44 @@ For further detail on the usage refer to the docstring.
 		- [row_linkage] : Precomputed linkage matrix for the rows from a linkage clustered scores matrix
 		- [col_linkage] : Precomputed linkage matrix for the columns from a linkage clustered scores matrix
 	- [methods](https://github.com/brettChapman//multivis/blob/master/multivis/clustermap.py#L41-L331)
-		- [set_params] : Set parameters - imageFileName: file name to save image to
-						- saveImage: Setting to 'True' will save the image to file
-						- dpi: The number of Dots Per Inch (DPI) for the image
-						- figSize: The figure size as a tuple (width,height)
-						- dendrogram_ratio_shift: The ratio to shift the proportion the dendrogram takes
-						- fontSize: The font size for all axes
-						- heatmap_params: heatmap parameters dictionary(
-												- xLabels: X axis labels
-												- yLabels: Y axis labels
-												- heatmap_cmap: CMAP colour palette for the heatmap)
-						- cluster_params: clustering parameters dictionary(
-												- cluster_cmap: CMAP colour palette for each clustered axis
-												- rowColorCluster: Setting to 'True' will display a colour bar for the rows
-												- colColorCluster: Setting to 'True' will display a colour bar for the columns
-												- row_color_threshold: The colour threshold for the row dendrogram
-												- col_color_threshold: The colour threshold for the column dendrogram)
+		- [set_params] : Set parameters -
+			- [imageFileName] : file name to save image to
+			- [saveImage] : Setting to 'True' will save the image to file
+			- [dpi] : The number of Dots Per Inch (DPI) for the image
+			- [figSize] : The figure size as a tuple (width,height)
+			- [dendrogram_ratio_shift] : The ratio to shift the proportion the dendrogram takes
+			- [fontSize] : The font size for all axes
+			- [heatmap_params] : heatmap parameters dictionary(
+				- [xLabels] : X axis labels
+				- [yLabels] : Y axis labels
+				- [heatmap_cmap] : CMAP colour palette for the heatmap)
+			- [cluster_params] : clustering parameters dictionary(
+				- [cluster_cmap] : CMAP colour palette for each clustered axis
+				- [rowColorCluster] : Setting to 'True' will display a colour bar for the rows
+				- [colColorCluster] : Setting to 'True' will display a colour bar for the columns
+				- [row_color_threshold] : The colour threshold for the row dendrogram
+				- [col_color_threshold] : The colour threshold for the column dendrogram)
 		- [run] : Generates and displays the Hierarchical Clustered Heatmap (HCH).
 
 - [polarDendrogram](https://github.com/brettChapman/multivis/blob/master/multivis/polarDendrogram.py): Polar dendrogram
 	- [init_parameters](https://github.com/brettChapman/multivis/blob/master/multivis/polarDendrogram.py#L22-L27)
-		- [dn] : Dendrogram dictionary.
+		- [dn] : Dendrogram dictionary labelled by Peak Table index
 	- [methods](https://github.com/brettChapman/multivis/blob/master/multivis/polarDendrogram.py#L29-L144)
-		- [set_params] : Set parameters - imageFileName: file name to save image to
-						- saveImage: Setting to 'True' will save the image to file
-						- branch_scale: Scale the distribution of branches ("linear", "log", "square")
-						- gap: The gap size within the polar dendrogram
-						- grid: Setting to 'True' overlays a grid over the polar dendrogram
-						- style_sheet: Setting the Seaborn style-sheet (see https://python-graph-gallery.com/104-seaborn-themes/)
-						- dpi: The number of Dots Per Inch (DPI) for the image
-						- figSize: The figure size as a tuple (width,height)
-						- text_params: text parameters dictionary(
-											- fontSize: The font size for all text
-											- text_colors: dictionary(Peak Table index: Peak Table 'Color' column)
-											- labels: dictionary(Peak Table index: Peak Table 'Label' column))
+		- [set_params] : Set parameters -
+			- [imageFileName] : file name to save image to
+			- [saveImage] : Setting to 'True' will save the image to file
+			- [branch_scale] : Scale the distribution of branches ("linear", "log", "square")
+			- [gap] : The gap size within the polar dendrogram
+			- [grid] : Setting to 'True' overlays a grid over the polar dendrogram
+			- [style_sheet] : Setting the Seaborn style-sheet (see https://python-graph-gallery.com/104-seaborn-themes/)
+			- [dpi] : The number of Dots Per Inch (DPI) for the image
+			- [figSize] : The figure size as a tuple (width,height)
+			- [text_params] : text parameters dictionary(
+				- [fontSize] : The font size for all text
+				- [text_colors] : dictionary(
+					- [Peak Table index] : Peak Table 'Color' column)
+				- [labels] : dictionary(
+					- [Peak Table index] : Peak Table 'Label' column))
 		- [run] : Generates and displays the Polar dendrogram.
 
 #### multivis.utils

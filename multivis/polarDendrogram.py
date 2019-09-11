@@ -10,12 +10,17 @@ class polarDendrogram:
 
             Parameters
             ----------
-            dn : Dendrogram dictionary.
+            dn :  Dendrogram dictionary labelled by Peak Table index.
 
             Methods
             -------
             set_params : Set parameters - image file name, save image flag, dendrogram branch scale type ('linear', 'log', 'square'), gap value, display grid flag, style-sheet type, dpi, figure size
-                                            , text parameters dictionary(font size, text colours dictionary(index from peak table: values as colours), text labels dictionary(index from peak table: values as labels from peak table))
+                                            , text parameters dictionary(
+                                                        font size
+                                                        , text colours dictionary(
+                                                                        index from peak table : Peak Table 'Color' column)
+                                                        , text labels dictionary(
+                                                                        index from peak table: values as labels from peak table))
             run : Generates and displays the Polar dendrogram.
     """
 

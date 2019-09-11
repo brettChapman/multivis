@@ -20,7 +20,7 @@ class springNetwork:
                                                                             - fix_nodes: Setting to 'True' will fix nodes in place when manually moved
                                                                             - displayLabel: Setting to 'True' will set the node labels to the 'Label' column, otherwise it will set the labels to the 'Name' column from the Peak Table
                                                                             - node_size_scale: node size scale dictionary(
-                                                                                                                        - Peak Table columns as index: dictionary(
+                                                                                                                        - Peak Table column names as index: dictionary(
                                                                                                                                                                 - scale: ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume")
                                                                                                                                                                 - range: a number array of length 2 - minimum size to maximum size))
                                     - link_params: link parameters dictionary(
