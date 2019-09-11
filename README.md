@@ -78,25 +78,26 @@ For further detail on the usage refer to the docstring.
 	- [init_parameters](https://github.com/brettChapman/multivis/blob/master/multivis/plotNetwork.py#L26-L32)
 		- [g] : NetworkX graph.
 	- [methods](https://github.com/brettChapman/multivis/blob/master/multivis/plotNetwork.py#L34-L191)
-		- [set_params] : Set parameters - node_params: node parameters dictionary(
-											- sizing_column: node sizing coloumn
-											- sizeScale: node size scale function ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume")
-											- size_range: Tuple of length 2 - minimum size to maximum size
-											- alpha: Node opacity value
-											- nodeLabels: Setting to 'True' will label the nodes
-											- fontSize: The font size set to each node
-											- keepSingletons: Setting to 'True' will keep any single nodes not connected in the NetworkX graph)
- 						- filter_params: filter parameters dictionary(
-											- column: Column from Peak Table to filter on
-											- threshold: Value to filter on
-											- operator: The comparison operator to use when filtering
-											- sign: The sign of the correlation to filter on ("pos", "neg" or "both")
-						- imageFileName: file name to save image to
-						- edgeLabels - Setting to 'True' labels all edges with the correlation value
-						- saveImage - Setting to 'True' will save the image to file
-						- layout = Set the NetworkX layout type ("circular", "kamada_kawai", "random", "spring", "spectral")
-						- dpi : The number of Dots Per Inch (DPI) for the image
-						- figSize : The figure size as a tuple (width,height)
+		- [set_params] : Set parameters -
+			- [node_params]: node parameters dictionary(
+				- [sizing_column] : node sizing coloumn
+				- [sizeScale] : node size scale function ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume")
+				- [size_range] : Tuple of length 2 - minimum size to maximum size
+				- [alpha] : Node opacity value
+				- [nodeLabels] : Setting to 'True' will label the nodes
+				- [fontSize] : The font size set to each node
+				- [keepSingletons] : Setting to 'True' will keep any single nodes not connected in the NetworkX graph)
+ 			- [filter_params]: filter parameters dictionary(
+				- [column] : Column from Peak Table to filter on
+				- [threshold] : Value to filter on
+				- [operator] : The comparison operator to use when filtering
+				- [sign] : The sign of the correlation to filter on ("pos", "neg" or "both"))
+			- [imageFileName] : file name to save image to
+			- [edgeLabels] : Setting to 'True' labels all edges with the correlation value
+			- [saveImage] : Setting to 'True' will save the image to file
+			- [layout] : Set the NetworkX layout type ("circular", "kamada_kawai", "random", "spring", "spectral")
+			- [dpi] : The number of Dots Per Inch (DPI) for the image
+			- [figSize] : The figure size as a tuple (width,height)
 		- [run] : Generates and displays the NetworkX graph.
 
 - [springNetwork](https://github.com/brettChapman/multivis/blob/master/multivis/springNetwork.py): Interactive spring-embedded network which inherits data from the NetworkX graph.
