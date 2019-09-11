@@ -171,6 +171,7 @@ class polarDendrogram:
 
         if branch_scale.lower() not in ["linear", "log", "square"]:
             print("Error: Branch scale not valid. Choose either \"linear\", \"log\" or \"square\".")
+            sys.exit()
 
         if not isinstance(gap, float):
             if not isinstance(gap, int):
@@ -183,6 +184,7 @@ class polarDendrogram:
 
         if not isinstance(style_sheet, str):
             print("Error: Style sheet is not valid. Choose a string value.")
+            sys.exit()
         else:
             styleList = list(plt.style.available)
 

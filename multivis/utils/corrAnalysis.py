@@ -4,6 +4,21 @@ import numpy as np
 import pandas as pd
 
 def corrAnalysis(X, correlationType):
+    """Performs correlation analysis on a given matrix of values.
+
+        Parameters
+        ----------
+        X : A Pandas dataframe matrix of values
+
+        correlationType : The correlation type to apply. Either "Pearson", "Spearman" or "KendallTau"
+
+        Returns
+        -------
+        df_corr : Pandas dataframe of all correlation coefficients
+        df_pval : Pandas dataframe of all correlation pvalues
+    """
+
+    X, correlationType = __checkData(X, correlationType)
 
     df_corr = pd.DataFrame()
     df_pval = pd.DataFrame()
@@ -43,3 +58,15 @@ def corrAnalysis(X, correlationType):
     df_pval.index = X.columns
 
     return df_corr, df_pval
+
+def __checkData(X, correlationType):
+
+    if correlationType.lower() not in ["pearson", "spearman", "kendalltau"]:
+        print("Error: Correlation type not valid. Choose either \"Pearson\", \"Spearman\" or \"KendallTau\".")
+        sys.exit()
+
+    if not isinstance(X, pd.DataFrame):
+        print("Error: A dataframe was not entered. Please check your data.")
+        sys.exit()
+
+    return X, correlationType

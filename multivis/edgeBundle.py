@@ -15,8 +15,17 @@ class edgeBundle:
 
         Methods
         -------
-        set_params : Set parameters - diameter, inner radius offset, group separation, link fade opacity, mouse over flag, font size, background colour, foreground colour, filter slider position offset
-                        , colour scale (value to colour edges by: 'Score' or 'Pvalue') and CMAP colour palette for edges.
+        set_params : Set parameters - diameter: Sets the diameter of the plot
+                                    - innerRadiusOffset: Sets the inner radius based on the offset value from the diameter
+                                    - groupSeparation : Value to set the distance between different segmented groups
+                                    - linkFadeOpacity: The link fade opacity when hovering over/clicking nodes
+                                    - mouseOver: Setting to 'True' swaps from clicking to hovering over nodes to select them
+                                    - fontSize: The font size set to each node
+                                    - backgroundColor: Set the background colour of the plot
+                                    - foregroundColor: Set the foreground colour of the plot
+                                    - filterOffSet: Set the position offset for the sliders
+                                    - color_scale: Set the values to colour the edges by. Either 'Score or 'Pvalue'
+                                    - edge_cmap: Set the CMAP colour palette to use for colouring the edges
         run : Generates and outputs the hierarchical edge bundle.
     """
 

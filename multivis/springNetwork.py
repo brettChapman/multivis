@@ -15,14 +15,25 @@ class springNetwork:
 
         Methods
         -------
-        set_params : Set parameters - node parameters dictionary(node text size, fix node when moved flag, display node label flag
-                                                        , node size scale dictionary(peak table columns as index: {index as "scale": values ("linear", "reverse_linear", "log", "reverse_log"
-                                                                                                                            , "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume"),
-                                                                                                                    index as "range": a number array of length 2})
-                                    , link parameters dictionary(link type used in building the network, link width
-                                                        , link score colour dictionary("positive": colour value, "negative": colour value)) #Colour values can be HTML/CSS name, hex code, and (R,G,B) tuples
-                                                        , background colour, foreground colour, canvas size, charge strength)
-        run: : Generates and returns JavaScript embedded HTML code for writing to HTML and displaying.
+        set_params : Set parameters - node_params: node parameters dictionary(
+                                                                            - node_text_size: The text size for each node
+                                                                            - fix_nodes: Setting to 'True' will fix nodes in place when manually moved
+                                                                            - displayLabel: Setting to 'True' will set the node labels to the 'Label' column, otherwise it will set the labels to the 'Name' column from the Peak Table
+                                                                            - node_size_scale: node size scale dictionary(
+                                                                                                                        - Peak Table columns as index: dictionary(
+                                                                                                                                                                - scale: ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume")
+                                                                                                                                                                - range: a number array of length 2 - minimum size to maximum size))
+                                    - link_params: link parameters dictionary(
+                                                                            - link_type: The link type used in building the network
+                                                                            - link_width: The width of the links
+                                                                            - link_score_color: dictionary(
+                                                                                                        - positive: Colour values. Can be HTML/CSS name, hex code, and (R,G,B) tuples
+                                                                                                        - negative: Colour values. Can be HTML/CSS name, hex code, and (R,G,B) tuples)
+                                                                            - backgroundColor: Set the background colour of the plot
+                                                                            - foregroundColor: Set the foreground colour of the plot
+                                                                            - canvas_size: The canvas size as a tuple (width,height)
+                                                                            - chargeStrength: The charge strength of the spring-embedded network (charged directed-force)
+        run: : Generates and returns JavaScript embedded HTML code for writing to HTML and displaying the Spring-embededded network (SEN) plot.
     """
 
     def __init__(self, g):

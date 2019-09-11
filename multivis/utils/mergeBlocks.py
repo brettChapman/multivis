@@ -3,6 +3,22 @@ import pandas as pd
 import collections
 
 def mergeBlocks(peak_blocks, data_blocks):
+    """Merge multiple Peak and Data Tables from different datasets.
+
+        Parameters
+        ----------
+        peak_blocks : A dictionary of Pandas Peak Table dataframes from different datasets indexed by dataset type.
+
+        data_blocks : A dictionary of Pandas Data Table dataframes from different datasets indexed by dataset type.
+
+        Returns
+        -------
+        DataTable: Merged Pandas dataFrame
+        PeakTable: Merged Pandas dataFrame
+    """
+
+    peak_blocks = __checkData(peak_blocks)
+    data_blocks = __checkData(data_blocks)
 
     blocks = list(data_blocks.keys())
 
@@ -60,3 +76,17 @@ def mergeBlocks(peak_blocks, data_blocks):
     df_peaks['Idx'] = df_peaks.index
 
     return df_peaks, df_data
+
+def __checkData(data):
+
+    if not isinstance(data, dict):
+            print("Error: A dictionary was not entered. Please check your data.")
+            sys.exit()
+    else:
+            df = data[list(data.keys())[0]]
+
+            if not isinstance(df, pd.DataFrame):
+                print("Error: A dataframe was not entered into the dictionary. Please check your data.")
+                sys.exit()
+
+    return data

@@ -8,11 +8,11 @@ def loadData(filename, DataSheet, PeakSheet):
 
         Parameters
         ----------
-        file : string. The name of the excel file (.xlsx file) e.g. 'Data.xlsx'.
+        filename : The name of the excel file (.xlsx file) e.g. 'Data.xlsx'.
 
-        DataSheet : string. The name of the data sheet in the file e.g. 'Data'. The data sheet must contain an 'Idx', 'SampleID', and 'Class' column.
+        DataSheet : The name of the data sheet in the file e.g. 'Data'. The data sheet must contain an 'Idx', 'SampleID', and 'Class' column.
 
-        PeakSheet : string. The name of the peak sheet in the file e.g. 'Pata'. The peak sheet must contain an 'Idx', 'Name', and 'Label' column.
+        PeakSheet : The name of the peak sheet in the file e.g. 'Data'. The peak sheet must contain an 'Idx', 'Name', and 'Label' column.
 
         Returns
         -------
