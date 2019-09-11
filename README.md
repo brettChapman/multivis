@@ -60,17 +60,18 @@ For further detail on the usage refer to the docstring.
 	- [init_parameters](https://github.com/brettChapman/multivis/blob/master/multivis/edgeBundle.py#L23-27)
 		- [edges] : Pandas dataframe containing edges generated from Edge.
 	- [methods](https://github.com/brettChapman/multivis/blob/master/multivis/edgeBundle.py#L29-L99)
-		- [set_params] : Set parameters	- [diameter] : Sets the diameter of the plot
-						- [innerRadiusOffset] : Sets the inner radius based on the offset value from the diameter
-						- [groupSeparation] : Value to set the distance between different segmented groups
-						- [linkFadeOpacity] : The link fade opacity when hovering over/clicking nodes
-						- [mouseOver] : Setting to 'True' swaps from clicking to hovering over nodes to select them
-						- [fontSize] : The font size set to each node
-						- [backgroundColor] : Set the background colour of the plot
-						- [foregroundColor] : Set the foreground colour of the plot
-						- [filterOffSet] : Set the position offset for the sliders
-						- [color_scale] : Set the values to colour the edges by. Either 'Score or 'Pvalue'
-						- [edge_cmap] : Set the CMAP colour palette to use for colouring the edges 
+		- [set_params] : Set parameters	
+			- [diameter] : Sets the diameter of the plot
+			- [innerRadiusOffset] : Sets the inner radius based on the offset value from the diameter
+			- [groupSeparation] : Value to set the distance between different segmented groups
+			- [linkFadeOpacity] : The link fade opacity when hovering over/clicking nodes
+			- [mouseOver] : Setting to 'True' swaps from clicking to hovering over nodes to select them
+			- [fontSize] : The font size set to each node
+			- [backgroundColor] : Set the background colour of the plot
+			- [foregroundColor] : Set the foreground colour of the plot
+			- [filterOffSet] : Set the position offset for the sliders
+			- [color_scale] : Set the values to colour the edges by. Either 'Score or 'Pvalue'
+			- [edge_cmap] : Set the CMAP colour palette to use for colouring the edges 
 		- [run] : Generates and outputs the hierarchical edge bundle.
 		
 - [plotNetwork](https://github.com/brettChapman/multivis/blob/master/multivis/plotNetwork.py#L12-L346): Generates and displays a static NetworkX graph given a user defined layout.
