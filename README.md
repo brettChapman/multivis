@@ -185,7 +185,7 @@ For further detail on the usage refer to the docstring.
 
 - [range_scale](https://github.com/brettChapman/multivis/blob/master/multivis/utils/range_scale.py): Scales a range of values between user chosen values.
 	- [parameters](https://github.com/brettChapman/multivis/blob/master/multivis/utils/range_scale.py#L4)
-		- [x] : A numpy array of values
+		- [\x] : A numpy array of values
 		- [newMin] : The minimum value to scale the numpy array to
 		- [newMax] : The maximum value to scale the number array to
 	- [Returns]
