@@ -185,15 +185,15 @@ For further detail on the usage refer to the docstring.
 
 - [range_scale](https://github.com/brettChapman/multivis/blob/master/multivis/utils/range_scale.py): Scales a range of values between user chosen values.
 	- [parameters](https://github.com/brettChapman/multivis/blob/master/multivis/utils/range_scale.py#L4)
-		- [\x] : A numpy array of values
+		- [data] : A numpy array of values
 		- [newMin] : The minimum value to scale the numpy array to
 		- [newMax] : The maximum value to scale the number array to
 	- [Returns]
-		- [scaled_x] : A scaled numpy array
+		- [scaled_data] : A scaled numpy array
 
 - [corrAnalysis](https://github.com/brettChapman/multivis/blob/master/multivis/corrAnalysis.py): Correlation analysis with Pearson, Spearman or Kendall's Tau.
 	- [parameters](https://github.com/brettChapman/multivis/blob/master/multivis/corrAnalysis.py#L6)
-		- [X] : A Pandas dataframe matrix of values
+		- [df_data] : A Pandas dataframe matrix of values
 		- [correlationType] : The correlation type to apply. Either "Pearson", "Spearman" or "KendallTau"
 	- [Returns]
 		- [df_corr] : Pandas dataframe of all correlation coefficients
@@ -201,13 +201,13 @@ For further detail on the usage refer to the docstring.
 
 - [cluster](https://github.com/brettChapman/multivis/blob/master/multivis/utils/spatialClustering.py): Clusters data using a linkage cluster method. If the data is correlated the correlations are first preprocessed, then clustered, otherwise a distance metric is applied to non-correlated data before clustering.
 	- [parameters](https://github.com/brettChapman/multivis/blob/master/multivis/utils/spatialClustering.py#L6)
-		- [X] : A Pandas dataframe matrix of values (may or may not be a matrix of correlation coefficients)
+		- [matrix] : A Pandas dataframe matrix of values (may or may not be a matrix of correlation coefficients)
 		- [transpose_non_correlated] : Setting to 'True' will transpose the matrix if it is not correlated data
 		- [is_correlated] : Setting to 'True' will treat the matrix as if it contains correlation coefficients
 		- distance_metric : Set the distance metric. Used if the matrix does not contain correlation coefficients.
 		- linkage_method : Set the linkage method for the clustering.
 	- [Returns]
-		- [X] : The original matrix, transposed if transpose_non_correlated is 'True' and is_correlated is 'False'.
+		- [matrix] : The original matrix, transposed if transpose_non_correlated is 'True' and is_correlated is 'False'.
 		- [row_linkage] : linkage matrix for the rows from a linkage clustered scores matrix
 		- [col_linkage] : linkage matrix for the columns from a linkage clustered scores matrix
 

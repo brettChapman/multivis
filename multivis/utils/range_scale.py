@@ -1,12 +1,12 @@
 from sklearn.preprocessing import MinMaxScaler
 import numpy as np
 
-def range_scale(x, newMin, newMax):
+def range_scale(data, newMin, newMax):
     """Scales a series of values between a minimum and maximum value
 
         Parameters
         ----------
-        x : A numpy array of values
+        data : A numpy array of values
 
         newMin : The minimum value to scale the numpy array to
 
@@ -14,12 +14,12 @@ def range_scale(x, newMin, newMax):
 
         Returns
         -------
-        scaled_x : A scaled numpy array
+        scaled_data : A scaled numpy array
     """
 
-    x = x.reshape((x.shape[0], 1)).astype(float)
+    data = data.reshape((data.shape[0], 1)).astype(float)
     scaler = MinMaxScaler(feature_range=(newMin,newMax))
     
-    scaled_x = scaler.fit_transform(x).flatten()   
+    scaled_data = scaler.fit_transform(data).flatten()
                     
-    return scaled_x
+    return scaled_data

@@ -3,12 +3,12 @@ import pandas as pd
 import scipy.spatial as sp, scipy.cluster.hierarchy as hc
 from scipy.spatial.distance import squareform
 
-def cluster(X, transpose_non_correlated, is_correlated, distance_metric, linkage_method):
+def cluster(matrix, transpose_non_correlated, is_correlated, distance_metric, linkage_method):
     """Performs linkage clustering given a matrix of correlations. If no correlated data is presented, then calculates spatial distance
     given a distance metric such as Euclidean distance, then applies the linkage clustering method.
         Parameters
         ----------
-        X : A Pandas dataframe matrix of values (may or may not be a matrix of correlation coefficients)
+        matrix : A Pandas dataframe matrix of values (may or may not be a matrix of correlation coefficients)
 
         transpose_non_correlated : Setting to 'True' will transpose the matrix if it is not correlated data
 
@@ -20,16 +20,16 @@ def cluster(X, transpose_non_correlated, is_correlated, distance_metric, linkage
 
         Returns
         -------
-        X : The original matrix, transposed if transpose_non_correlated is 'True' and is_correlated is 'False'.
+        matrix : The original matrix, transposed if transpose_non_correlated is 'True' and is_correlated is 'False'.
         row_linkage : linkage matrix for the rows from a linkage clustered scores matrix
         col_linkage : linkage matrix for the columns from a linkage clustered scores matrix
     """
 
-    X, transpose_non_correlated, is_correlated, distance_metric, linkage_method = __checkData(X, transpose_non_correlated, is_correlated, distance_metric, linkage_method)
+    matrix, transpose_non_correlated, is_correlated, distance_metric, linkage_method = __checkData(matrix, transpose_non_correlated, is_correlated, distance_metric, linkage_method)
 
     if is_correlated:
 
-        Z = (X.values + X.values.T) / 2
+        Z = (matrix.values + matrix.values.T) / 2
 
         np.fill_diagonal(Z, 1)
 
@@ -41,14 +41,14 @@ def cluster(X, transpose_non_correlated, is_correlated, distance_metric, linkage
         col_linkage = linkage;
     else:
         if transpose_non_correlated:
-            X = X.T
+            matrix = matrix.T
 
         row_linkage, col_linkage = (hc.linkage(sp.distance.pdist(x, distance_metric), linkage_method)
-                                    for x in (X.values, X.values.T))
+                                    for x in (matrix.values, matrix.values.T))
 
-    return X, row_linkage, col_linkage
+    return matrix, row_linkage, col_linkage
 
-def __checkData(X, transpose_non_correlated, is_correlated, distance_metric, linkage_method):
+def __checkData(matrix, transpose_non_correlated, is_correlated, distance_metric, linkage_method):
 
     VALID_METRICS = ['euclidean', 'l2', 'l1', 'manhattan', 'cityblock', 'braycurtis', 'canberra', 'chebyshev', 'correlation',
                      'cosine', 'dice', 'hamming', 'jaccard', 'kulsinski', 'mahalanobis', 'matching', 'minkowski', 'rogerstanimoto',
@@ -58,7 +58,7 @@ def __checkData(X, transpose_non_correlated, is_correlated, distance_metric, lin
 
     EUCLIDEAN_LINKAGE_METHODS = ['centroid', 'median', 'ward']
 
-    if not isinstance(X, pd.DataFrame):
+    if not isinstance(matrix, pd.DataFrame):
         print("Error: A dataframe was not entered. Please check your data.")
         sys.exit()
 
@@ -82,4 +82,4 @@ def __checkData(X, transpose_non_correlated, is_correlated, distance_metric, lin
         print("Error: Method {} requires the distance metric to be Euclidean.".format(linkage_method.lower()))
         sys.exit()
 
-    return X, transpose_non_correlated, is_correlated, distance_metric, linkage_method
+    return matrix, transpose_non_correlated, is_correlated, distance_metric, linkage_method
