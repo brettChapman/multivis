@@ -42,11 +42,11 @@ For further detail on the usage refer to the docstring.
 	- [methods](https://github.com/brettChapman/multivis/blob/master/multivis/Edge.py#L45-L122)
 		- [set_params] : Set parameters
 			- [filterScoreType] : Value type to filter similarities on (default: 'pvalue')
-            		- [hard_threshold] : Value to filter similarities on (default: 0.005)
-            		- [internalSimilarities] : Include similarities within blocks if building multi-block network (default: False)
-            		- [sign] : The sign of the similarity score to filter on ('pos', 'neg' or 'both') (default: 'both')
-            		- [node_color_column] : The Peak Table column to use for node colours (default: None sets to black)
-            		- [node_cmap] : The CMAP colour palette to use for nodes (default: 'brg')
+			- [hard_threshold] : Value to filter similarities on (default: 0.005)
+			- [internalSimilarities] : Include similarities within blocks if building multi-block network (default: False)
+			- [sign] : The sign of the similarity score to filter on ('pos', 'neg' or 'both') (default: 'both')
+			- [node_color_column] : The Peak Table column to use for node colours (default: None sets to black)
+			- [node_cmap] : The CMAP colour palette to use for nodes (default: 'brg')
 
         	- [run] : Builds the nodes and edges.
         	- [getNodes] : Returns a Pandas dataframe of all nodes.
@@ -61,11 +61,11 @@ For further detail on the usage refer to the docstring.
 		- [set_params] : Set parameters
 			- [filterScoreType] : Value type to filter similarities on (default: 'pvalue')
 			- [hard_threshold] : Value to filter similarities on (default: 0.005)
-            		- [link_type] : The value type to represent links in the network (default: 'score')
-            		- [internalSimilarities] : Include similarities within blocks if building multi-block network (default: False)
-            		- [sign] : The sign of the similarity score to filter on ('pos', 'neg' or 'both') (default: 'both')
-            		- [node_color_column] : The Peak Table column to use for node colours (default: None sets to black)
-            		- [node_cmap] : The CMAP colour palette to use for nodes (default: 'brg')
+			- [link_type] : The value type to represent links in the network (default: 'score')
+			- [internalSimilarities] : Include similarities within blocks if building multi-block network (default: False)
+			- [sign] : The sign of the similarity score to filter on ('pos', 'neg' or 'both') (default: 'both')
+			- [node_color_column] : The Peak Table column to use for node colours (default: None sets to black)
+			- [node_cmap] : The CMAP colour palette to use for nodes (default: 'brg')
 
                 - [run] : Builds nodes, edges and NetworkX graph.
                 - [getNetworkx] : Returns a NetworkX graph.
@@ -77,15 +77,15 @@ For further detail on the usage refer to the docstring.
 	- [methods](https://github.com/brettChapman/multivis/blob/master/multivis/edgeBundle.py#L39-L104)
 		- [set_params] : Set parameters
 			- [html_file] : Name to save the HTML file as (default: 'hEdgeBundle.html')
-            		- [innerRadiusOffset] : Sets the inner radius based on the offset value from the canvas width/diameter (default: 120)
-            		- [groupSeparation] : Value to set the distance between different segmented groups (default: 1)
-            		- [linkFadeOpacity] : The link fade opacity when hovering over/clicking nodes (default: 0.05)
-            		- [mouseOver] : Setting to 'True' swaps from clicking to hovering over nodes to select them (default: True)
-            		- [fontSize] : The font size set to each node (default: 1)
-            		- [backgroundColor] : Set the background colour of the plot (default: 'white')
-            		- [foregroundColor] : Set the foreground colour of the plot (default: 'black')
-            		- [edge_color_scale] : Set the values to colour the edges by. Either 'score or 'pvalue' (default: 'score')
-            		- [edge_cmap] : Set the CMAP colour palette to use for colouring the edges (default: 'brg')
+			- [innerRadiusOffset] : Sets the inner radius based on the offset value from the canvas width/diameter (default: 120)
+			- [groupSeparation] : Value to set the distance between different segmented groups (default: 1)
+			- [linkFadeOpacity] : The link fade opacity when hovering over/clicking nodes (default: 0.05)
+			- [mouseOver] : Setting to 'True' swaps from clicking to hovering over nodes to select them (default: True)
+			- [fontSize] : The font size set to each node (default: 1)
+			- [backgroundColor] : Set the background colour of the plot (default: 'white')
+			- [foregroundColor] : Set the foreground colour of the plot (default: 'black')
+			- [edge_color_scale] : Set the values to colour the edges by. Either 'score or 'pvalue' (default: 'score')
+			- [edge_cmap] : Set the CMAP colour palette to use for colouring the edges (default: 'brg')
 
         	- [run] : Generates the JavaScript embedded HTML code and writes to a HTML file
 		
@@ -94,23 +94,23 @@ For further detail on the usage refer to the docstring.
 		- [g] : NetworkX graph.
 	- [methods](https://github.com/brettChapman/multivis/blob/master/multivis/plotNetwork.py#L47-L211)
 		- [set_params] : Set parameters
-            		- [imageFileName] : The image file name to save to (default: 'networkPlot.jpg')
-            		- [edgeLabels] : Setting to 'True' labels all edges with the similarity score (default: True)
-            		- [saveImage] : Setting to 'True' will save the image to file (default: True)
-            		- [layout] : Set the NetworkX layout type ('circular', 'kamada_kawai', 'random', 'spring', 'spectral') (default: 'spring')
-            		- [dpi] : The number of Dots Per Inch (DPI) for the image (default: 200)
-            		- [figSize] : The figure size as a tuple (width,height) (default: (30,20))
-            		- [sizing_column] : The node sizing colomn to use (default: sizes all nodes to 1)
-            		- [sizeScale] : The node size scale to apply ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume") (default: 'reverse_linear')
-            		- [size_range] : The node size scale range to apply. Tuple of length 2. Minimum size to maximum size (default: (150,2000))
-            		- [alpha] :  Node opacity value (default: 0.5)
-            		- [nodeLabels] : Setting to 'True' will label the nodes (default: True)
-            		- [fontSize] : The font size set for each node (default: 15)
-            		- [keepSingletons] : Setting to 'True' will keep any single nodes not connected by edges in the NetworkX graph) (default: True)
-            		- [column] : Column from Peak Table to filter on (default: no filtering)
-            		- [threshold] : Value to filter on (default: no filtering)
-            		- [operator] : The comparison operator to use when filtering (default: '>')
-            		- [sign] : The sign of the similarity score to filter on ('pos', 'neg' or 'both') (default: 'pos')
+			- [imageFileName] : The image file name to save to (default: 'networkPlot.jpg')
+			- [edgeLabels] : Setting to 'True' labels all edges with the similarity score (default: True)
+			- [saveImage] : Setting to 'True' will save the image to file (default: True)
+			- [layout] : Set the NetworkX layout type ('circular', 'kamada_kawai', 'random', 'spring', 'spectral') (default: 'spring')
+			- [dpi] : The number of Dots Per Inch (DPI) for the image (default: 200)
+			- [figSize] : The figure size as a tuple (width,height) (default: (30,20))
+			- [sizing_column] : The node sizing colomn to use (default: sizes all nodes to 1)
+			- [sizeScale] : The node size scale to apply ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume") (default: 'reverse_linear')
+			- [size_range] : The node size scale range to apply. Tuple of length 2. Minimum size to maximum size (default: (150,2000))
+			- [alpha] :  Node opacity value (default: 0.5)
+			- [nodeLabels] : Setting to 'True' will label the nodes (default: True)
+			- [fontSize] : The font size set for each node (default: 15)
+			- [keepSingletons] : Setting to 'True' will keep any single nodes not connected by edges in the NetworkX graph) (default: True)
+			- [column] : Column from Peak Table to filter on (default: no filtering)
+			- [threshold] : Value to filter on (default: no filtering)
+			- [operator] : The comparison operator to use when filtering (default: '>')
+			- [sign] : The sign of the similarity score to filter on ('pos', 'neg' or 'both') (default: 'pos')
 	
 		- [run] : Generates and displays the NetworkX graph.
 
@@ -119,22 +119,22 @@ For further detail on the usage refer to the docstring.
 		- [g] : NetworkX graph.
 	- [methods](https://github.com/brettChapman/multivis/blob/master/multivis/springNetwork.py#L44-L113)
 		- [set_params] : Set parameters
-                    - [node_size_scale]: dictionary(Peak Table column name as index: dictionary('scale': ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume")
-                                                                                            'range': a number array of length 2 - minimum size to maximum size)) (default: sizes all nodes to 10 with no dropdown menu)
-                    - [html_file] : Name to save the HTML file as (default: 'springNetwork.html')
-                    - [backgroundColor] : Set the background colour of the plot (default: 'white')
-                    - [foregroundColor] : Set the foreground colour of the plot (default: 'black')
-                    - [chargeStrength] : The charge strength of the spring-embedded network (force between springs) (default: -120)
-                    - [node_text_size] : The text size for each node (default: 15)
-                    - [fix_nodes] : Setting to 'True' will fix nodes in place when manually moved (default: False)
-                    - [displayLabel] : Setting to 'True' will set the node labels to the 'Label' column, otherwise it will set the labels to the 'Name' column from the Peak Table (default: False)
-                    - [node_data] : Peak Table column names to include in the mouse over information (default: 'Name' and 'Label')
-                    - [link_type] : The link type used in building the network (default: 'score')
-                    - [link_width] : The width of the links (default: 0.5)
-                    - [pos_score_color] : Colour value for positive similarity scores. Can be HTML/CSS name, hex code, and (R,G,B) tuples (default: 'red')
-                    - [neg_score_color] : Colour value for negative similarity scores. Can be HTML/CSS name, hex code, and (R,G,B) tuples (default: 'black')
-
-        	- [run] : Generates the JavaScript embedded HTML code and writes to a HTML file
+			- [node_size_scale]: dictionary(Peak Table column name as index: dictionary('scale': ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume")
+                	                                                                            'range': a number array of length 2 - minimum size to maximum size)) (default: sizes all nodes to 10 with no dropdown menu)
+			- [html_file] : Name to save the HTML file as (default: 'springNetwork.html')
+			- [backgroundColor] : Set the background colour of the plot (default: 'white')
+			- [foregroundColor] : Set the foreground colour of the plot (default: 'black')
+			- [chargeStrength] : The charge strength of the spring-embedded network (force between springs) (default: -120)
+			- [node_text_size] : The text size for each node (default: 15)
+			- [fix_nodes] : Setting to 'True' will fix nodes in place when manually moved (default: False)
+			- [displayLabel] : Setting to 'True' will set the node labels to the 'Label' column, otherwise it will set the labels to the 'Name' column from the Peak Table (default: False)
+			- [node_data] : Peak Table column names to include in the mouse over information (default: 'Name' and 'Label')
+			- [link_type] : The link type used in building the network (default: 'score')
+			- [link_width] : The width of the links (default: 0.5)
+			- [pos_score_color] : Colour value for positive similarity scores. Can be HTML/CSS name, hex code, and (R,G,B) tuples (default: 'red')
+			- [neg_score_color] : Colour value for negative similarity scores. Can be HTML/CSS name, hex code, and (R,G,B) tuples (default: 'black')
+		
+		- [run] : Generates the JavaScript embedded HTML code and writes to a HTML file
 
 - [clustermap](https://github.com/brettChapman//multivis/blob/master/multivis/clustermap.py): Hierarchical Clustered Heatmap.
 	- [init_parameters](https://github.com/brettChapman//multivis/blob/master/multivis/clustermap.py#L42-L50)
@@ -144,42 +144,42 @@ For further detail on the usage refer to the docstring.
 	- [methods](https://github.com/brettChapman//multivis/blob/master/multivis/clustermap.py#L52-L350)
 		- [set_params] : Set parameters
 			- [xLabels] : A Pandas Series for labelling the X axis of the HCH
-            		- [yLabels] : A Pandas Series for labelling the Y axis of the HCH
-            		- [imageFileName] : The image file name to save to (default: 'clusterMap.png')
-            		- [saveImage] : Setting to 'True' will save the image to file (default: True)
-            		- [dpi] : The number of Dots Per Inch (DPI) for the image (default: 200)
-            		- [figSize] : The figure size as a tuple (width,height) (default: (80,70))
-            		- [dendrogram_ratio_shift] : The ratio to shift the position of the dendrogram in relation to the heatmap (default: 0.0)
-            		- [fontSize] : The font size set for each node (default: 30)
-            		- [heatmap_cmap] : The CMAP colour palette to use for the heatmap (default: 'RdYlGn')
-            		- [cluster_cmap] : The CMAP colour palette to use for the branch seperation of clusters in the dendrogram (default: 'Set1')
-            		- [rowColorCluster] : Setting to 'True' will display a colour bar for the clustered rows (default: False)
-            		- [colColorCluster] : Setting to 'True' will display a colour bar for the clustered columns (default: False)
-            		- [row_color_threshold] : The colouring threshold for the row dendrogram (default: 10)
-            		- [col_color_threshold] : The colouring threshold for the column dendrogram (default: 10)
-
-        	- [run] : : Generates and displays the Hierarchical Clustered Heatmap (HCH).
+			- [yLabels] : A Pandas Series for labelling the Y axis of the HCH
+			- [imageFileName] : The image file name to save to (default: 'clusterMap.png')
+			- [saveImage] : Setting to 'True' will save the image to file (default: True)
+			- [dpi] : The number of Dots Per Inch (DPI) for the image (default: 200)
+			- [figSize] : The figure size as a tuple (width,height) (default: (80,70))
+			- [dendrogram_ratio_shift] : The ratio to shift the position of the dendrogram in relation to the heatmap (default: 0.0)
+			- [fontSize] : The font size set for each node (default: 30)
+			- [heatmap_cmap] : The CMAP colour palette to use for the heatmap (default: 'RdYlGn')
+			- [cluster_cmap] : The CMAP colour palette to use for the branch seperation of clusters in the dendrogram (default: 'Set1')
+			- [rowColorCluster] : Setting to 'True' will display a colour bar for the clustered rows (default: False)
+			- [colColorCluster] : Setting to 'True' will display a colour bar for the clustered columns (default: False)
+			- [row_color_threshold] : The colouring threshold for the row dendrogram (default: 10)
+			- [col_color_threshold] : The colouring threshold for the column dendrogram (default: 10)
+		
+		- [run] : : Generates and displays the Hierarchical Clustered Heatmap (HCH).
 
 - [polarDendrogram](https://github.com/brettChapman/multivis/blob/master/multivis/polarDendrogram.py): Polar dendrogram
 	- [init_parameters](https://github.com/brettChapman/multivis/blob/master/multivis/polarDendrogram.py#L36-L40)
 		- [dn] : Dendrogram dictionary labelled by Peak Table index
 	- [methods](https://github.com/brettChapman/multivis/blob/master/multivis/polarDendrogram.py#42-L159)
 		- set_params : Set parameters
-                	- [imageFileName] : The image file name to save to (default: 'polarDendrogram.png')
-                	- [saveImage] : Setting to 'True' will save the image to file (default: True)
-                	- [branch_scale] : The branch distance scale to apply ('linear', 'log', 'square') (default: 'linear')
-                	- [gap] : The gap size within the polar dendrogram (default: 0.1)
-               		- [grid] : Setting to 'True' will overlay a grid over the polar dendrogram (default: False)
-                	- [style_sheet] : Setting the Seaborn style-sheet (see https://python-graph-gallery.com/104-seaborn-themes/) (default: 'seaborn-white')
-                	- [dpi] : The number of Dots Per Inch (DPI) for the image (default: 200)
-                	- [figSize] : The figure size as a tuple (width,height) (default: (10,10))
-                	- [fontSize] : The font size for all text (default: 15)
-                	- [PeakTable] : The Peak Table Pandas dataframe (default: empty dataframe)
-                	- [Color_column] : The colour column to use from Peak Table (Can be colour or numerical values such as 'pvalue') (default: 'black')
-                	- [Label_column] : The label column to use from Peak Table (default: use original Peak Table index from cartesian dendrogram)
-                	- [text_cmap] : The CMAP colour palette to use (default: 'brg')
+			- [imageFileName] : The image file name to save to (default: 'polarDendrogram.png')
+			- [saveImage] : Setting to 'True' will save the image to file (default: True)
+			- [branch_scale] : The branch distance scale to apply ('linear', 'log', 'square') (default: 'linear')
+			- [gap] : The gap size within the polar dendrogram (default: 0.1)
+			- [grid] : Setting to 'True' will overlay a grid over the polar dendrogram (default: False)
+			- [style_sheet] : Setting the Seaborn style-sheet (see https://python-graph-gallery.com/104-seaborn-themes/) (default: 'seaborn-white')
+			- [dpi] : The number of Dots Per Inch (DPI) for the image (default: 200)
+			- [figSize] : The figure size as a tuple (width,height) (default: (10,10))
+			- [fontSize] : The font size for all text (default: 15)
+			- [PeakTable] : The Peak Table Pandas dataframe (default: empty dataframe)
+			- [Color_column] : The colour column to use from Peak Table (Can be colour or numerical values such as 'pvalue') (default: 'black')
+			- [Label_column] : The label column to use from Peak Table (default: use original Peak Table index from cartesian dendrogram)
+			- [text_cmap] : The CMAP colour palette to use (default: 'brg')
 
-            	- [run] : Generates and displays the Polar dendrogram.
+		- [run] : Generates and displays the Polar dendrogram.
 
 - [pca](https://github.com/brettChapman/multivis/blob/master/multivis/pca.py): Principle Component Analysis (PCA) plot
 	- [parameters](https://github.com/brettChapman/multivis/blob/master/multivis/pca.py#L7)
