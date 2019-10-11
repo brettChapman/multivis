@@ -66,10 +66,10 @@ For further detail on the usage refer to the docstring.
 			- [sign] : The sign of the similarity score to filter on ('pos', 'neg' or 'both') (default: 'both')
 			- [node_color_column] : The Peak Table column to use for node colours (default: None sets to black)
 			- [node_cmap] : The CMAP colour palette to use for nodes (default: 'brg')
-
-                - [run] : Builds nodes, edges and NetworkX graph.
-                - [getNetworkx] : Returns a NetworkX graph.
-                - [getLinkType] : Returns the link type parameter used in building the network.
+		
+		- [run] : Builds nodes, edges and NetworkX graph.
+		- [getNetworkx] : Returns a NetworkX graph.
+		- [getLinkType] : Returns the link type parameter used in building the network.
 
 - [edgeBundle](https://github.com/brettChapman/multivis/blob/master/multivis/edgeBundle.py): Generates and displays a Hierarchical edge bundle plot.
 	- [init_parameters](https://github.com/brettChapman/multivis/blob/master/multivis/edgeBundle.py#L33-37)
@@ -87,7 +87,7 @@ For further detail on the usage refer to the docstring.
 			- [edge_color_scale] : Set the values to colour the edges by. Either 'score or 'pvalue' (default: 'score')
 			- [edge_cmap] : Set the CMAP colour palette to use for colouring the edges (default: 'brg')
 
-        	- [run] : Generates the JavaScript embedded HTML code and writes to a HTML file
+		- [run] : Generates the JavaScript embedded HTML code and writes to a HTML file
 		
 - [plotNetwork](https://github.com/brettChapman/multivis/blob/master/multivis/plotNetwork.py): Generates and displays a static NetworkX graph given a user defined layout.
 	- [init_parameters](https://github.com/brettChapman/multivis/blob/master/multivis/plotNetwork.py#L41-L45)
@@ -111,7 +111,7 @@ For further detail on the usage refer to the docstring.
 			- [threshold] : Value to filter on (default: no filtering)
 			- [operator] : The comparison operator to use when filtering (default: '>')
 			- [sign] : The sign of the similarity score to filter on ('pos', 'neg' or 'both') (default: 'pos')
-	
+		
 		- [run] : Generates and displays the NetworkX graph.
 
 - [springNetwork](https://github.com/brettChapman/multivis/blob/master/multivis/springNetwork.py): Interactive spring-embedded network which inherits data from the NetworkX graph.
@@ -178,7 +178,7 @@ For further detail on the usage refer to the docstring.
 			- [Color_column] : The colour column to use from Peak Table (Can be colour or numerical values such as 'pvalue') (default: 'black')
 			- [Label_column] : The label column to use from Peak Table (default: use original Peak Table index from cartesian dendrogram)
 			- [text_cmap] : The CMAP colour palette to use (default: 'brg')
-
+		
 		- [run] : Generates and displays the Polar dendrogram.
 
 - [pca](https://github.com/brettChapman/multivis/blob/master/multivis/pca.py): Principle Component Analysis (PCA) plot
