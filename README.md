@@ -184,33 +184,33 @@ For further detail on the usage refer to the docstring.
 - [pca](https://github.com/brettChapman/multivis/blob/master/multivis/pca.py): Principle Component Analysis (PCA) plot
 	- [parameters](https://github.com/brettChapman/multivis/blob/master/multivis/pca.py#L7)
 		- [data] : array-like matrix, shape (n_samples, n_features)
-    		- [imageFileName] : The image file name to save to (default: 'PCA.png')
-    		- [saveImage] : Setting to 'True' will save the image to file (default: True)
-    		- [dpi] : The number of Dots Per Inch (DPI) for the image (default: 200)
-    		- [pcx] : The first component (default: 1)
-   		- [pcy] : The second component (default: 2)
-    		- [group_label] : Labels to assign to each group/class in the PCA plot (default: None)
-    		- [sample_label] : Labels to assign to each sample in the PCA plot (default: None)
-    		- [peak_label] : Labels to assign to each peak in the loadings biplot (default: None)
-    		- [markerSize] : The size of each marker (default: 100)
-    		- [fontSize] : The font size set for each node (default: 12)
-    		- [figSize] : The figure size as a tuple (width,height) (default: (20,10))
+		- [imageFileName] : The image file name to save to (default: 'PCA.png')
+		- [saveImage] : Setting to 'True' will save the image to file (default: True)
+		- [dpi] : The number of Dots Per Inch (DPI) for the image (default: 200)
+		- [pcx] : The first component (default: 1)
+		- [pcy] : The second component (default: 2)
+		- [group_label] : Labels to assign to each group/class in the PCA plot (default: None)
+		- [sample_label] : Labels to assign to each sample in the PCA plot (default: None)
+		- [peak_label] : Labels to assign to each peak in the loadings biplot (default: None)
+		- [markerSize] : The size of each marker (default: 100)
+		- [fontSize] : The font size set for each node (default: 12)
+		- [figSize] : The figure size as a tuple (width,height) (default: (20,10))
 
 - [pcoa](https://github.com/brettChapman/multivis/blob/master/multivis/pcoa.py): Principle Coordinates Analysis (PCoA) plot
 	- [parameters](https://github.com/brettChapman/multivis/blob/master/multivis/pcoa.py#L8)
-		- [similarities] : array-like, shape (n_samples, n_features)
-    		- [imageFileName] : The image file name to save to (default: 'PCOA.png')
-    		- [saveImage] : Setting to 'True' will save the image to file (default: True)
-    		- [dpi] : The number of Dots Per Inch (DPI) for the image (default: 200)
-    		- [n_components] : Number of components (default: 2)
-    		- [max_iter] : Maximum number of iterations of the SMACOF algorithm (default: 300)
-    		- [eps] : Relative tolerance with respect to stress at which to declare convergence (default: 1e-3)
-    		- [seed] : Seed number used by the random number generator for the RandomState instance (default: 3)
-    		- [group_label] : Labels to assign to each group/class (default: None)
-    		- [peak_label] : Labels to assign to each peak (default: None)
-    		- [markerSize] : The size of each marker (default: 100)
-    		- [fontSize] : The font size set for each node (default: 12)
-    		- [figSize] : The figure size as a tuple (width,height) (default: (20,10))   
+		- [similarities] : array-like matrix, shape (n_samples, n_features)
+		- [imageFileName] : The image file name to save to (default: 'PCOA.png')
+		- [saveImage] : Setting to 'True' will save the image to file (default: True)
+		- [dpi] : The number of Dots Per Inch (DPI) for the image (default: 200)
+		- [n_components] : Number of components (default: 2)
+		- [max_iter] : Maximum number of iterations of the SMACOF algorithm (default: 300)
+		- [eps] : Relative tolerance with respect to stress at which to declare convergence (default: 1e-3)
+		- [seed] : Seed number used by the random number generator for the RandomState instance (default: 3)
+		- [group_label] : Labels to assign to each group/class (default: None)
+		- [peak_label] : Labels to assign to each peak (default: None)
+		- [markerSize] : The size of each marker (default: 100)
+		- [fontSize] : The font size set for each node (default: 12)
+		- [figSize] : The figure size as a tuple (width,height) (default: (20,10))   
 
 #### multivis.utils
 
@@ -219,7 +219,7 @@ For further detail on the usage refer to the docstring.
 		- [filename] : The name of the excel file (.xlsx file) e.g. 'Data.xlsx'.
 		- [DataSheet] : The name of the data sheet in the file e.g. 'Data'. The data sheet must contain an 'Idx', 'SampleID', and 'Class' column.
 		- [PeakSheet] : The name of the peak sheet in the file e.g. 'Peak'. The peak sheet must contain an 'Idx', 'Name', and 'Label' column.
-	- [Returns]
+	- [Returns](https://github.com/brettChapman/multivis/blob/master/multivis/utils/loadData.py#L52)
 		- DataTable: Pandas dataFrame
 		- PeakTable: Pandas dataFrame
 
@@ -227,7 +227,7 @@ For further detail on the usage refer to the docstring.
 	- [parameters](https://github.com/brettChapman/multivis/blob/master/multivis/utils/mergeBlocks.py#L5)
 		- [peak_blocks] : A dictionary of Pandas Peak Table dataframes from different datasets indexed by dataset type.
 		- [data_blocks] : A dictionary of Pandas Data Table dataframes from different datasets indexed by dataset type.
-	- [Returns]
+	- [Returns](https://github.com/brettChapman/multivis/blob/master/multivis/utils/mergeBlocks.p#77)
 		- [DataTable] : Merged Pandas dataFrame
 		- [PeakTable] : Merged Pandas dataFrame
 
@@ -236,14 +236,14 @@ For further detail on the usage refer to the docstring.
 		- [data] : A 1D numpy array of values
 		- [newMin] : The minimum value to scale the numpy array to
 		- [newMax] : The maximum value to scale the number array to
-	- [Returns]
+	- [Returns](https://github.com/brettChapman/multivis/blob/master/multivis/utils/range_scale.py#L25)
 		- [scaled_data] : A scaled numpy array
 
 - [corrAnalysis](https://github.com/brettChapman/multivis/blob/master/multivis/utils/corrAnalysis.py): Correlation analysis with Pearson, Spearman or Kendall's Tau.
 	- [parameters](https://github.com/brettChapman/multivis/blob/master/multivis/utils/corrAnalysis.py#L7)
 		- [df_data] : A Pandas dataframe matrix of values
 		- [correlationType] : The correlation type to apply. Either 'Pearson', 'Spearman' or 'KendallTau'
-	- [Returns]
+	- [Returns](https://github.com/brettChapman/multivis/blob/master/multivis/utils/corrAnalysis.py#L60)
 		- [df_corr] : Pandas dataframe matrix of all correlation coefficients
 		- [df_pval] : Pandas dataframe matrix of all correlation pvalues
 
@@ -254,7 +254,7 @@ For further detail on the usage refer to the docstring.
 		- [is_correlated] : Setting to 'True' will treat the matrix as if it contains correlation coefficients
 		- [distance_metric] : Set the distance metric. Used if the matrix does not contain correlation coefficients.
 		- [linkage_method] : Set the linkage method for the clustering.
-	- [Returns]
+	- [Returns](https://github.com/brettChapman/multivis/blob/master/multivis/utils/cluster.py#L47)
 		- [matrix] : The original matrix, transposed if transpose_non_correlated is 'True' and is_correlated is 'False'.
 		- [row_linkage] : linkage matrix for the rows from a linkage clustered similarities matrix
 		- [col_linkage] : linkage matrix for the columns from a linkage clustered similarities matrix
