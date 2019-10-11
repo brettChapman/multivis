@@ -47,10 +47,10 @@ For further detail on the usage refer to the docstring.
 			- [sign] : The sign of the similarity score to filter on ('pos', 'neg' or 'both') (default: 'both')
 			- [node_color_column] : The Peak Table column to use for node colours (default: None sets to black)
 			- [node_cmap] : The CMAP colour palette to use for nodes (default: 'brg')
-
-        	- [run] : Builds the nodes and edges.
-        	- [getNodes] : Returns a Pandas dataframe of all nodes.
-        	- [getEdges] : Returns a Pandas dataframe of all edges.        	
+		
+		- [run] : Builds the nodes and edges.
+		- [getNodes] : Returns a Pandas dataframe of all nodes.
+		- [getEdges] : Returns a Pandas dataframe of all edges.        	
 
 - [Network](https://github.com/brettChapman/multivis/blob/master/multivis/Network.py): Inherits from Edge and generates dataframe of nodes, edges, and a NetworkX graph.
 	- [init_parameters](https://github.com/brettChapman/multivis/blob/master/multivis/Network.py#L33-L37)
