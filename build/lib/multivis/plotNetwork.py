@@ -10,15 +10,31 @@ import warnings
 class plotNetwork:
     """Class for plotNetwork to produce a static spring-embedded network.
 
-        Parameters
+        Initial_Parameters
         ----------
         g : NetworkX graph.
 
         Methods
         -------
-        set_params : Set parameters - node parameters dictionary(node sizing columnn, node size scale, node size range, alpha opacity value, node labelling flag, font size and keep single nodes flag)
-                                    , filter parameters dictionary(filter column, filter threshold, filter operator and sign)
-                                    , image filename, label edges flag, save image flag, NetworkX layout type, dpi, figure size.
+        set_params : Set parameters -
+            imageFileName: The image file name to save to (default: 'networkPlot.jpg')
+            edgeLabels: Setting to 'True' labels all edges with the similarity score (default: True)
+            saveImage: Setting to 'True' will save the image to file (default: True)
+            layout: Set the NetworkX layout type ('circular', 'kamada_kawai', 'random', 'spring', 'spectral') (default: 'spring')
+            dpi: The number of Dots Per Inch (DPI) for the image (default: 200)
+            figSize: The figure size as a tuple (width,height) (default: (30,20))
+            sizing_column: The node sizing colomn to use (default: sizes all nodes to 1)
+            sizeScale: The node size scale to apply ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume") (default: 'reverse_linear')
+            size_range: The node size scale range to apply. Tuple of length 2. Minimum size to maximum size (default: (150,2000))
+            alpha:  Node opacity value (default: 0.5)
+            nodeLabels: Setting to 'True' will label the nodes (default: True)
+            fontSize: The font size set for each node (default: 15)
+            keepSingletons: Setting to 'True' will keep any single nodes not connected by edges in the NetworkX graph) (default: True)
+            column: Column from Peak Table to filter on (default: no filtering)
+            threshold: Value to filter on (default: no filtering)
+            operator: The comparison operator to use when filtering (default: '>')
+            sign: The sign of the similarity score to filter on ('pos', 'neg' or 'both') (default: 'pos')
+
         run : Generates and displays the NetworkX graph.
     """
 
@@ -27,18 +43,10 @@ class plotNetwork:
         self.__g = self.__checkData(copy.deepcopy(g))
 
         self.set_params()
-        self.__set_node_params()
-        self.__set_filter_params()
 
-    def set_params(self, node_params={}, filter_params={}, imageFileName='networkPlot.jpg', edgeLabels=True, saveImage=True, layout='spring', dpi=200, figSize=(30,20)):
+    def set_params(self, imageFileName='networkPlot.jpg', edgeLabels=True, saveImage=True, layout='spring', dpi=200, figSize=(30,20), sizing_column='none', sizeScale='reverse_linear', size_range=(150,2000), alpha=0.5, nodeLabels=True, fontSize=15, keepSingletons=True, column='none', threshold=0.01, operator='>', sign='pos'):
 
-        if node_params:
-            self.__set_node_params(**node_params)
-
-        if filter_params:
-            self.__set_filter_params(**filter_params)
-
-        imageFileName, edgeLabels, saveImage, layout, dpi, figSize = self.__paramCheck(imageFileName, edgeLabels, saveImage, layout, dpi, figSize)
+        imageFileName, edgeLabels, saveImage, layout, dpi, figSize, sizing_column, sizeScale, size_range, alpha, nodeLabels, fontSize, keepSingletons, column, threshold, operator, sign = self.__paramCheck(imageFileName, edgeLabels, saveImage, layout, dpi, figSize, sizing_column, sizeScale, size_range, alpha, nodeLabels, fontSize, keepSingletons, column, threshold, operator, sign)
 
         self.__imageFileName = imageFileName;
         self.__edgeLabels = edgeLabels;
@@ -46,6 +54,17 @@ class plotNetwork:
         self.__layout = layout;
         self.__dpi = dpi
         self.__figSize = figSize;
+        self.__sizing_column = sizing_column;
+        self.__sizeScale = sizeScale;
+        self.__size_range = size_range;
+        self.__alpha = alpha
+        self.__nodeLabels = nodeLabels
+        self.__fontSize = fontSize;
+        self.__keepSingletons = keepSingletons;
+        self.__filter_column = column;
+        self.__filter_threshold = threshold;
+        self.__operator = operator;
+        self.__sign = sign;
 
     def run(self):
 
@@ -174,7 +193,7 @@ class plotNetwork:
         elif self.__layout == "spectral":
             pos = nx.spectral_layout(g)
 
-        nx.draw(g, pos=pos, labels=dict(zip(g.nodes(), list(nx.get_node_attributes(g, 'Label').values()))), node_size=node_size, font_size=self.__fontSize, node_color=list(nx.get_node_attributes(g, 'Color').values()), alpha=self.__alpha, with_labels=self.__nodeLabels)
+        nx.draw(g, pos=pos, labels=dict(zip(g.nodes(), list(nx.get_node_attributes(g, 'Label').values()))), node_size=node_size, font_size=self.__fontSize, node_color=list(nx.get_node_attributes(g, 'color').values()), alpha=self.__alpha, with_labels=self.__nodeLabels)
 
         if self.__edgeLabels:
 
@@ -194,33 +213,15 @@ class plotNetwork:
     def __checkData(self, g):
 
         if not isinstance(g, nx.classes.graph.Graph):
-            print("Error: A networkx graph was not entered. Please check your data.")
+            print("Error: A NetworkX graph was not entered. Please check your data.")
             sys.exit()
 
         return g
 
-    def __set_node_params(self, sizing_column='none', sizeScale='reverse_linear', size_range=(150,2000), alpha=0.5, nodeLabels=True, fontSize=15, keepSingletons=True):
+    def __paramCheck(self, imageFileName, edgeLabels, saveImage, layout, dpi, figSize, sizing_column, sizeScale, size_range, alpha, nodeLabels, fontSize, keepSingletons, filter_column, filter_threshold, operator, sign):
 
-        sizing_column, sizeScale, size_range, alpha, nodeLabels, fontSize, keepSingletons = self.__node_paramCheck(sizing_column, sizeScale, size_range, alpha, nodeLabels, fontSize, keepSingletons)
-
-        self.__sizing_column = sizing_column;
-        self.__sizeScale = sizeScale;
-        self.__size_range = size_range;
-        self.__alpha = alpha
-        self.__nodeLabels = nodeLabels
-        self.__fontSize = fontSize;
-        self.__keepSingletons = keepSingletons;
-
-    def __set_filter_params(self, column='none', threshold=0.01, operator='>', sign='both'):
-
-        column, threshold, operator, sign = self.__filter_paramCheck(column, threshold, operator, sign)
-
-        self.__filter_column = column;
-        self.__filter_threshold = threshold;
-        self.__operator = operator;
-        self.__sign = sign;
-
-    def __paramCheck(self, imageFileName, edgeLabels, saveImage, layout, dpi, figSize):
+        g = self.__g
+        col_list = list(g.nodes[list(g.nodes.keys())[0]].keys())[:-2] + ['none']
 
         if not isinstance(imageFileName, str):
             print("Error: Image file name is not valid. Choose a string value.")
@@ -253,13 +254,6 @@ class plotNetwork:
                         print("Error: Figure size items not valid. Choose a float or integer value.")
                         sys.exit()
 
-        return imageFileName, edgeLabels, saveImage, layout, dpi, figSize
-
-    def __node_paramCheck(self, sizing_column, sizeScale, size_range, alpha, nodeLabels, fontSize, keepSingletons):
-
-        g = self.__g
-        col_list = list(g.nodes[list(g.nodes.keys())[0]].keys())[:-2] + ['none']
-
         if sizing_column not in col_list:
             print("Error: Sizing column not valid. Choose one of {}.".format(', '.join(col_list)))
             sys.exit()
@@ -270,11 +264,14 @@ class plotNetwork:
                     try:
                         float(g.node[node][sizing_column])
                     except ValueError:
-                        print("Error: Sizing column contains invalid values. Choose a sizing column containing float or integer values.")
+                        print(
+                        "Error: Sizing column contains invalid values. Choose a sizing column containing float or integer values.")
                         sys.exit()
 
-        if sizeScale.lower() not in ["linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume"]:
-            print("Error: Size scale type not valid. Choose either \"linear\", \"reverse_linear\", \"log\", \"reverse_log\", \"square\", \"reverse_square\", \"area\", \"reverse_area\", \"volume\", \"reverse_volume\".")
+        if sizeScale.lower() not in ["linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square",
+                                     "area", "reverse_area", "volume", "reverse_volume"]:
+            print(
+            "Error: Size scale type not valid. Choose either \"linear\", \"reverse_linear\", \"log\", \"reverse_log\", \"square\", \"reverse_square\", \"area\", \"reverse_area\", \"volume\", \"reverse_volume\".")
             sys.exit()
 
         if not isinstance(size_range, tuple):
@@ -305,34 +302,28 @@ class plotNetwork:
             print("Error: Keep singletons is not valid. Choose either \"True\" or \"False\".")
             sys.exit()
 
-        return sizing_column, sizeScale, size_range, alpha, nodeLabels, fontSize, keepSingletons
-
-    def __filter_paramCheck(self, column, threshold, operator, sign):
-
-        g = self.__g
-        col_list = list(g.nodes[list(g.nodes.keys())[0]].keys())[:-2] + ['none']
-
-        if column not in col_list:
+        if filter_column not in col_list:
             print("Error: Filter column not valid. Choose one of {}.".format(', '.join(col_list)))
             sys.exit()
         else:
 
-            if column != 'none':
+            if filter_column != 'none':
                 for idx, node in enumerate(g.nodes()):
                     try:
-                        float(g.node[node][column])
+                        float(g.node[node][filter_column])
                     except ValueError:
-                        print("Error: Filter column contains invalid values. Choose a filter column containing float or integer values.")
+                        print(
+                        "Error: Filter column contains invalid values. Choose a filter column containing float or integer values.")
                         sys.exit()
 
-        if not isinstance(threshold, float):
-            if not isinstance(threshold, int):
+        if not isinstance(filter_threshold, float):
+            if not isinstance(filter_threshold, int):
                 print("Error: Filter threshold is not valid. Choose a float or integer value.")
                 sys.exit()
-            elif threshold == 0:
+            elif filter_threshold == 0:
                 print("Error: Filter threshold should not be zero. Choose a value close to zero or above.")
                 sys.exit()
-        elif threshold == 0.0:
+        elif filter_threshold == 0.0:
             print("Error: Filter threshold should not be zero. Choose a value close to zero or above.")
             sys.exit()
 
@@ -344,4 +335,4 @@ class plotNetwork:
             print("Error: Sign not valid. Choose either \"pos\", \"neg\", or \"both\".")
             sys.exit()
 
-        return column, threshold, operator, sign
+        return imageFileName, edgeLabels, saveImage, layout, dpi, figSize, sizing_column, sizeScale, size_range, alpha, nodeLabels, fontSize, keepSingletons, filter_column, filter_threshold, operator, sign

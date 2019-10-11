@@ -8,7 +8,6 @@ def mergeBlocks(peak_blocks, data_blocks):
         Parameters
         ----------
         peak_blocks : A dictionary of Pandas Peak Table dataframes from different datasets indexed by dataset type.
-
         data_blocks : A dictionary of Pandas Data Table dataframes from different datasets indexed by dataset type.
 
         Returns

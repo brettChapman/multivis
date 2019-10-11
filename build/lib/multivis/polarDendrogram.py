@@ -1,21 +1,35 @@
 import sys
 import copy
+import matplotlib
 import matplotlib.pyplot as plt
 from scipy.cluster.hierarchy import linkage, dendrogram
 import numpy as np
 import pandas as pd
 
 class polarDendrogram:
-    """Class for plotNetwork to produce a static spring-embedded network.
+    """Class for polarDendrogram to produce a polar dendrogram given a cartesian dendrogram
 
-            Parameters
+            Initial_Parameters
             ----------
-            dn : Dendrogram dictionary.
+            dn :  Dendrogram dictionary labelled by Peak Table index.
 
             Methods
             -------
-            set_params : Set parameters - image file name, save image flag, dendrogram branch scale type ('linear', 'log', 'square'), gap value, display grid flag, style-sheet type, dpi, figure size
-                                            , text parameters dictionary(font size, text colours dictionary(index from peak table: values as colours), text labels dictionary(index from peak table: values as labels from peak table))
+            set_params : Set parameters -
+                imageFileName: The image file name to save to (default: 'polarDendrogram.png')
+                saveImage: Setting to 'True' will save the image to file (default: True)
+                branch_scale: The branch distance scale to apply ('linear', 'log', 'square') (default: 'linear')
+                gap: The gap size within the polar dendrogram (default: 0.1)
+                grid: Setting to 'True' will overlay a grid over the polar dendrogram (default: False)
+                style_sheet: Setting the Seaborn style-sheet (see https://python-graph-gallery.com/104-seaborn-themes/) (default: 'seaborn-white')
+                dpi: The number of Dots Per Inch (DPI) for the image (default: 200)
+                figSize: The figure size as a tuple (width,height) (default: (10,10))
+                fontSize: The font size for all text (default: 15)
+                PeakTable: The Peak Table Pandas dataframe (default: empty dataframe)
+                Color_column: The colour column to use from Peak Table (Can be colour or numerical values such as 'pvalue') (default: 'black')
+                Label_column: The label column to use from Peak Table (default: use original Peak Table index from cartesian dendrogram)
+                text_cmap: The CMAP colour palette to use (default: 'brg')
+
             run : Generates and displays the Polar dendrogram.
     """
 
@@ -24,14 +38,12 @@ class polarDendrogram:
         self.__dn = self.__checkData(dn)
 
         self.set_params()
-        self.__set_text_params()
 
-    def set_params(self, imageFileName='polarDendrogram.png', saveImage=True, branch_scale='linear', gap=0.1, grid=False, style_sheet='seaborn-white', dpi=200, figSize=(10,10), text_params={}):
+    def set_params(self, imageFileName='polarDendrogram.png', saveImage=True, branch_scale='linear', gap=0.1, grid=False, style_sheet='seaborn-white', dpi=200, figSize=(10,10), fontSize=15, PeakTable=pd.DataFrame(), Color_column=None, Label_column=None, text_cmap='brg'):
 
-        if text_params:
-            self.__set_text_params(**text_params)
+        text_colors, labels = self.__checkPeakTable(PeakTable, Color_column, Label_column, text_cmap)
 
-        imageFileName, saveImage, branch_scale, gap, grid, style_sheet, dpi, figSize = self.__paramCheck(imageFileName, saveImage, branch_scale, gap, grid, style_sheet, dpi, figSize)
+        imageFileName, saveImage, branch_scale, gap, grid, style_sheet, dpi, figSize, fontSize = self.__paramCheck(imageFileName, saveImage, branch_scale, gap, grid, style_sheet, dpi, figSize, fontSize)
 
         self.__imageFileName = imageFileName;
         self.__saveImage = saveImage;
@@ -41,6 +53,9 @@ class polarDendrogram:
         self.__style_sheet = style_sheet;
         self.__dpi = dpi;
         self.__figSize = figSize;
+        self.__fontSize = fontSize;
+        self.__text_colors = text_colors;
+        self.__labels = labels;
 
     def run(self):
 
@@ -151,15 +166,75 @@ class polarDendrogram:
 
         return dn
 
-    def __set_text_params(self, fontSize=15, text_colors={}, labels={}):
+    def __checkPeakTable(self, PeakTable, Color_column, Label_column, text_cmap):
 
-        fontSize, text_colors, labels = self.__text_paramCheck(fontSize, text_colors, labels)
+        if not isinstance(text_cmap, str):
+            print("Error: Text CMAP is not valid. Choose a string value.")
+            sys.exit()
+        else:
+            cmap_list = matplotlib.cm.cmap_d.keys()
 
-        self.__fontSize = fontSize;
-        self.__text_colors = text_colors;
-        self.__labels = labels;
+            if text_cmap not in cmap_list:
+                print("Error: Text CMAP is not valid. Choose one of the following: {}.".format(', '.join(cmap_list)))
+                sys.exit()
 
-    def __paramCheck(self, imageFileName, saveImage, branch_scale, gap, grid, style_sheet, dpi, figSize):
+        if not isinstance(PeakTable, pd.DataFrame):
+            print("Error: Provided Peak Table is not valid. Choose a Pandas dataframe.")
+            sys.exit()
+        else:
+            if PeakTable.empty:
+                text_colors = {}
+                labels = {}
+            else:
+                textCmap = plt.cm.get_cmap(text_cmap)  # Sets the color palette for the text
+
+                PeakTable_columns = list(PeakTable.columns);
+
+                if Color_column in PeakTable_columns:
+                    colorsHEX = []
+
+                    for colorValue in PeakTable[Color_column].values:
+                        if matplotlib.colors.is_color_like(colorValue):
+                            text_colors = dict(zip(PeakTable.index, PeakTable[Color_column]))
+                            break;
+                        elif isinstance(colorValue, float):
+                            colorsRGB = self.__get_colors(PeakTable[Color_column].values, textCmap)[:, :3]
+
+                            for rgb in colorsRGB:
+                                colorsHEX.append(matplotlib.colors.rgb2hex(rgb))
+
+                            text_colors = dict(zip(PeakTable.index, colorsHEX))
+
+                            break;
+                        elif isinstance(colorValue, int):
+                            colorsRGB = self.__get_colors(PeakTable[Color_column].values, textCmap)[:, :3]
+
+                            for rgb in colorsRGB:
+                                colorsHEX.append(matplotlib.colors.rgb2hex(rgb))
+
+                            text_colors = dict(zip(PeakTable.index, colorsHEX))
+
+                            break;
+                        else:
+                            print("Error: Colour column is not valid. Choose colour values, floats or integer values.")
+                            sys.exit()
+                elif Color_column == None:
+                    text_colors = {}
+                else:
+                    print("Error: Provided Color_column is not in Peak Table. Choose a valid colour column.")
+                    sys.exit()
+
+                if Label_column in PeakTable_columns:
+                    labels = dict(zip(PeakTable.index, PeakTable[Label_column]))
+                elif Label_column == None:
+                    labels = {}
+                else:
+                    print("Error: Provided Label_column is not in Peak Table. Choose a valid label column.")
+                    sys.exit()
+
+        return text_colors, labels
+
+    def __paramCheck(self, imageFileName, saveImage, branch_scale, gap, grid, style_sheet, dpi, figSize, fontSize):
 
         if not isinstance(imageFileName, str):
             print("Error: Image file name is not valid. Choose a string value.")
@@ -171,6 +246,7 @@ class polarDendrogram:
 
         if branch_scale.lower() not in ["linear", "log", "square"]:
             print("Error: Branch scale not valid. Choose either \"linear\", \"log\" or \"square\".")
+            sys.exit()
 
         if not isinstance(gap, float):
             if not isinstance(gap, int):
@@ -183,6 +259,7 @@ class polarDendrogram:
 
         if not isinstance(style_sheet, str):
             print("Error: Style sheet is not valid. Choose a string value.")
+            sys.exit()
         else:
             styleList = list(plt.style.available)
 
@@ -205,26 +282,17 @@ class polarDendrogram:
                         print("Error: Figure size value is not valid. Choose a float or integer value.")
                         sys.exit()
 
-        return imageFileName, saveImage, branch_scale, gap, grid, style_sheet, dpi, figSize
-
-    def __text_paramCheck(self, fontSize, text_colors, labels):
-
         if not isinstance(fontSize, float):
             if not isinstance(fontSize, int):
                 print("Error: Font size is not valid. Choose a float or integer value.")
                 sys.exit()
 
-        if not text_colors:
-            if not isinstance(text_colors, dict):
-                print("Error: Text colours is not valid. Use a dictionary with Peak Table indexes as keys and associated colours as values.")
-                sys.exit()
-
-        if not labels:
-            if not isinstance(labels, dict):
-                print("Error: Labels is not valid. Use a dictionary with Peak Table indexes as keys and associated labels as values.")
-                sys.exit()
-
-        return fontSize, text_colors, labels
+        return imageFileName, saveImage, branch_scale, gap, grid, style_sheet, dpi, figSize, fontSize
 
     def __smoothsegment(self, seg, Nsmooth=100):
         return np.concatenate([[seg[0]], np.linspace(seg[1], seg[2], Nsmooth), [seg[3]]])
+
+    def __get_colors(self, x, cmap):
+        norm = matplotlib.colors.Normalize(vmin=x.min(), vmax=x.max())
+
+        return cmap(norm(x))

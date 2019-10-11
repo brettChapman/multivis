@@ -7,23 +7,20 @@ from scipy.spatial.distance import squareform
 def cluster(matrix, transpose_non_correlated, is_correlated, distance_metric, linkage_method):
     """Performs linkage clustering given a matrix of correlations. If no correlated data is presented, then calculates spatial distance
     given a distance metric such as Euclidean distance, then applies the linkage clustering method.
+
         Parameters
         ----------
         matrix : A Pandas dataframe matrix of values (may or may not be a matrix of correlation coefficients)
-
         transpose_non_correlated : Setting to 'True' will transpose the matrix if it is not correlated data
-
         is_correlated : Setting to 'True' will treat the matrix as if it contains correlation coefficients
-
         distance_metric : Set the distance metric. Used if the matrix does not contain correlation coefficients.
-
         linkage_method : Set the linkage method for the clustering.
 
         Returns
         -------
         matrix : The original matrix, transposed if transpose_non_correlated is 'True' and is_correlated is 'False'.
-        row_linkage : linkage matrix for the rows from a linkage clustered scores matrix
-        col_linkage : linkage matrix for the columns from a linkage clustered scores matrix
+        row_linkage : linkage matrix for the rows from a linkage clustered similarities matrix
+        col_linkage : linkage matrix for the columns from a linkage clustered similarities matrix
     """
 
     matrix, transpose_non_correlated, is_correlated, distance_metric, linkage_method = __checkData(matrix, transpose_non_correlated, is_correlated, distance_metric, linkage_method)

@@ -12,17 +12,30 @@ import pandas as pd
 class clustermap:
     """Class for clustermap to produce an Hierarchical Clustered Heatmap (HCH) plot.
 
-        Parameters
+        Initial_Parameters
         ----------
-        scores : Pandas dataframe containing similarity scores (e.g. correlation coefficients or Euclidean distance values).
-        row_linkage : Precomputed linkage matrix for the rows from a linkage clustered scores matrix
-        col_linkage : Precomputed linkage matrix for the columns from a linkage clustered scores matrix
+        similarities : Pandas dataframe containing similarity scores.
+        row_linkage : Precomputed linkage matrix for the rows from a linkage clustered similarities matrix
+        col_linkage : Precomputed linkage matrix for the columns from a linkage clustered similarities matrix
 
         Methods
         -------
-        set_params : Set parameters - image file name, save image flag, dpi, figure size, ratio to shift position of dendrograms, font size
-                                        , heatmap parameters dictionary(X axis labels, Y axis labels, CMAP colour palette)
-                                        , clustering parameters dictionary(CMAP colour palette, colour the row clusters flag, colour the column clusters flag, row colour clustering threshold, coloumn colour clustering threshold)
+        set_params : Set parameters -
+            xLabels: A Pandas Series for labelling the X axis of the HCH
+            yLabels: A Pandas Series for labelling the Y axis of the HCH
+            imageFileName: The image file name to save to (default: 'clusterMap.png')
+            saveImage: Setting to 'True' will save the image to file (default: True)
+            dpi: The number of Dots Per Inch (DPI) for the image (default: 200)
+            figSize: The figure size as a tuple (width,height) (default: (80,70))
+            dendrogram_ratio_shift: The ratio to shift the position of the dendrogram in relation to the heatmap (default: 0.0)
+            fontSize: The font size set for each node (default: 30)
+            heatmap_cmap: The CMAP colour palette to use for the heatmap (default: 'RdYlGn')
+            cluster_cmap: The CMAP colour palette to use for the branch seperation of clusters in the dendrogram (default: 'Set1')
+            rowColorCluster: Setting to 'True' will display a colour bar for the clustered rows (default: False)
+            colColorCluster: Setting to 'True' will display a colour bar for the clustered columns (default: False)
+            row_color_threshold: The colouring threshold for the row dendrogram (default: 10)
+            col_color_threshold: The colouring threshold for the column dendrogram (default: 10)
+
         run: : Generates and displays the Hierarchical Clustered Heatmap (HCH).
     """
 
@@ -34,26 +47,32 @@ class clustermap:
         self.__row_linkage = row_linkage;
         self.__col_linkage = col_linkage;
 
-        self.set_params()
-        self.__set_heatmap_params(xLabels=list(scores.columns), yLabels=list(scores.index))
-        self.__set_cluster_params()
+        self.set_params(xLabels=pd.Series(scores.columns), yLabels=pd.Series(scores.index))
 
-    def set_params(self, imageFileName='clusterMap.png', saveImage=True, dpi=200, figSize=(80, 70), dendrogram_ratio_shift=0.0, fontSize=30, heatmap_params={}, cluster_params={}):
+    def set_params(self, xLabels, yLabels, imageFileName='clusterMap.png', saveImage=True, dpi=200, figSize=(80, 70), dendrogram_ratio_shift=0.0, fontSize=30, heatmap_cmap='RdYlGn', cluster_cmap='Set1', rowColorCluster=False, colColorCluster=False, row_color_threshold=10, col_color_threshold=10):
 
-        if heatmap_params:
-            self.__set_heatmap_params(**heatmap_params)
+        imageFileName, saveImage, dpi, figSize, dendrogram_ratio_shift, fontSize, xLabels, yLabels, heatmap_cmap, cluster_cmap, rowColorCluster, colColorCluster, row_color_threshold, col_color_threshold = self.__paramCheck(imageFileName, saveImage, dpi, figSize, dendrogram_ratio_shift, fontSize, xLabels, yLabels, heatmap_cmap, cluster_cmap, rowColorCluster, colColorCluster, row_color_threshold, col_color_threshold)
 
-        if cluster_params:
-            self.__set_cluster_params(**cluster_params)
+        scores = self.__scores
 
-        imageFileName, saveImage, dpi, figSize, dendrogram_ratio_shift, fontSize = self.__paramCheck(imageFileName, saveImage, dpi, figSize, dendrogram_ratio_shift, fontSize)
+        col_label_dict = dict(zip(list(scores.columns), xLabels))
+        row_label_dict = dict(zip(list(scores.index), yLabels))
 
+        scores.rename(columns=col_label_dict, index=row_label_dict, inplace=True)
+
+        self.__scores = scores;
         self.__imageFileName = imageFileName;
         self.__saveImage = saveImage;
         self.__dpi = dpi;
         self.__figSize = figSize;
         self.__dendrogram_ratio_shift = dendrogram_ratio_shift;
         self.__fontSize = fontSize;
+        self.__heatmap_cmap = heatmap_cmap;
+        self.__cluster_cmap = cluster_cmap;
+        self.__rowColorCluster = rowColorCluster;
+        self.__colColorCluster = colColorCluster;
+        self.__row_color_threshold = row_color_threshold;
+        self.__col_color_threshold = col_color_threshold;
 
     def run(self):
 
@@ -352,31 +371,7 @@ class clustermap:
 
         return scores, row_linkage, col_linkage
 
-    def __set_heatmap_params(self, xLabels, yLabels, heatmap_cmap='RdYlGn'):
-
-        xLabels, yLabels, heatmap_cmap = self.__heatmap_paramCheck(xLabels, yLabels, heatmap_cmap)
-
-        scores = self.__scores
-
-        col_label_dict = dict(zip(list(scores.columns), xLabels))
-        row_label_dict = dict(zip(list(scores.index), yLabels))
-
-        scores.rename(columns=col_label_dict, index=row_label_dict, inplace=True)
-
-        self.__scores = scores;
-        self.__heatmap_cmap = heatmap_cmap;
-
-    def __set_cluster_params(self, cluster_cmap='Set1', rowColorCluster=False, colColorCluster=False, row_color_threshold=10, col_color_threshold=10):
-
-        cluster_cmap, rowColorCluster, colColorCluster, row_color_threshold, col_color_threshold = self.__cluster_paramCheck(cluster_cmap, rowColorCluster, colColorCluster, row_color_threshold, col_color_threshold)
-
-        self.__cluster_cmap = cluster_cmap;
-        self.__rowColorCluster = rowColorCluster;
-        self.__colColorCluster = colColorCluster;
-        self.__row_color_threshold = row_color_threshold;
-        self.__col_color_threshold = col_color_threshold;
-
-    def __paramCheck(self, imageFileName, saveImage, dpi, figSize, dendrogram_ratio_shift, fontSize):
+    def __paramCheck(self, imageFileName, saveImage, dpi, figSize, dendrogram_ratio_shift, fontSize, xLabels, yLabels, heatmap_cmap, cluster_cmap, rowColorCluster, colColorCluster, row_color_threshold, col_color_threshold):
 
         if not isinstance(imageFileName, str):
             print("Error: Image file name is not valid. Choose a string value.")
@@ -410,26 +405,22 @@ class clustermap:
                 print("Error: Font size is not valid. Choose a float or integer value.")
                 sys.exit()
 
-        return imageFileName, saveImage, dpi, figSize, dendrogram_ratio_shift, fontSize
-
-    def __heatmap_paramCheck(self, xLabels, yLabels, heatmap_cmap):
-
         scores = self.__scores
 
         scores_row, scores_col = scores.shape
 
-        if not isinstance(xLabels, list):
-            print("Error: XLabels is not valid. Use a list.")
+        if not isinstance(xLabels, pd.Series):
+            print("Error: XLabels is not valid. Use a Pandas Series.")
         else:
-            if scores_col != len(xLabels):
+            if scores_col != len(list(xLabels)):
                 print("Error: XLabels length does not match the scores column length. Please check your data.")
                 sys.exit()
 
-        if not isinstance(yLabels, list):
-            print("Error: YLabels is not valid. Use a list.")
+        if not isinstance(yLabels, pd.Series):
+            print("Error: YLabels is not valid. Use a Pandas Series.")
             sys.exit()
         else:
-            if scores_row != len(yLabels):
+            if scores_row != len(list(yLabels)):
                 print("Error: YLabels length does not match the scores row length. Please check your data.")
                 sys.exit()
 
@@ -442,10 +433,6 @@ class clustermap:
             if heatmap_cmap not in cmap_list:
                 print("Error: Heatmap CMAP is not valid. Choose one of the following: {}.".format(', '.join(cmap_list)))
                 sys.exit()
-
-        return xLabels, yLabels, heatmap_cmap
-
-    def __cluster_paramCheck(self, cluster_cmap, rowColorCluster, colColorCluster, row_color_threshold, col_color_threshold):
 
         if not isinstance(cluster_cmap, str):
             print("Error: Cluster CMAP choice is not valid. Choose a string value.")
@@ -475,7 +462,7 @@ class clustermap:
                 print("Error: Column colour threshold is not valid. Choose a float or integer value.")
                 sys.exit()
 
-        return cluster_cmap, rowColorCluster, colColorCluster, row_color_threshold, col_color_threshold
+        return imageFileName, saveImage, dpi, figSize, dendrogram_ratio_shift, fontSize, xLabels, yLabels, heatmap_cmap, cluster_cmap, rowColorCluster, colColorCluster, row_color_threshold, col_color_threshold
 
     def __get_cluster_classes(self, dn, labels, label='ivl'):
         cluster_idxs = defaultdict(list)

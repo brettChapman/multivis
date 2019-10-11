@@ -1,30 +1,39 @@
 import sys
 import pandas as pd
 import numpy as np
+import matplotlib
+import matplotlib.pyplot as plt
 import networkx as nx
 from .utils import *
 
 class Edge:
     """ Class for edgeBundle and base class for network.
 
-        Parameters
+        Initial_Parameters
         ----------
-        peaktable : Pandas dataframe containing peak data
-        scores : Pandas dataframe containing correlation coefficients
-        pvalues : Pandas dataframe containing correlation pvalues
+        peaktable : Pandas dataframe containing peak data. Must contain 'Name' and 'Label'.
+        similarities : Pandas dataframe matrix containing similarity scores
+        pvalues : Pandas dataframe matrix containing similarity pvalues
 
         Methods
         -------
-        set_params : Set parameters - filter score type, hard threshold, internal correlation flag and sign type.
+        set_params : Set parameters
+            filterScoreType: Value type to filter similarities on (default: 'pvalue')
+            hard_threshold: Value to filter similarities on (default: 0.005)
+            internalSimilarities: Include similarities within blocks if building multi-block network (default: False)
+            sign: The sign of the similarity score to filter on ('pos', 'neg' or 'both') (default: 'both')
+            node_color_column: The Peak Table column to use for node colours (default: None sets to black)
+            node_cmap: The CMAP colour palette to use for nodes (default: 'brg')
+
         run : Builds the nodes and edges.
         getNodes : Returns a Pandas dataframe of all nodes.
         getEdges : Returns a Pandas dataframe of all edges.
     """
 
-    def __init__(self, peaktable, scores, pvalues):
+    def __init__(self, peaktable, similarities, pvalues):
 
-        self.__peaks = self.__checkPeaks(self.__checkData(peaktable));
-        self.__scores = self.__checkData(scores);
+        self.__peaktable = self.__checkPeakTable(self.__checkData(peaktable));
+        self.__similarities = self.__checkData(similarities);
         self.__pvalues = self.__checkData(pvalues);
 
         self.__setNodes(pd.DataFrame())
@@ -32,27 +41,27 @@ class Edge:
 
         self.set_params()
 
-    def set_params(self, filterScoreType='Pvalue', hard_threshold=0.005, internalCorrelation=False, sign="both"):
+    def set_params(self, filterScoreType='pvalue', hard_threshold=0.005, internalSimilarities=False, sign='both', node_color_column=None, node_cmap='brg'):
 
-        filterScoreType, hard_threshold, internalCorrelation, sign = self.__paramCheck(filterScoreType, hard_threshold, internalCorrelation, sign)
+        filterScoreType, hard_threshold, internalCorrelation, sign = self.__paramCheck(filterScoreType, hard_threshold, internalSimilarities, sign, node_color_column, node_cmap)
 
         self.__filterScoreType = filterScoreType;
         self.__hard_threshold = hard_threshold;
-        self.__internalCorrelation = internalCorrelation;
+        self.__internalSimilarities = internalSimilarities;
         self.__sign = sign;
 
     def run(self):
 
-        peaks = self.__peaks
-        scores = self.__scores
+        peaktable = self.__peaktable
+        similarities = self.__similarities
         pvalues = self.__pvalues
 
         filterScoreType = self.__filterScoreType
         hard_threshold = self.__hard_threshold
         sign = self.__sign
 
-        if 'Block' in peaks.columns:
-            blocks = list(peaks['Block'].unique())
+        if 'Block' in peaktable.columns:
+            blocks = list(peaktable['Block'].unique())
         else:
             blocks = [1]
 
@@ -61,16 +70,16 @@ class Edge:
 
         for idx, block1 in enumerate(blocks):
 
-            nodes, scoreBlocks_blocked1, pvalBlocks_blocked1, block1_labels = self.__scoreBlock1(nodes, peaks, scores, pvalues, blocks, block1)
+            nodes, scoreBlocks_blocked1, pvalBlocks_blocked1, block1_labels = self.__scoreBlock1(nodes, peaktable, similarities, pvalues, blocks, block1)
 
             for block2 in blocks[idx:]:
 
                 if pvalues is None:
-                    filterScoreType = 'Score';
+                    filterScoreType = 'score';
 
-                if self.__internalCorrelation:
+                if self.__internalSimilarities:
 
-                    nodes, scoreBlocks_blocked2, pvalBlocks_blocked2 = self.__scoreBlock2(nodes, peaks, scoreBlocks_blocked1, pvalBlocks_blocked1, blocks, block2, block1_labels);
+                    nodes, scoreBlocks_blocked2, pvalBlocks_blocked2 = self.__scoreBlock2(nodes, peaktable, scoreBlocks_blocked1, pvalBlocks_blocked1, blocks, block2, block1_labels);
 
                     if edges.empty:
                         edges = self.__buildEdges(nodes, scoreBlocks_blocked2, pvalBlocks_blocked2, block1, block2, filterScoreType, hard_threshold, sign)
@@ -81,7 +90,7 @@ class Edge:
 
                     if block1 != block2:
 
-                        nodes, scoreBlocks_blocked2, pvalBlocks_blocked2 = self.__scoreBlock2(nodes, peaks, scoreBlocks_blocked1, pvalBlocks_blocked1, blocks, block2, block1_labels);
+                        nodes, scoreBlocks_blocked2, pvalBlocks_blocked2 = self.__scoreBlock2(nodes, peaktable, scoreBlocks_blocked1, pvalBlocks_blocked1, blocks, block2, block1_labels);
 
                         if edges.empty:
                             edges = self.__buildEdges(nodes, scoreBlocks_blocked2, pvalBlocks_blocked2, block1, block2, filterScoreType, hard_threshold, sign)
@@ -110,23 +119,19 @@ class Edge:
 
         return df
 
-    def __checkPeaks(self, Peaks):
+    def __checkPeakTable(self, PeakTable):
 
-        if "Name" not in Peaks.columns:
+        if "Name" not in PeakTable.columns:
             print("Error: \"Name\" column not in Peak Table. Please check your data.")
             sys.exit()
 
-        if "Label" not in Peaks.columns:
+        if "Label" not in PeakTable.columns:
             print("Error: \"Label\" column not in Peak Table. Please check your data.")
             sys.exit()
 
-        if "Color" not in Peaks.columns:
-            print("Error: \"Color\" column not in Peak Table. Please check your data.")
-            sys.exit()
+        return PeakTable
 
-        return Peaks
-
-    def __paramCheck(self, filterScoreType, hard_threshold, internalCorrelation, sign):
+    def __paramCheck(self, filterScoreType, hard_threshold, internalSimilarities, sign, node_color_column, node_cmap):
 
         if filterScoreType.lower() not in ["pvalue", "score"]:
             print("Error: Filter score type not valid. Choose either \"Pvalue\" or \"Score\".")
@@ -137,7 +142,7 @@ class Edge:
                 print("Error: Hard threshold is not valid. Choose a float or integer value.")
                 sys.exit()
 
-        if not type(internalCorrelation) == bool:
+        if not type(internalSimilarities) == bool:
             print("Error: Internal correlation not valid. Choose either \"True\" or \"False\".")
             sys.exit()
 
@@ -145,9 +150,67 @@ class Edge:
             print("Error: Sign is not valid. Choose either \"pos\" or \"neg\" or \"both\".")
             sys.exit()
 
-        return filterScoreType, hard_threshold, internalCorrelation, sign
+        if not isinstance(node_cmap, str):
+            print("Error: Node CMAP is not valid. Choose a string value.")
+            sys.exit()
+        else:
+            cmap_list = matplotlib.cm.cmap_d.keys()
 
-    def __scoreBlock1(self, nodes, peaks, scores, pvalues, blocks, block1):
+            if node_cmap not in cmap_list:
+                print("Error: Node CMAP is not valid. Choose one of the following: {}.".format(', '.join(cmap_list)))
+                sys.exit()
+
+        nodeCmap = plt.cm.get_cmap(node_cmap)  # Sets the color palette for the nodes
+
+        if "Default_color" in self.__peaktable.columns:
+            self.__peaktable["color"] = self.__peaktable["Default_color"]
+            self.__peaktable = self.__peaktable.drop("Default_color", axis=1)
+
+        if node_color_column == None:
+
+            if "color" in self.__peaktable.columns:
+                self.__peaktable["Default_color"] = self.__peaktable["color"]
+
+            self.__peaktable["color"] = "#000000"
+
+        elif node_color_column in self.__peaktable.columns:
+
+            colorsHEX = []
+
+            for colorValue in self.__peaktable[node_color_column].values:
+                if matplotlib.colors.is_color_like(colorValue):
+                    self.__peaktable["color"] =  self.__peaktable[node_color_column]
+                    break;
+                elif isinstance(colorValue, float):
+
+                    colorsRGB = self.__get_colors(self.__peaktable[node_color_column].values, nodeCmap)[:, :3]
+
+                    for rgb in colorsRGB:
+                        colorsHEX.append(matplotlib.colors.rgb2hex(rgb))
+
+                    self.__peaktable["color"] = colorsHEX
+
+                    break;
+                elif isinstance(colorValue, int):
+
+                    colorsRGB = self.__get_colors(self.__peaktable[node_color_column].values, nodeCmap)[:, :3]
+
+                    for rgb in colorsRGB:
+                        colorsHEX.append(matplotlib.colors.rgb2hex(rgb))
+
+                    self.__peaktable["color"] = colorsHEX
+
+                    break;
+                else:
+                    print("Error: Node colour column is not valid. Choose a column containing colour values, floats or integer values.")
+                    sys.exit()
+        else:
+            print("Error: Node colour column is not valid. The chosen node colour column is not in the Peak Table.")
+            sys.exit()
+
+        return filterScoreType, hard_threshold, internalSimilarities, sign
+
+    def __scoreBlock1(self, nodes, peaks, similarities, pvalues, blocks, block1):
 
         node_data = []
 
@@ -158,23 +221,21 @@ class Edge:
 
             block1_labels = list(peaks[peaks['Block'] == block1]['Label'].values)
             block1_names = list(peaks[peaks['Block'] == block1]['Name'].values)
-            #block1_colors = list(peaks[peaks['Block'] == block1]['Color'].values)
         else:
             for col in peaks.columns:
                 node_data.append(list(peaks[col].values))
 
             block1_labels = list(peaks['Label'].values)
             block1_names = list(peaks['Name'].values)
-            #block1_colors = list(peaks['Color'].values)
 
         if len(blocks) == 1:
 
-            scoreBlocks_blocked1 = scores
+            scoreBlocks_blocked1 = similarities
 
             scoreBlocks_blocked1.index = block1_labels
             scoreBlocks_blocked1.columns = block1_labels
         else:
-            scoreBlocks_blocked1 = scores[scores.index.isin(block1_names)]
+            scoreBlocks_blocked1 = similarities[similarities.index.isin(block1_names)]
 
         if pvalues is not None:
             if len(blocks) == 1:
@@ -190,19 +251,19 @@ class Edge:
             pvalBlocks_blocked1 = None;
 
         if nodes.empty:
-            nodes = pd.DataFrame(np.column_stack(node_data), columns=peaks.columns)#['label', 'name', 'color'])
-            nodes['Group'] = block1
+            nodes = pd.DataFrame(np.column_stack(node_data), columns=peaks.columns)
+            nodes['Block'] = block1
         else:
-            addedBlocks = list(np.unique(nodes['Group'].values))
+            addedBlocks = list(np.unique(nodes['Block'].values))
 
             if block1 not in addedBlocks:
-                dat = pd.DataFrame(np.column_stack(node_data), columns=peaks.columns)#['label', 'name', 'color'])
-                dat['Group'] = block1
+                dat = pd.DataFrame(np.column_stack(node_data), columns=peaks.columns)
+                dat['Block'] = block1
 
                 nodes = pd.concat([nodes, dat], sort=False).reset_index(drop=True)
 
         if not len(blocks) > 1:
-            nodes = nodes.drop(columns="Group")
+            nodes = nodes.drop(columns="Block")
 
         return nodes, scoreBlocks_blocked1, pvalBlocks_blocked1, block1_labels
 
@@ -217,7 +278,6 @@ class Edge:
 
             block2_labels = list(peaks[peaks['Block'] == block2]['Label'].values)
             block2_names = list(peaks[peaks['Block'] == block2]['Name'].values)
-            #block2_colors = list(peaks[peaks['Block'] == block2]['Color'].values)
         else:
 
             for col in peaks.columns:
@@ -225,7 +285,6 @@ class Edge:
 
             block2_labels = list(peaks['Label'].values)
             block2_names = list(peaks['Name'].values)
-            #block2_colors = list(peaks['Color'].values)
 
         scoreBlocks_blocked2 = scoreBlocks_blocked1[block2_names].astype(float)
 
@@ -240,14 +299,14 @@ class Edge:
             pvalBlocks_blocked2 = None;
 
         if nodes.empty:
-            nodes = pd.DataFrame(np.column_stack(node_data), columns=peaks.columns)#'label', 'name', 'color'])
-            nodes['Group'] = block2
+            nodes = pd.DataFrame(np.column_stack(node_data), columns=peaks.columns)
+            nodes['Block'] = block2
         else:
-            addedBlocks = list(np.unique(nodes['Group'].values))
+            addedBlocks = list(np.unique(nodes['Block'].values))
 
             if block2 not in addedBlocks:
                 dat = pd.DataFrame(np.column_stack(node_data), columns=peaks.columns)
-                dat['Group'] = block2
+                dat['Block'] = block2
 
                 nodes = pd.concat([nodes, dat], sort=False).reset_index(drop=True)
 
@@ -255,14 +314,14 @@ class Edge:
 
     def __buildEdges(self, nodes, SCORE, PVAL, block1, block2, filterScoreType, hard_threshold, sign):
 
-        if 'Group' in nodes.columns:
-            blocks = list(nodes['Group'].unique())
+        if 'Block' in nodes.columns:
+            blocks = list(nodes['Block'].unique())
         else:
             blocks = [1]
 
         if len(blocks) > 1:
-            block1_nodes = nodes[nodes['Group'] == block1]
-            block2_nodes = nodes[nodes['Group'] == block2]
+            block1_nodes = nodes[nodes['Block'] == block1]
+            block2_nodes = nodes[nodes['Block'] == block2]
         else:
             block1_nodes = nodes
             block2_nodes = nodes
@@ -278,8 +337,8 @@ class Edge:
             block1_names = list(block1_nodes['Name'])
             block2_names = list(block2_nodes['Name'])
 
-            block1_nodeColors = list(block1_nodes['Color'].values)
-            block2_nodeColors = list(block2_nodes['Color'].values)
+            block1_nodeColors = list(block1_nodes["color"].values)
+            block2_nodeColors = list(block2_nodes["color"].values)
 
             e = []
 
@@ -321,15 +380,15 @@ class Edge:
             if PVAL is None:
 
                 if len(blocks) > 1:
-                    score = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_color', 'start_label', 'start_block', 'end_index', 'end_name', 'end_color', 'end_label', 'end_block', 'Score', 'Sign'])
+                    score = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_color', 'start_label', 'start_block', 'end_index', 'end_name', 'end_color', 'end_label', 'end_block', 'score', 'sign'])
                 else:
-                    score = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_color', 'start_label', 'end_index', 'end_name', 'end_color', 'end_label', 'Score', 'Sign'])
+                    score = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_color', 'start_label', 'end_index', 'end_name', 'end_color', 'end_label', 'score', 'sign'])
             else:
 
                 if len(blocks) > 1:
-                    score = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_color', 'start_label', 'start_block', 'end_index', 'end_name', 'end_color', 'end_label', 'end_block', 'Score', 'Sign', 'Pvalue'])
+                    score = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_color', 'start_label', 'start_block', 'end_index', 'end_name', 'end_color', 'end_label', 'end_block', 'score', 'sign', 'pvalue'])
                 else:
-                    score = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_color', 'start_label', 'end_index', 'end_name', 'end_color', 'end_label', 'Score', 'Sign', 'Pvalue'])
+                    score = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_color', 'start_label', 'end_index', 'end_name', 'end_color', 'end_label', 'score', 'sign', 'pvalue'])
 
             return score
 
@@ -344,8 +403,8 @@ class Edge:
             block1_names = list(block1_nodes['Name'])
             block2_names = list(block2_nodes['Name'])
 
-            block1_nodeColors = list(block1_nodes['Color'].values)
-            block2_nodeColors = list(block2_nodes['Color'].values)
+            block1_nodeColors = list(block1_nodes["color"].values)
+            block2_nodeColors = list(block2_nodes["color"].values)
 
             e = []
 
@@ -388,33 +447,38 @@ class Edge:
             if PVAL is None:
 
                 if len(blocks) > 1:
-                    pval = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_color', 'start_label', 'start_block', 'end_index', 'end_name', 'end_color', 'end_label', 'end_block', 'Score', 'Sign'])
+                    pval = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_color', 'start_label', 'start_block', 'end_index', 'end_name', 'end_color', 'end_label', 'end_block', 'score', 'sign'])
                 else:
-                    pval = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_color', 'start_label', 'end_index', 'end_name', 'end_color', 'end_label', 'Score', 'Sign'])
+                    pval = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_color', 'start_label', 'end_index', 'end_name', 'end_color', 'end_label', 'score', 'sign'])
             else:
 
                 if len(blocks) > 1:
-                    pval = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_color', 'start_label', 'start_block', 'end_index', 'end_name', 'end_color', 'end_label', 'end_block', 'Score', 'Sign', 'Pvalue'])
+                    pval = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_color', 'start_label', 'start_block', 'end_index', 'end_name', 'end_color', 'end_label', 'end_block', 'score', 'sign', 'pvalue'])
                 else:
-                    pval = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_color', 'start_label', 'end_index', 'end_name', 'end_color', 'end_label', 'Score', 'Sign', 'Pvalue'])
+                    pval = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_color', 'start_label', 'end_index', 'end_name', 'end_color', 'end_label', 'score', 'sign', 'pvalue'])
 
             return pval
 
-        options = {'Score': __score(block1_nodes, block2_nodes, SCORE, PVAL, block1, block2, blocks, hard_threshold), 'Pvalue': __pval(block1_nodes, block2_nodes, SCORE, PVAL, block1, block2, blocks, hard_threshold)}
+        options = {'score': __score(block1_nodes, block2_nodes, SCORE, PVAL, block1, block2, blocks, hard_threshold), 'pvalue': __pval(block1_nodes, block2_nodes, SCORE, PVAL, block1, block2, blocks, hard_threshold)}
 
         edges = pd.DataFrame()
 
-        if filterScoreType in options:
-            edges = options[filterScoreType];
+        if filterScoreType.lower() in options:
+            edges = options[filterScoreType.lower()];
         else:
             print ("Error: wrong score type specified. Valid entries are 'Score' and 'Pvalue'.")
 
         if sign.lower() == "pos":
-            edges = edges[edges['Sign'] > 0].reset_index(drop=True)
+            edges = edges[edges['sign'] > 0].reset_index(drop=True)
         elif sign.lower() == "neg":
-            edges = edges[edges['Sign'] < 0].reset_index(drop=True)
+            edges = edges[edges['sign'] < 0].reset_index(drop=True)
 
         return edges
+
+    def __get_colors(self, x, cmap):
+        norm = matplotlib.colors.Normalize(vmin=x.min(), vmax=x.max())
+
+        return cmap(norm(x))
 
     def __setNodes(self, nodes):
 

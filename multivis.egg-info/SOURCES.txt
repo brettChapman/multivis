@@ -6,6 +6,8 @@ multivis/__init__.py
 multivis/__version__.py
 multivis/clustermap.py
 multivis/edgeBundle.py
+multivis/pca.py
+multivis/pcoa.py
 multivis/plotNetwork.py
 multivis/polarDendrogram.py
 multivis/springNetwork.py

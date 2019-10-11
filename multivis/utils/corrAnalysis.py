@@ -10,13 +10,12 @@ def corrAnalysis(df_data, correlationType):
         Parameters
         ----------
         df_data : A Pandas dataframe matrix of values
-
-        correlationType : The correlation type to apply. Either "Pearson", "Spearman" or "KendallTau"
+        correlationType : The correlation type to apply. Either 'Pearson', 'Spearman' or 'KendallTau'
 
         Returns
         -------
-        df_corr : Pandas dataframe of all correlation coefficients
-        df_pval : Pandas dataframe of all correlation pvalues
+        df_corr : Pandas dataframe matrix of all correlation coefficients
+        df_pval : Pandas dataframe matrix of all correlation pvalues
     """
 
     df_data, correlationType = __checkData(df_data, correlationType)
@@ -35,11 +34,11 @@ def corrAnalysis(df_data, correlationType):
             x = df_data[i].values[mask]
             y = df_data[a].values[mask]
 
-            if correlationType == "pearson":
+            if correlationType.lower() == "pearson":
                 corr, pval = stats.pearsonr(x, y)
-            elif correlationType == "spearman":
+            elif correlationType.lower() == "spearman":
                 corr, pval = stats.spearmanr(x, y)
-            elif correlationType == "kendalltau":
+            elif correlationType.lower() == "kendalltau":
                 corr, pval = stats.kendalltau(x, y)
 
             corrList.append(corr)

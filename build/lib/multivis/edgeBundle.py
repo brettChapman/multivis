@@ -15,9 +15,19 @@ class edgeBundle:
 
         Methods
         -------
-        set_params : Set parameters - diameter, inner radius offset, group separation, link fade opacity, mouse over flag, font size, background colour, foreground colour, filter slider position offset
-                        , colour scale (value to colour edges by: 'Score' or 'Pvalue') and CMAP colour palette for edges.
-        run : Generates and outputs the hierarchical edge bundle.
+        set_params : Set parameters -
+            html_file: Name to save the HTML file as (default: 'hEdgeBundle.html')
+            innerRadiusOffset: Sets the inner radius based on the offset value from the canvas width/diameter (default: 120)
+            groupSeparation: Value to set the distance between different segmented groups (default: 1)
+            linkFadeOpacity: The link fade opacity when hovering over/clicking nodes (default: 0.05)
+            mouseOver: Setting to 'True' swaps from clicking to hovering over nodes to select them (default: True)
+            fontSize: The font size set to each node (default: 1)
+            backgroundColor: Set the background colour of the plot (default: 'white')
+            foregroundColor: Set the foreground colour of the plot (default: 'black')
+            edge_color_scale: Set the values to colour the edges by. Either 'score or 'pvalue' (default: 'score')
+            edge_cmap: Set the CMAP colour palette to use for colouring the edges (default: 'brg')
+
+        run : Generates the JavaScript embedded HTML code and writes to a HTML file
     """
 
     def __init__(self, edges):
@@ -26,11 +36,11 @@ class edgeBundle:
 
         self.set_params()
 
-    def set_params(self, diameter=960, innerRadiusOffset=120, groupSeparation=1, linkFadeOpacity=0.05, mouseOver=True, fontSize=10, backgroundColor='white', foregroundColor='black', filterOffSet=-60, color_scale='Score', edge_cmap="brg"):
+    def set_params(self, html_file='hEdgeBundle.html', innerRadiusOffset=120, groupSeparation=1, linkFadeOpacity=0.05, mouseOver=True, fontSize=1, backgroundColor='white', foregroundColor='black', edge_color_scale='score', edge_cmap="brg"):
 
-        diameter, innerRadiusOffset, groupSeparation, linkFadeOpacity, mouseOver, fontSize, backgroundColor, foregroundColor, filterOffSet, color_scale, edge_cmap = self.__paramCheck(diameter, innerRadiusOffset, groupSeparation, linkFadeOpacity, mouseOver, fontSize, backgroundColor, foregroundColor, filterOffSet, color_scale, edge_cmap)
+        html_file, innerRadiusOffset, groupSeparation, linkFadeOpacity, mouseOver, fontSize, backgroundColor, foregroundColor, edge_color_scale, edge_cmap = self.__paramCheck(html_file, innerRadiusOffset, groupSeparation, linkFadeOpacity, mouseOver, fontSize, backgroundColor, foregroundColor, edge_color_scale, edge_cmap)
 
-        self.__diameter = diameter;
+        self.__html_file = html_file;
         self.__innerRadiusOffset = innerRadiusOffset;
         self.__groupSeparation = groupSeparation;
         self.__linkFadeOpacity = linkFadeOpacity;
@@ -38,14 +48,13 @@ class edgeBundle:
         self.__fontSize = fontSize;
         self.__backgroundColor = backgroundColor;
         self.__foregroundColor = foregroundColor;
-        self.__filterOffSet = filterOffSet;
-        self.__color_scale = color_scale;
+        self.__edge_color_scale = edge_color_scale;
         self.__edge_cmap = edge_cmap;
 
     def run(self):
 
         edges = self.__edges
-        diameter = self.__diameter
+        html_file = self.__html_file
         innerRadiusOffset = self.__innerRadiusOffset
         groupSeparation = self.__groupSeparation
         linkFadeOpacity = self.__linkFadeOpacity
@@ -53,16 +62,15 @@ class edgeBundle:
         fontSize = self.__fontSize
         backgroundColor = self.__backgroundColor
         foregroundColor = self.__foregroundColor
-        filterOffSet = self.__filterOffSet
-        color_scale = self.__color_scale
+        edge_color_scale = self.__edge_color_scale
         edge_cmap = self.__edge_cmap
 
         edgeCmap = plt.cm.get_cmap(edge_cmap)  # Sets the color palette for the edges
 
-        if "Pvalue" in edges.columns:
-            edges = self.__edge_color(edges, color_scale, edgeCmap)
-        elif "Score" in edges.columns:
-            edges = self.__edge_color(edges, 'Score', edgeCmap)
+        if "pvalue" in edges.columns:
+            edges = self.__edge_color(edges, edge_color_scale, edgeCmap)
+        elif "score" in edges.columns:
+            edges = self.__edge_color(edges, 'score', edgeCmap)
         else:
             print("Error: Edges dataframe does not contain \"Pvalue\" or \"Score\".")
             sys.exit()
@@ -74,29 +82,26 @@ class edgeBundle:
 
         bundleJson = self.__df_to_Json(edges);
 
-        css_text_template_bundle = Template(self.__getCSSbundle());
-        js_text_template_bundle = Template(self.__getJSbundle())
-        html_template_bundle = Template(self.__getHTMLbundle());
+        css_text_template_bundle = Template(self.__getCSS());
+        js_text_template_bundle = Template(self.__getJS())
+        html_template_bundle = Template(self.__getHTML());
 
         js_text = js_text_template_bundle.substitute({'flareData': bundleJson
-                                                         , 'diameter': diameter
                                                          , 'innerRadiusOffset': innerRadiusOffset
                                                          , 'groupSeparation': groupSeparation
                                                          , 'linkFadeOpacity': linkFadeOpacity
                                                          , 'mouseOver': mouse
                                                          , 'backgroundColor': backgroundColor})
 
-        css_text = css_text_template_bundle.substitute({'fontSize': str(fontSize) + 'px'
+        css_text = css_text_template_bundle.substitute({'fontSize': str(fontSize) + 'vw'
                                                            , 'backgroundColor': backgroundColor
-                                                           , 'foregroundColor': foregroundColor
-                                                           , 'radioOffSet': str(filterOffSet) + 'px'
-                                                           , 'filterSliderOffSet': str(filterOffSet - 40) + 'px'
-                                                           , 'tensionSliderOffSet': str(filterOffSet - 70) + 'px'
-                                                           , 'saveButtonOffSet': str(filterOffSet - 90) + 'px'})
+                                                           , 'foregroundColor': foregroundColor})
 
         html = html_template_bundle.substitute({'css_text': css_text, 'js_text': js_text})
 
-        return html
+        with open(html_file, 'w') as f:
+            f.write(html)
+            f.close()
 
     def __checkData(self, df):
 
@@ -106,11 +111,16 @@ class edgeBundle:
 
         return df
 
-    def __paramCheck(self, diameter, innerRadiusOffset, groupSeparation, linkFadeOpacity, mouseOver, fontSize, backgroundColor, foregroundColor, filterOffSet, color_scale, edge_cmap):
+    def __paramCheck(self, html_file, innerRadiusOffset, groupSeparation, linkFadeOpacity, mouseOver, fontSize, backgroundColor, foregroundColor, edge_color_scale, edge_cmap):
 
-        if not isinstance(diameter, float):
-            if not isinstance(diameter, int):
-                print("Error: Diameter is not valid. Choose a float or integer value.")
+        if not isinstance(html_file, str):
+            print("Error: Html file is not valid. Choose a string value.")
+            sys.exit()
+        else:
+            html_end = html_file.split(".")[-1]
+
+            if html_end != "html":
+                print("Error: Html file extension is not 'html'. Please use '.html' extension.")
                 sys.exit()
 
         if not isinstance(innerRadiusOffset, float):
@@ -145,12 +155,7 @@ class edgeBundle:
             print("Error: Slider text colour is not valid. Choose a valid colour value.")
             sys.exit()
 
-        if not isinstance(filterOffSet, float):
-            if not isinstance(filterOffSet, int):
-                print("Error: Filter position offset is not valid. Choose a float or integer value.")
-                sys.exit()
-
-        if color_scale.lower() not in ["pvalue", "score"]:
+        if edge_color_scale.lower() not in ["pvalue", "score"]:
             print("Error: Colour scale type not valid. Choose either \"Pvalue\" or \"Score\".")
             sys.exit()
 
@@ -164,9 +169,9 @@ class edgeBundle:
                 print("Error: Edge CMAP is not valid. Choose one of the following: {}.".format(', '.join(cmap_list)))
                 sys.exit()
 
-        return diameter, innerRadiusOffset, groupSeparation, linkFadeOpacity, mouseOver, fontSize, backgroundColor, foregroundColor, filterOffSet, color_scale, edge_cmap
+        return html_file, innerRadiusOffset, groupSeparation, linkFadeOpacity, mouseOver, fontSize, backgroundColor, foregroundColor, edge_color_scale, edge_cmap
 
-    def __getCSSbundle(self):
+    def __getCSS(self):
 
         css_text = '''
         .node {
@@ -233,59 +238,59 @@ class edgeBundle:
             stroke-opacity: 1.0;
             stroke-width: 2px;
         }
+        
+        #edgeBundle {
+            margin-top: 50px;
+        }
        
         #wrapper {
             position: relative;
-            width: 960px;
             margin: 0 auto;
+            margin-top: auto;
+            margin-bottom: auto;
             margin-left: auto;
             margin-right: auto;
         }
        
         #filterType {
-            position: absolute;
-            bottom: $radioOffSet;
-            left: 0px; 
+            position: relative;
+            top: 0px;
             color: $foregroundColor;
         }
        
         #scoreSelect {
             position: absolute;
-            bottom: $radioOffSet;
-            left: 160px;
+            top: 20px;
             color: $foregroundColor;
         }
      
         #abs_score, #p_score, #n_score, #pvalue {
             position: absolute;
-            bottom: $filterSliderOffSet;
-            left: 0px;
+            top: 35px;
             color: $foregroundColor;
         }
         
         #absScoreSlider, #posScoreSlider, #negScoreSlider, #pvalueSlider {
             position: absolute;
-            bottom: -115px;     
-            left: 85px;
+            top: -18px;     
+            left: 80px;
         }
         
         #tension {
             position: absolute;
-            bottom: $tensionSliderOffSet;
-            left: 0px;
+            top: 70px;          
             color: $foregroundColor;
         }
         
         #tensionSlider {
             position: absolute;
-            bottom: -115px;            
-            left: 85px;
+            top: -18px;
+            left: 80px;
         }
       
         #abs_scoreValue, #p_scoreValue, #n_scoreValue, #pvalueValue, #tensionValue {
-            position: absolute;
-            bottom: 0px;
-            left: 315px;
+            position: absolute;            
+            left: 310px;
             color: $foregroundColor;
         }
        
@@ -307,8 +312,7 @@ class edgeBundle:
         
         #save {
             position: absolute;
-            bottom: $saveButtonOffSet;
-            left: 0px;
+            top: 120px;
             color: $foregroundColor;     
         }   
                 
@@ -325,7 +329,7 @@ class edgeBundle:
 
         return css_text
 
-    def __getJSbundle(self):
+    def __getJS(self):
 
         js_text = '''
         
@@ -336,112 +340,88 @@ class edgeBundle:
         var n_scores = [];
         var abs_scores = [];
         
-        var diameter = $diameter,
-            radius = diameter / 2,
-            innerRadius = radius - $innerRadiusOffset;
+        var canvas = document.getElementById("wrapper");
+        var edgeBundle = d3.select(canvas).append("svg").attr("id", "edgeBundle");
         
-        var cluster = d3.cluster()
-		            .separation(function(a, b) { return (a.parent == b.parent ? 1 : $groupSeparation ) })
-                    .size([360, innerRadius]);
+        function redraw(){
+                    
+            var diameter = canvas.clientWidth;
+                  
+            //var diagonal = Math.sqrt(Math.pow(width, 2) + Math.pow(height, 2))
+                                    
+            var radius = diameter / 2;
+            var innerRadius = radius - $innerRadiusOffset;        
         
-        var canvas = d3.select("#wrapper")
-		                .append("svg")
-		                .attr("id", "edgeBundle")
-    	                .attr("width", diameter)
-    	                .attr("height", diameter)
-                        .append("g")
-    	                .attr("transform", "translate(" + radius + "," + radius + ")")
-                        .append("g");
+            var cluster = d3.cluster()
+		                .separation(function(a, b) { return (a.parent == b.parent ? 1 : $groupSeparation ) })
+                        .size([360, innerRadius]);
         
-        var node = canvas.selectAll(".node");
-        var link = canvas.selectAll(".link");
+            edgeBundle.selectAll("*").remove();
         
-        d3.select("#save")
-                .on('click', function(){
-		        
-                    var options = {
-                            canvg: window.canvg,
-                            backgroundColor: '$backgroundColor',
-                            height: diameter+100,
-                            width: diameter+100,
-                            left: -50,
-                            scale: 5/window.devicePixelRatio,
-                            encoderOptions: 1,
-                            ignoreMouse : true,
-                            ignoreAnimation : true,
-                    }
+            edgeBundle = d3.select("svg#edgeBundle")
+    	                        .attr("width", diameter)
+    	                        .attr("height", diameter)
+                                .append("g")
+    	                        .attr("transform", "translate(" + radius + "," + radius + ")")
+                                .append("g");
+        
+            var node = edgeBundle.selectAll(".node");
+            var link = edgeBundle.selectAll(".link");
+        
+            d3.select("#save")
+                    .on('click', function(){
+                    
+                        var scaleFactor_offset = 800/diameter
+                    
+                        var scaleFactor = 5*scaleFactor_offset;
+                    
+                        svgNodes = d3.select('svg#edgeBundle').selectAll(".node")
+                                                
+                        var currentFontSize = svgNodes.style('font-size');
+                        
+                        //Scale down the font size prior to saving
+                        svgNodes.style('font-size', currentFontSize/scaleFactor);
+                        
+                        var options = {
+                                canvg: window.canvg,
+                                backgroundColor: '$backgroundColor',
+                                height: diameter+100,
+                                width: diameter+100,
+                                left: -50,
+                                scale: scaleFactor/window.devicePixelRatio,
+                                encoderOptions: 1,
+                                ignoreMouse : true,
+                                ignoreAnimation : true,
+                        }
 		    
-                    saveSvgAsPng(d3.select('svg#edgeBundle').node(), "edgeBundle.png", options);
-                })
-                
-        var linkLine = updateBundle(flareData);    //Initial generation of bundle to populate arrays
+                        saveSvgAsPng(d3.select('svg#edgeBundle').node(), "edgeBundle.png", options);
+                        
+                        //Scale font size back to original after saving
+                        svgNodes.style('font-size', currentFontSize);
+                    })
+        
+            var linkLine = updateBundle(flareData);    //Initial generation of bundle to populate arrays
                                 
-        var currValues = {'abs_score': 0               
+            var currValues = {'abs_score': 0               
                         , 'p_score': 0                
                         , 'n_score': 0                
                         , 'pvalue': 1                
                         , 'tension': 0.85};
         
-        var abs_scaleLinksLinear = d3.scaleLinear()
-            .domain(d3.extent(abs_scores))
-            .range([1,1000])
-            .clamp(true);
-        
-        d3.select('#abs_scoreValue').text(d3.min(abs_scores).toPrecision(5));
-        
-        var sliderWidth = 225;
-        var sliderOffSet = 45;
-        
-        var abs_scoreSlider = d3.sliderHorizontal()
-    	    					.min(abs_scaleLinksLinear(d3.min(abs_scores)))
-    							.max(abs_scaleLinksLinear(d3.max(abs_scores)))
-                                .default(abs_scaleLinksLinear(d3.min(abs_scores)))
-                                .ticks(0)
-                                .handle(d3.symbol().type(d3.symbolCircle).size(150)())
-    							.step(0.0001)                        
-                                .fill('#2196f3')
-    							.width(sliderWidth - sliderOffSet)
-    							.displayValue(false)
-    							.on('onchange', value => {
-      							    				
-                                    var absScoreValue = abs_scaleLinksLinear.invert(value);
-                                        
-                    				var tension = currValues.tension;
-                					currValues['abs_score'] = absScoreValue;
-                						
-                					d3.select('#abs_scoreValue').text(absScoreValue.toPrecision(5));
-                						
-                					var FlareData = filterData(absScoreValue, 'score_abs');
-      											
-                					var linkLine = updateBundle(FlareData);
-      
-                					var line = linkLine.line;
-                					var link = linkLine.link;
-      
-                					line.curve(d3.curveBundle.beta(tension));
-                    				link.attr('d', d => line(d.source.path(d.target)));          
-          						});
-        
-        d3.select('#absScoreSlider')
-                .append('svg')
-                .attr('width', sliderWidth)    
-                .append('g')    
-                .attr('transform', 'translate(30,30)')
-                .call(abs_scoreSlider);
-        
-        if (p_scores.length != 0) {
-        
-            var pos_scaleLinksLinear = d3.scaleLinear()
-                .domain(d3.extent(p_scores))
+            var abs_scaleLinksLinear = d3.scaleLinear()
+                .domain(d3.extent(abs_scores))
                 .range([1,1000])
                 .clamp(true);
         
-            d3.select('#p_scoreValue').text(d3.min(p_scores).toPrecision(5));
+            d3.select('#abs_scoreValue').text(d3.min(abs_scores).toPrecision(5));
         
-            var pos_scoreSlider = d3.sliderHorizontal()
-								    .min(pos_scaleLinksLinear(d3.min(p_scores)))
-    							    .max(pos_scaleLinksLinear(d3.max(p_scores)))
-                                    .default(pos_scaleLinksLinear(d3.min(p_scores)))
+            var sliderWidth = 225;
+            var sliderOffSet = 45;
+        
+            var abs_scoreSlider = d3.sliderHorizontal()
+    	    					    .min(abs_scaleLinksLinear(d3.min(abs_scores)))
+    							    .max(abs_scaleLinksLinear(d3.max(abs_scores)))
+                                    .default(abs_scaleLinksLinear(d3.min(abs_scores)))
                                     .ticks(0)
                                     .handle(d3.symbol().type(d3.symbolCircle).size(150)())
     							    .step(0.0001)                        
@@ -449,609 +429,810 @@ class edgeBundle:
     							    .width(sliderWidth - sliderOffSet)
     							    .displayValue(false)
     							    .on('onchange', value => {
-      											            
-                    				    var p_scoreValue = pos_scaleLinksLinear.invert(value);
+      							    				
+                                        var absScoreValue = abs_scaleLinksLinear.invert(value);
+                                        
+                    				    var tension = currValues.tension;
+                					    currValues['abs_score'] = absScoreValue;
                 						
-                					    var tension = currValues.tension;
-                					    currValues['p_score'] = p_scoreValue;
-    												
-                					    d3.select('#p_scoreValue').text(p_scoreValue.toPrecision(5));
-          									
-                					    var FlareData = filterData(p_scoreValue, 'score_pos');
-														      							
+                					    d3.select('#abs_scoreValue').text(absScoreValue.toPrecision(5));
+                						                                    
+                                        //Filter out all links prior to updating with the score threshold
+                                        var FlareData = filterData(1, 'score_abs');    
+                                        var linkLine = updateBundle(FlareData);
+                                        
+                						var line = linkLine.line;
+                					    var link = linkLine.link;
+      
+                					    line.curve(d3.curveBundle.beta(tension));
+                    				    link.attr('d', d => line(d.source.path(d.target)));    
+                						                						
+                                        //Filter with the new score threshold                						                						
+                					    var FlareData = filterData(absScoreValue, 'score_abs');      									
+      									
+      									//FlareData.forEach(function(d) { if (d.id == "flare#9") { console.log(d); } })
+      									//FlareData.forEach(function(d) { if (d.id == "flare#7") { console.log(d); } })
+      									//FlareData.forEach(function(d) { console.log(d); })
+      									
                 					    var linkLine = updateBundle(FlareData);
-														      							
+      
                 					    var line = linkLine.line;
                 					    var link = linkLine.link;
-      											
+      
                 					    line.curve(d3.curveBundle.beta(tension));
-                					    link.attr("d", d => line(d.source.path(d.target)));        
+                    				    link.attr('d', d => line(d.source.path(d.target)));          
           						    });
         
-            d3.select('#posScoreSlider')
+            d3.select('#absScoreSlider').selectAll("*").remove();
+        
+            d3.select('#absScoreSlider')
                     .append('svg')
-                    .attr('width', sliderWidth)
+                    .attr('width', sliderWidth)    
                     .append('g')    
                     .attr('transform', 'translate(30,30)')
-                    .call(pos_scoreSlider);
-        } else {
+                    .call(abs_scoreSlider);
         
-            d3.select('#p_scoreValue').text('none');
+            if (p_scores.length != 0) {
         
-        }
-        
-        if (n_scores.length != 0) {
-                
-            var neg_scaleLinksLinear = d3.scaleLinear()
-                .domain(d3.extent(n_scores))
-                .range([1,1000])
-                .clamp(true);
-            
-            d3.select('#n_scoreValue').text(d3.max(n_scores).toPrecision(5));
-            
-            var neg_scoreSlider = d3.sliderHorizontal()
-			    					.min(neg_scaleLinksLinear(d3.min(n_scores)))
-    			    				.max(neg_scaleLinksLinear(d3.max(n_scores)))
-                                    .default(neg_scaleLinksLinear(d3.max(n_scores)))
-                                    .ticks(0)
-                                    .handle(d3.symbol().type(d3.symbolCircle).size(150)())
-    					    		.step(0.0001)                        
-                                    .fill('#2196f3')
-    					    		.width(sliderWidth - sliderOffSet)
-    							    .displayValue(false)
-    							    .on('onchange', value => {
-      											                						
-                					    var n_scoreValue = neg_scaleLinksLinear.invert(value);
-                						
-                					    var tension = currValues.tension;
-                					    currValues['n_score'] = n_scoreValue;
-                						
-                					    d3.select('#n_scoreValue').text(n_scoreValue.toPrecision(5));
-                						
-                					    var FlareData = filterData(n_scoreValue, 'score_neg');
-														      							
-                					    var linkLine = updateBundle(FlareData);
-      											
-                					    var line = linkLine.line;
-                					    var link = linkLine.link;
-      											
-                					    line.curve(d3.curveBundle.beta(tension));
-                					    link.attr("d", d => line(d.source.path(d.target)));          
-          						    });
-        
-            d3.select('#negScoreSlider')
-                    .append('svg')
-                    .attr('width', sliderWidth)
-                    .append('g')    
-                    .attr('transform', 'translate(30,30)')
-                    .call(neg_scoreSlider);
-        
-        } else {
-            
-            d3.select('#n_scoreValue').text('none');
-            
-        }
-        
-        if (pvalues.length != 0) {
-        
-            if (d3.min(pvalues) != 0.0) {
-            
-                var pvalue_scaleLinksLog = d3.scaleLog()
-                        .domain(d3.extent(pvalues))          	    
-                        .range([1,1000])
-                        .clamp(true);
-                        
-            } else {
-                        
-                var pvalue_scaleLinksLog = d3.scaleSymlog()
-                    .domain(d3.extent(pvalues))
+                var pos_scaleLinksLinear = d3.scaleLinear()
+                    .domain(d3.extent(p_scores))
                     .range([1,1000])
                     .clamp(true);
-            }
         
-            d3.select('#pvalueValue').text(d3.max(pvalues).toPrecision(5));
+                d3.select('#p_scoreValue').text(d3.min(p_scores).toPrecision(5));
+        
+                var pos_scoreSlider = d3.sliderHorizontal()
+								        .min(pos_scaleLinksLinear(d3.min(p_scores)))
+    							        .max(pos_scaleLinksLinear(d3.max(p_scores)))
+                                        .default(pos_scaleLinksLinear(d3.min(p_scores)))
+                                        .ticks(0)
+                                        .handle(d3.symbol().type(d3.symbolCircle).size(150)())
+    							        .step(0.0001)                        
+                                        .fill('#2196f3')
+    							        .width(sliderWidth - sliderOffSet)
+    							        .displayValue(false)
+    							        .on('onchange', value => {
+      											            
+                    				        var p_scoreValue = pos_scaleLinksLinear.invert(value);
+                						
+                					        var tension = currValues.tension;
+                					        currValues['p_score'] = p_scoreValue;
+    												
+                					        d3.select('#p_scoreValue').text(p_scoreValue.toPrecision(5));
+          									
+          									//Filter out all links prior to updating with the score threshold
+                                            var FlareData = filterData(1, 'score_pos');    
+                                            var linkLine = updateBundle(FlareData);
+                                        
+                						    var line = linkLine.line;
+                					        var link = linkLine.link;
+      
+                					        line.curve(d3.curveBundle.beta(tension));
+                    				        link.attr('d', d => line(d.source.path(d.target)));      
+                						                						
+                                            //Filter with the new score threshold           
+          									var FlareData = filterData(p_scoreValue, 'score_pos');
+														      							
+                					        var linkLine = updateBundle(FlareData);
+														      							
+                					        var line = linkLine.line;
+                					        var link = linkLine.link;
+      											
+                					        line.curve(d3.curveBundle.beta(tension));
+                					        link.attr("d", d => line(d.source.path(d.target)));        
+          						        });
+          						        
+          		d3.select('#posScoreSlider').selectAll("*").remove();
+        
+                d3.select('#posScoreSlider')
+                        .append('svg')
+                        .attr('width', sliderWidth)
+                        .append('g')    
+                        .attr('transform', 'translate(30,30)')
+                        .call(pos_scoreSlider);
+            } else {
             
-            var pvalueSlider = d3.sliderHorizontal()
-                                .min(pvalue_scaleLinksLog(d3.min(pvalues)))
-    						    .max(pvalue_scaleLinksLog(d3.max(pvalues)))
-                                .default(pvalue_scaleLinksLog(d3.max(pvalues)))
+                d3.select('#p_scoreValue').text('none');
+            
+            }
+            
+            if (n_scores.length != 0) {
+                    
+                var neg_scaleLinksLinear = d3.scaleLinear()
+                    .domain(d3.extent(n_scores))
+                    .range([1,1000])
+                    .clamp(true);
+                
+                d3.select('#n_scoreValue').text(d3.max(n_scores).toPrecision(5));
+                
+                var neg_scoreSlider = d3.sliderHorizontal()
+                                        .min(neg_scaleLinksLinear(d3.min(n_scores)))
+                                        .max(neg_scaleLinksLinear(d3.max(n_scores)))
+                                        .default(neg_scaleLinksLinear(d3.max(n_scores)))
+                                        .ticks(0)
+                                        .handle(d3.symbol().type(d3.symbolCircle).size(150)())
+                                        .step(0.0001)                        
+                                        .fill('#2196f3')
+                                        .width(sliderWidth - sliderOffSet)
+                                        .displayValue(false)
+                                        .on('onchange', value => {
+                                                                                            
+                                            var n_scoreValue = neg_scaleLinksLinear.invert(value);
+                                            
+                                            var tension = currValues.tension;
+                                            currValues['n_score'] = n_scoreValue;
+                                            
+                                            d3.select('#n_scoreValue').text(n_scoreValue.toPrecision(5));
+                                            
+                                            //Filter out all links prior to updating with the score threshold
+                                            var FlareData = filterData(-1, 'score_neg');    
+                                            var linkLine = updateBundle(FlareData);
+                                        
+                						    var line = linkLine.line;
+                					        var link = linkLine.link;
+      
+                					        line.curve(d3.curveBundle.beta(tension));
+                    				        link.attr('d', d => line(d.source.path(d.target)));       
+                						                						
+                                            //Filter with the new score threshold
+                                            var FlareData = filterData(n_scoreValue, 'score_neg');
+                                                                                            
+                                            var linkLine = updateBundle(FlareData);
+                                                    
+                                            var line = linkLine.line;
+                                            var link = linkLine.link;
+                                                    
+                                            line.curve(d3.curveBundle.beta(tension));
+                                            link.attr("d", d => line(d.source.path(d.target)));          
+                                        });
+                
+                d3.select('#negScoreSlider').selectAll("*").remove();
+            
+                d3.select('#negScoreSlider')
+                        .append('svg')
+                        .attr('width', sliderWidth)
+                        .append('g')    
+                        .attr('transform', 'translate(30,30)')
+                        .call(neg_scoreSlider);
+            
+            } else {
+                
+                d3.select('#n_scoreValue').text('none');
+                
+            }
+            
+            if (pvalues.length != 0) {
+            
+                if (d3.min(pvalues) != 0.0) {
+                
+                    var pvalue_scaleLinksLog = d3.scaleLog()
+                            .domain(d3.extent(pvalues))          	    
+                            .range([1,1000])
+                            .clamp(true);
+                            
+                } else {
+                            
+                    var pvalue_scaleLinksLog = d3.scaleSymlog()
+                        .domain(d3.extent(pvalues))
+                        .range([1,1000])
+                        .clamp(true);
+                }
+            
+                d3.select('#pvalueValue').text(d3.max(pvalues).toPrecision(5));
+                
+                var pvalueSlider = d3.sliderHorizontal()
+                                    .min(pvalue_scaleLinksLog(d3.min(pvalues)))
+                                    .max(pvalue_scaleLinksLog(d3.max(pvalues)))
+                                    .default(pvalue_scaleLinksLog(d3.max(pvalues)))
+                                    .ticks(0)
+                                    .handle(d3.symbol().type(d3.symbolCircle).size(150)())
+                                    .step(0.0001)                        
+                                    .fill('#2196f3')
+                                    .width(sliderWidth - sliderOffSet)
+                                    .displayValue(false)
+                                    .on('onchange', value => {
+                                    
+                                        var pvalueValue = pvalue_scaleLinksLog.invert(value);
+                                        
+                                        var tension = currValues.tension;
+                                        currValues['pvalue'] = pvalueValue;
+                                            
+                                        d3.select('#pvalueValue').text(pvalueValue.toPrecision(5));
+                                        
+                                        //Filter out all links prior to updating with the pvalue threshold
+                                        var FlareData = filterData(-1, 'pvalue');    
+                                        var linkLine = updateBundle(FlareData);
+                                        
+                						var line = linkLine.line;
+                					    var link = linkLine.link;
+      
+                					    line.curve(d3.curveBundle.beta(tension));
+                    				    link.attr('d', d => line(d.source.path(d.target)));      
+                						                						
+                                        //Filter with the new pvalue threshold
+                                        var FlareData = filterData(pvalueValue, 'pvalue');
+                                                
+                                        var linkLine = updateBundle(FlareData);
+                                                    
+                                        var line = linkLine.line;
+                                        var link = linkLine.link;
+                                        
+                                        line.curve(d3.curveBundle.beta(tension));
+                                        link.attr("d", d => line(d.source.path(d.target)));                            
+                                    });
+            
+                d3.select('#pvalueSlider').selectAll("*").remove();
+            
+                d3.select('#pvalueSlider')
+                        .append('svg')
+                        .attr('width', sliderWidth)
+                        .append('g')    
+                        .attr('transform', 'translate(30,30)')
+                        .call(pvalueSlider);
+            } else {
+                
+                d3.select('#pvalueValue').text('none');
+             
+            }
+            
+            var tension_scaleLinear = d3.scaleLinear()
+                .domain([0,1])
+                .range([0,20])
+                .clamp(true);
+            
+            d3.select('#tensionValue').text(currValues.tension);
+            
+            var tensionSlider = d3.sliderHorizontal()
+                                .min(tension_scaleLinear(0.0))
+                                .max(tension_scaleLinear(1.0))
+                                .default(tension_scaleLinear(0.85))
                                 .ticks(0)
                                 .handle(d3.symbol().type(d3.symbolCircle).size(150)())
-    						    .step(0.0001)                        
+                                .step(0.01)                        
                                 .fill('#2196f3')
-    						    .width(sliderWidth - sliderOffSet)
-    						    .displayValue(false)
-    					        .on('onchange', value => {
-      							
-                                    var pvalueValue = pvalue_scaleLinksLog.invert(value);
-                    				
-                    			    var tension = currValues.tension;
-                				    currValues['pvalue'] = pvalueValue;
-                						
-                				    d3.select('#pvalueValue').text(pvalueValue.toPrecision(5));
-          									
-                				    var FlareData = filterData(pvalueValue, 'pvalue');
-      										
-                				    var linkLine = updateBundle(FlareData);
-      											
-                				    var line = linkLine.line;
-                				    var link = linkLine.link;
-      							    
-                				    line.curve(d3.curveBundle.beta(tension));
-                				    link.attr("d", d => line(d.source.path(d.target)));                            
-          					    });
-        
-            d3.select('#pvalueSlider')
+                                .width(sliderWidth - sliderOffSet)
+                                .displayValue(false)
+                                .on('onchange', value => {
+                                                                
+                                    var tension =  tension_scaleLinear.invert(value);
+                                    currValues['tension'] = tension;
+                                                    
+                                    d3.select('#tensionValue').text(tension.toPrecision(2));
+              
+                                    var form = document.getElementById("filterType")
+                                    var form_val;
+                                                    
+                                    for(var i=0; i<form.length; i++) {
+                                        if(form[i].checked) {
+                                            form_val = form[i].id;        
+                                        }
+                                    }                                    
+                            
+                                    if (form_val == "scoreRadio") { 
+                                                
+                                        var score_form = document.getElementById("scoreSelect")
+                                        var score_form_val;
+                                                        
+                                        for(var i=0; i<score_form.length; i++){
+                                            if(score_form[i].checked){
+                                                score_form_val = score_form[i].id;        
+                                            }
+                                        }  
+                                                        
+                                        if (score_form_val == "PosScoreRadio") {
+                                        
+                                            //Filter out all links prior to updating with the score threshold
+                                            var FlareData = filterData(1, 'score_pos');    
+                                            var linkLine = updateBundle(FlareData);
+                                        
+                						    var line = linkLine.line;
+                					        var link = linkLine.link;
+      
+                					        line.curve(d3.curveBundle.beta(tension));
+                    				        link.attr('d', d => line(d.source.path(d.target)));
+                                        
+                                            var p_scoreValue = currValues.p_score;
+                                            var FlareData = filterData(p_scoreValue, 'score_pos');
+                                        } else if (score_form_val == "NegScoreRadio") {
+                                        
+                                            //Filter out all links prior to updating with the score threshold
+                                            var FlareData = filterData(-1, 'score_neg');    
+                                            var linkLine = updateBundle(FlareData);
+                                        
+                						    var line = linkLine.line;
+                					        var link = linkLine.link;
+      
+                					        line.curve(d3.curveBundle.beta(tension));
+                    				        link.attr('d', d => line(d.source.path(d.target))); 
+                                        
+                                            var n_scoreValue = currValues.n_score;
+                                            var FlareData = filterData(n_scoreValue, 'score_neg');
+                                        } else if (score_form_val == "AbsScoreRadio") {
+                                        
+                                            //Filter out all links prior to updating with the score threshold
+                                            var FlareData = filterData(1, 'score_abs');    
+                                            var linkLine = updateBundle(FlareData);
+                                        
+                						    var line = linkLine.line;
+                					        var link = linkLine.link;
+      
+                					        line.curve(d3.curveBundle.beta(tension));
+                    				        link.attr('d', d => line(d.source.path(d.target)));
+                                        
+                                            var abs_scoreValue = currValues.abs_score;
+                                            var FlareData = filterData(abs_scoreValue, 'score_abs');
+                                        }
+                                    } else if (form_val == "pvalueRadio") {
+                                    
+                                        //Filter out all links prior to updating with the pvalue threshold
+                                        var FlareData = filterData(-1, 'pvalue');    
+                                        var linkLine = updateBundle(FlareData);
+                                        
+                						var line = linkLine.line;
+                					    var link = linkLine.link;
+      
+                					    line.curve(d3.curveBundle.beta(tension));
+                    				    link.attr('d', d => line(d.source.path(d.target))); 
+                                    
+                                        var pvalueValue = currValues.pvalue;
+                                        var FlareData = filterData(pvalueValue, 'pvalue');
+                                    }
+                    
+                                    var linkLine = updateBundle(FlareData);
+                                    
+                                    var line = linkLine.line;
+                                    var link = linkLine.link;
+                                    
+                                    line.curve(d3.curveBundle.beta(tension));
+                                    link.attr("d", d => line(d.source.path(d.target)));     
+                                });
+            
+            d3.select('#tensionSlider').selectAll("*").remove();
+                          
+            d3.select('#tensionSlider')
                     .append('svg')
                     .attr('width', sliderWidth)
                     .append('g')    
                     .attr('transform', 'translate(30,30)')
-                    .call(pvalueSlider);
-        } else {
+                    .call(tensionSlider);
             
-            d3.select('#pvalueValue').text('none');
-         
-        }
-        
-        var tension_scaleLinear = d3.scaleLinear()
-			.domain([0,1])
-            .range([0,20])
-            .clamp(true);
-        
-        d3.select('#tensionValue').text(currValues.tension);
-        
-        var tensionSlider = d3.sliderHorizontal()
-							.min(tension_scaleLinear(0.0))
-    						.max(tension_scaleLinear(1.0))
-                            .default(tension_scaleLinear(0.85))
-                            .ticks(0)
-                            .handle(d3.symbol().type(d3.symbolCircle).size(150)())
-    						.step(0.01)                        
-                            .fill('#2196f3')
-    						.width(sliderWidth - sliderOffSet)
-    						.displayValue(false)
-    						.on('onchange', value => {
-      											            
-                    		    var tension =  tension_scaleLinear.invert(value);
-                				currValues['tension'] = tension;
-      											
-                				d3.select('#tensionValue').text(tension.toPrecision(2));
-          
-               					var form = document.getElementById("filterType")
-                				var form_val;
-      											
-                				for(var i=0; i<form.length; i++) {
-                    				if(form[i].checked) {
-                      					form_val = form[i].id;        
-                    				}
-                				}
-      											
-                				if (form_val == "scoreRadio") { 
-          									
-                    				var score_form = document.getElementById("scoreSelect")
-                    				var score_form_val;
-      												
-                    				for(var i=0; i<score_form.length; i++){
-                        				if(score_form[i].checked){
-                            			    score_form_val = score_form[i].id;        
-                        				}
-                    				}
-      												
-                    				if (score_form_val == "PosScoreRadio") {
-                              	        var p_scoreValue = currValues.p_score;
-                        				var FlareData = filterData(p_scoreValue, 'score_pos');
-                    				} else if (score_form_val == "NegScoreRadio") {
-                              	        var n_scoreValue = currValues.n_score;
-                        				var FlareData = filterData(n_scoreValue, 'score_neg');
-                    				} else if (score_form_val == "AbsScoreRadio") {
-                              	        var abs_scoreValue = currValues.abs_score;
-                        				var FlareData = filterData(abs_scoreValue, 'score_abs');
-                    				}
-                				} else if (form_val == "pvalueRadio") {
-                            	    var pvalueValue = currValues.pvalue;
-                    				var FlareData = filterData(pvalueValue, 'pvalue');
-								}
+            function changeFilter() {
                 
-                				var linkLine = updateBundle(FlareData);
-                                
-                				var line = linkLine.line;
-                				var link = linkLine.link;
-                                
-                				line.curve(d3.curveBundle.beta(tension));
-                				link.attr("d", d => line(d.source.path(d.target)));     
-          					});
-                                
-        d3.select('#tensionSlider')
-                .append('svg')
-                .attr('width', sliderWidth)
-                .append('g')    
-                .attr('transform', 'translate(30,30)')
-                .call(tensionSlider);
-        
-        function changeFilter() {
-            
-		    var form = document.getElementById("filterType")
-            var form_val;
-            
-            for(var i=0; i<form.length; i++){
-    	        if(form[i].checked){
-      	            form_val = form[i].id;        
+                var form = document.getElementById("filterType")
+                var form_val;
+                
+                for(var i=0; i<form.length; i++){
+                    if(form[i].checked){
+                        form_val = form[i].id;        
+                    }
                 }
-            }
+          
+                if (form_val == "scoreRadio") { 
+                    d3.select('#abs_scoreHide').style("display", 'block');     
+                    d3.select('#p_scoreHide').style("display", 'none');
+                    d3.select('#n_scoreHide').style("display", 'none');
+                    d3.select('#scoreSelect').style("display", 'block');
+                    d3.select('#pvalueHide').style("display", 'none');
+                    
+                    var form_score = document.getElementById("scoreSelect")
+                    var form_val_score;
+                    
+                    for(var i=0; i<form_score.length; i++){
+                        if(form_score[i].checked){
+                            form_val_score = form_score[i].id;        
+                        }
+                    }
+                    
+                    if (form_val_score == "PosScoreRadio") {
+                        d3.select('#p_scoreHide').style("display", 'block');
+                        d3.select('#n_scoreHide').style("display", 'none');
+                        d3.select('#abs_scoreHide').style("display", 'none');
+                        
+                        //Filter out all links prior to updating with the score threshold
+                        var FlareData = filterData(1, 'score_pos');    
+                        var linkLine = updateBundle(FlareData);
+                                        
+                		var line = linkLine.line;
+                		var link = linkLine.link;
       
-            if (form_val == "scoreRadio") { 
-    	        d3.select('#abs_scoreHide').style("display", 'block');     
-                d3.select('#p_scoreHide').style("display", 'none');
-                d3.select('#n_scoreHide').style("display", 'none');
-                d3.select('#scoreSelect').style("display", 'block');
-                d3.select('#pvalueHide').style("display", 'none');
+                		line.curve(d3.curveBundle.beta(tension));
+                    	link.attr('d', d => line(d.source.path(d.target)));    
+                						                						
+                        //Filter with the new score threshold
+                        var FlareData = filterData(currValues.p_score, 'score_pos');        
+                        var linkLine = updateBundle(FlareData);
+                    } else if (form_val_score == "NegScoreRadio") {
+                        d3.select('#p_scoreHide').style("display", 'none');
+                        d3.select('#n_scoreHide').style("display", 'block');
+                        d3.select('#abs_scoreHide').style("display", 'none');
+                           
+                        //Filter out all links prior to updating with the score threshold
+                        var FlareData = filterData(-1, 'score_neg');    
+                        var linkLine = updateBundle(FlareData);
+                                        
+                		var line = linkLine.line;
+                		var link = linkLine.link;
+      
+                		line.curve(d3.curveBundle.beta(tension));
+                    	link.attr('d', d => line(d.source.path(d.target)));   
+                						                						
+                        //Filter with the new score threshold
+                        var FlareData = filterData(currValues.n_score, 'score_neg');  
+                        var linkLine = updateBundle(FlareData);       
+                    } else if (form_val_score == "AbsScoreRadio") {
+                        d3.select('#p_scoreHide').style("display", 'none');
+                        d3.select('#n_scoreHide').style("display", 'none');
+                        d3.select('#abs_scoreHide').style("display", 'block');
+                        
+                        //Filter out all links prior to updating with the score threshold
+                        var FlareData = filterData(1, 'score_abs');    
+                        var linkLine = updateBundle(FlareData);
+                                        
+                		var line = linkLine.line;
+                		var link = linkLine.link;
+      
+                		line.curve(d3.curveBundle.beta(tension));
+                    	link.attr('d', d => line(d.source.path(d.target)));    
+                						                						
+                        //Filter with the new score threshold
+                        var FlareData = filterData(currValues.abs_score, 'score_abs');
+                        var linkLine = updateBundle(FlareData);
+                    }
+                } else if (form_val == "pvalueRadio") {
+                    d3.select('#abs_scoreHide').style("display", 'none');
+                    d3.select('#p_scoreHide').style("display", 'none');
+                    d3.select('#n_scoreHide').style("display", 'none');
+                    d3.select('#scoreSelect').style("display", 'none');
+                    d3.select('#pvalueHide').style("display", 'block');
+                    
+                    //Filter out all links prior to updating with the pvalue threshold
+                    var FlareData = filterData(-1, 'pvalue');    
+                    var linkLine = updateBundle(FlareData);
+                                        
+                	var line = linkLine.line;
+                    var link = linkLine.link;
+      
+                	line.curve(d3.curveBundle.beta(tension));
+                    link.attr('d', d => line(d.source.path(d.target)));      
+                						                						
+                    //Filter with the new pvalue threshold                    
+                    var FlareData = filterData(currValues.pvalue, 'pvalue');
+                    var linkLine = updateBundle(FlareData);
+                }
+          
+                var tension = currValues.tension;
                 
-                var form_score = document.getElementById("scoreSelect")
-                var form_val_score;
+                var line = linkLine.line;
+                var link = linkLine.link;
                 
-                for(var i=0; i<form_score.length; i++){
-      	            if(form_score[i].checked){
-        	            form_val_score = form_score[i].id;        
+                line.curve(d3.curveBundle.beta(tension));
+                link.attr("d", d => line(d.source.path(d.target)));
+            }
+        
+            function changeScore() {
+                
+                var form = document.getElementById("scoreSelect")
+                var form_val;
+                
+                for(var i=0; i<form.length; i++) {
+                    if(form[i].checked){
+                        form_val = form[i].id;        
                     }
                 }
                 
-                if (form_val_score == "PosScoreRadio") {
-      	            d3.select('#p_scoreHide').style("display", 'block');
+                if (form_val == "PosScoreRadio") { 
+                    d3.select('#p_scoreHide').style("display", 'block');
                     d3.select('#n_scoreHide').style("display", 'none');
                     d3.select('#abs_scoreHide').style("display", 'none');
                     
                     //Filter out all links prior to updating with the score threshold
                     var FlareData = filterData(1, 'score_pos');
-    		        var linkLine = updateBundle(FlareData);
-    		        
-    		        var FlareData = filterData(currValues.p_score, 'score_pos');        
-    		        var linkLine = updateBundle(FlareData);
-                } else if (form_val_score == "NegScoreRadio") {
+                    var linkLine = updateBundle(FlareData);
+                    
+                    var line = linkLine.line;
+                    var link = linkLine.link;
+                      
+                    line.curve(d3.curveBundle.beta(tension));
+                    link.attr("d", d => line(d.source.path(d.target)));
+                    
+                    var FlareData = filterData(currValues.p_score, 'score_pos');        
+                    var linkLine = updateBundle(FlareData);      
+                    
+                } else if (form_val == "NegScoreRadio") {
                     d3.select('#p_scoreHide').style("display", 'none');
                     d3.select('#n_scoreHide').style("display", 'block');
                     d3.select('#abs_scoreHide').style("display", 'none');
                     
+                    //Filter out all links prior to updating with the score threshold
                     var FlareData = filterData(-1, 'score_neg');    
-    		        var linkLine = updateBundle(FlareData);
-    		        
-  			        var FlareData = filterData(currValues.n_score, 'score_neg');  
-  			        var linkLine = updateBundle(FlareData);       
-                } else if (form_val_score == "AbsScoreRadio") {
+                    var linkLine = updateBundle(FlareData);
+                    
+                    var line = linkLine.line;
+                    var link = linkLine.link;
+                      
+                    line.curve(d3.curveBundle.beta(tension));
+                    link.attr("d", d => line(d.source.path(d.target)));                    
+                    
+                    var FlareData = filterData(currValues.n_score, 'score_neg');  
+                    var linkLine = updateBundle(FlareData);        
+                } else if (form_val == "AbsScoreRadio") {
                     d3.select('#p_scoreHide').style("display", 'none');
                     d3.select('#n_scoreHide').style("display", 'none');
                     d3.select('#abs_scoreHide').style("display", 'block');
                     
                     //Filter out all links prior to updating with the score threshold
                     var FlareData = filterData(1, 'score_abs');
-    		        var linkLine = updateBundle(FlareData);
+                    var linkLine = updateBundle(FlareData);
                     
-    		        var FlareData = filterData(currValues.abs_score, 'score_abs');
-    		        var linkLine = updateBundle(FlareData);
+                    var line = linkLine.line;
+                    var link = linkLine.link;
+                      
+                    line.curve(d3.curveBundle.beta(tension));
+                    link.attr("d", d => line(d.source.path(d.target)));
+                    
+                    var FlareData = filterData(currValues.abs_score, 'score_abs');
+                    var linkLine = updateBundle(FlareData);
                 }
-   	        } else if (form_val == "pvalueRadio") {
-       	        d3.select('#abs_scoreHide').style("display", 'none');
-                d3.select('#p_scoreHide').style("display", 'none');
-                d3.select('#n_scoreHide').style("display", 'none');
-                d3.select('#scoreSelect').style("display", 'none');
-                d3.select('#pvalueHide').style("display", 'block');
                 
-    		    //Filter out all links prior to updating with the pvalue threshold
-                var FlareData = filterData(-1, 'pvalue');
-    		    var linkLine = updateBundle(FlareData);
-                
-    		    var FlareData = filterData(currValues.pvalue, 'pvalue');
-                var linkLine = updateBundle(FlareData);
+                var tension = currValues.tension;
+                      
+                var line = linkLine.line;
+                var link = linkLine.link;
+                      
+                line.curve(d3.curveBundle.beta(tension));
+                link.attr("d", d => line(d.source.path(d.target)));
             }
-      
-            var tension = currValues.tension;
+        
+            var filterDim = d3.select("#filterType");
+            filterDim.on("change", changeFilter);
             
-            var line = linkLine.line;
-            var link = linkLine.link;
+            var selectDim = d3.select("#scoreSelect");
+            selectDim.on("change", changeScore);
             
-            line.curve(d3.curveBundle.beta(tension));
-            link.attr("d", d => line(d.source.path(d.target)));
-        }
-    
-        function changeScore() {
-            
-	        var form = document.getElementById("scoreSelect")
-            var form_val;
-            
-            for(var i=0; i<form.length; i++) {
-  	            if(form[i].checked){
-    	            form_val = form[i].id;        
+            function updateBundle(data) {
+                
+                pvalues = []
+                p_scores = []
+                n_scores = []
+                abs_scores = []
+                
+                var line = d3.radialLine()
+                    .curve(d3.curveBundle.beta(0.85))
+                    .radius(function(d) { return d.y; })
+                    .angle(function(d) { return d.x / 180 * Math.PI; });
+                
+                var root = d3.hierarchy(packageHierarchy(data), (d) => d.children);
+                
+                cluster(root)
+                
+                var nodes = root.descendants();
+                  
+                node = node.data(nodes.filter(function(n) { return !n.children; }));
+                
+                node.exit().remove();
+                
+                if ("$mouseOver" == "true") {
+                
+                    var newNode = node.enter().append("text")
+                                        .attr("class", "node")
+                                        .attr("dy", ".31em")
+                                        .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + (d.y + 8) + ",0)" + (d.x < 180 ? "" : "rotate(180)"); })
+                                        .style("text-anchor", function(d) { return d.x < 180 ? "start" : "end"; })
+                                        .text(function(d) { return d.data.name; })
+                                        .style("fill", function(d) { return d.data.node_color; })
+                                        .on("mouseover", mouseovered)
+                                        .on("mouseout", mouseouted);
+                } else {
+                
+                    var newNode = node.enter().append("text")
+                                        .attr("class", "node")
+                                        .attr("dy", ".31em")
+                                        .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + (d.y + 8) + ",0)" + (d.x < 180 ? "" : "rotate(180)"); })
+                                        .style("text-anchor", function(d) { return d.x < 180 ? "start" : "end"; })
+                                        .text(function(d) { return d.data.name; })
+                                        .style("fill", function(d) { return d.data.node_color; })
+                                        .on("click", mouseovered)
+                                        .on("dblclick", mouseouted);
                 }
-            }
-            
-            if (form_val == "PosScoreRadio") { 
-  	            d3.select('#p_scoreHide').style("display", 'block');
-                d3.select('#n_scoreHide').style("display", 'none');
-                d3.select('#abs_scoreHide').style("display", 'none');
-                
-   	            //Filter out all links prior to updating with the score threshold
-                var FlareData = filterData(1, 'score_pos');
-                var linkLine = updateBundle(FlareData);
-                
-                var FlareData = filterData(currValues.p_score, 'score_pos');        
-                var linkLine = updateBundle(FlareData);      
-                
-            } else if (form_val == "NegScoreRadio") {
-                d3.select('#p_scoreHide').style("display", 'none');
-                d3.select('#n_scoreHide').style("display", 'block');
-                d3.select('#abs_scoreHide').style("display", 'none');
-                
-                //Filter out all links prior to updating with the score threshold
-                var FlareData = filterData(-1, 'score_neg');    
-                var linkLine = updateBundle(FlareData);
-                
-  	            var FlareData = filterData(currValues.n_score, 'score_neg');  
-  	            var linkLine = updateBundle(FlareData);        
-            } else if (form_val == "AbsScoreRadio") {
-                d3.select('#p_scoreHide').style("display", 'none');
-                d3.select('#n_scoreHide').style("display", 'none');
-                d3.select('#abs_scoreHide').style("display", 'block');
-                
-                //Filter out all links prior to updating with the score threshold
-                var FlareData = filterData(1, 'score_abs');
-                var linkLine = updateBundle(FlareData);
-                
-                var FlareData = filterData(currValues.abs_score, 'score_abs');
-                var linkLine = updateBundle(FlareData);
-            }
-            
-            var tension = currValues.tension;
-                  
-            var line = linkLine.line;
-            var link = linkLine.link;
-                  
-            line.curve(d3.curveBundle.beta(tension));
-            link.attr("d", d => line(d.source.path(d.target)));
-        }
-    
-        var filterDim = d3.select("#filterType");
-        filterDim.on("change", changeFilter);
-        
-        var selectDim = d3.select("#scoreSelect");
-        selectDim.on("change", changeScore);
-        
-        function updateBundle(data) {
-            
-	        pvalues = []
-            p_scores = []
-            n_scores = []
-            abs_scores = []
-            
-	        var line = d3.radialLine()
-    	        .curve(d3.curveBundle.beta(0.85))
-    	        .radius(function(d) { return d.y; })
-    	        .angle(function(d) { return d.x / 180 * Math.PI; });
-            
-            var root = d3.hierarchy(packageHierarchy(data), (d) => d.children);
-            
-            cluster(root)
-            
-            var nodes = root.descendants();
-              
-            node = node.data(nodes.filter(function(n) { return !n.children; }));
-            
-            node.exit().remove();
-            
-            if ("$mouseOver" == "true") {
-            
-                var newNode = node.enter().append("text")
-                      	            .attr("class", "node")
-    				    			.attr("dy", ".31em")
-    					    		.attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + (d.y + 8) + ",0)" + (d.x < 180 ? "" : "rotate(180)"); })
-    						    	.style("text-anchor", function(d) { return d.x < 180 ? "start" : "end"; })
-      							    .text(function(d) { return d.data.name; })
-      							    .style("fill", function(d) { return d.node_color; })
-    							    .on("mouseover", mouseovered)
-    							    .on("mouseout", mouseouted);
-    	    } else {
-    	    
-    	        var newNode = node.enter().append("text")
-                      	            .attr("class", "node")
-    				    			.attr("dy", ".31em")
-    					    		.attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + (d.y + 8) + ",0)" + (d.x < 180 ? "" : "rotate(180)"); })
-    						    	.style("text-anchor", function(d) { return d.x < 180 ? "start" : "end"; })
-      							    .text(function(d) { return d.data.name; })
-      							    .style("fill", function(d) { return d.node_color; })
-    							    .on("click", mouseovered)
-    							    .on("dblclick", mouseouted);
-    	    }
-    							
-            
-            node = node.merge(newNode);
-            
-            var links = packageImports(root.descendants());
-            
-            links = links.map(d=> ({ ...d
-  									, link_color: d.source.data.imports[d.target.data.id]["link_color"]
-                                    , link_score: d.source.data.imports[d.target.data.id]["link_score"]
-                                    , link_pvalue : d.source.data.imports[d.target.data.id]["link_pvalue"]}));
-            
-            links.forEach(function(d) { abs_scores.push(Math.abs(d.link_score))
-  										, pvalues.push(d.link_pvalue);
-                      				
-                                        if (d.link_score >= 0) {
                                     
-                        					p_scores.push(d.link_score);
-                                     
-                        			    } else {
-                                
-   	                        			    n_scores.push(d.link_score);
-                                  
-                        			    }
-            	        });
-            
-            link = link.data(links);
-            
-            link.exit().remove();
-              
-            var newLink = link.enter().append("path")
-    	      				.attr("class", "link")
-            				.attr('d', d => line(d.source.path(d.target)))
-            				.style("stroke", function(d) { return d.link_color; });
-            
-            link = link.merge(newLink);
-            
-            var linkLine = {"line": line, "link": link}            
-            
-	        function mouseovered(d) {
-	        
-	            //d3.select(this).style('font-weight', 'bold');
-	        	            
-  	            node
-      	            .each(function(n) { n.target = n.source = false; });
                 
-  	            link
-      	            .classed("link--target", function(l) { if (l.target === d) return l.source.source = true; })
-      	            .classed("link--source", function(l) { if (l.source === d) return l.target.target = true; })
-    		        .filter(function(l) { return l.target === d || l.source === d; })
-      	            .each(function() { this.parentNode.appendChild(this); })
+                node = node.merge(newNode);
                 
-  	            node
-      	            .classed("node--both", function(n) { return n.source && n.target; })
-      	            .classed("node--target", function(n) { return n.target; })
-      	            .classed("node--source", function(n) { return n.source; });
-                                
-                link.style('opacity', o => (o.source === d || o.target === d ? 1 : $linkFadeOpacity))
-	        }
-            
-	        function mouseouted(d) {
-	        
-  	            link
-      	            .classed("link--target", false)
-      	            .classed("link--source", false);
+                var links = packageImports(root.descendants());
                 
-  	            node
-      	            .classed("node--both", false)
-      	            .classed("node--target", false)
-      	            .classed("node--source", false);
-                        
-                link.style('opacity', 1);
-                node.style('opacity', 1);
-                //node.style('font-weight', 'normal');
-	        }
-            
-	        function packageHierarchy(classes) {
-  		        var map = {};
+                links = links.map(d=> ({ ...d
+                                        , link_color: d.source.data.imports[d.target.data.id]["link_color"]
+                                        , link_score: d.source.data.imports[d.target.data.id]["link_score"]
+                                        , link_pvalue : d.source.data.imports[d.target.data.id]["link_pvalue"]}));
                 
-  		        function find(id, data) {
-    		        var node = map[id], i;
-    		        if (!node) {
-      		            node = map[id] = data || {id: id, children: []};
-      		            if (id.length) {
-        		            node.parent = find(id.substring(0, i = id.lastIndexOf("#")));
-        		            node.parent.children.push(node);
-        		            node.key = id.substring(i + 1);
-      		            }
-    		        }
-   			        return node;
-  		        }
+                links.forEach(function(d) { abs_scores.push(Math.abs(d.link_score))
+                                            , pvalues.push(d.link_pvalue);
+                                        
+                                            if (d.link_score >= 0) {
+                                        
+                                                p_scores.push(d.link_score);
+                                         
+                                            } else {
+                                    
+                                                n_scores.push(d.link_score);
+                                      
+                                            }
+                            });
                 
-  		        classes.forEach(function(d) {
-    		        find(d.id, d);
-  		        });
+                link = link.data(links);
                 
-  		        return map[""];
-	        }
-            
-	        function packageImports(nodes) {
-  		        var map = {}, imports = [];
+                link.exit().remove();
+                  
+                var newLink = link.enter().append("path")
+                                .attr("class", "link")
+                                .attr('d', d => line(d.source.path(d.target)))
+                                .style("stroke", function(d) { return d.link_color; });
                 
-  		        nodes.forEach(function(d) {
-    		        map[d.data.id] = d;
-  		        });
+                link = link.merge(newLink);
                 
-  		        nodes.forEach(function(d) {
-      		        if (d.data.imports) Object.keys(d.data.imports).forEach(function(i) {    
-      				    imports.push({source: map[d.data.id], target: map[i]});
-    			    });
-  		        });
+                var linkLine = {"line": line, "link": link}            
                 
-  		        return imports;
-	        }
-            
-            return linkLine;
-        }
-        
-        function filterData(threshold, filtType) {
-            
-            const data = flareData.map(a => ({...a}));
-                        
-            var FlareData = []
-            
-            //Remove nodes from imports with weight below threshold
-            for (var i = 0; i < data.length; i++) {
-    		    var flare = data[i];
-                
-                var links = flare.imports;
-                var newLinks = {}
-                
-                for (const [key, value] of Object.entries(links)) {
-                    
-        		    var link_score = value["link_score"];
-        		    var link_pvalue = value["link_pvalue"];
-        		    var link_color = value["link_color"];
-                    
-        		    if (filtType == 'score_abs') {
-                        
-            		    if (Math.abs(link_score) >= threshold) {
-                            newLinks[key] = {"link_score": link_score
-                                            , "link_pvalue": link_pvalue
-                                            , "link_color": link_color};
-                        }
+                function mouseovered(d) {
                             
-                    } else if (filtType == 'score_neg') {
-                        
-                        if (link_score <= threshold) {
-                            newLinks[key] = {"link_score": link_score
-            	                            , "link_pvalue": link_pvalue
-                                            , "link_color": link_color};
+                    node
+                        .each(function(n) { n.target = n.source = false; });
+                    
+                    link
+                        .classed("link--target", function(l) { if (l.target === d) return l.source.source = true; })
+                        .classed("link--source", function(l) { if (l.source === d) return l.target.target = true; })
+                        .filter(function(l) { return l.target === d || l.source === d; })
+                        .each(function() { this.parentNode.appendChild(this); })
+                    
+                    node
+                        .classed("node--both", function(n) { return n.source && n.target; })
+                        .classed("node--target", function(n) { return n.target; })
+                        .classed("node--source", function(n) { return n.source; });
+                                    
+                    link.style('opacity', o => (o.source === d || o.target === d ? 1 : $linkFadeOpacity))
+                }
+                
+                function mouseouted(d) {
+                
+                    link
+                        .classed("link--target", false)
+                        .classed("link--source", false);
+                    
+                    node
+                        .classed("node--both", false)
+                        .classed("node--target", false)
+                        .classed("node--source", false);
+                            
+                    link.style('opacity', 1);
+                    node.style('opacity', 1);
+                    //node.style('font-weight', 'normal');
+                }
+                
+                function packageHierarchy(classes) {
+                    var map = {};
+                    
+                    function find(id, data) {
+                        var node = map[id], i;
+                        if (!node) {
+                            node = map[id] = data || {id: id, children: []};
+                            if (id.length) {
+                                node.parent = find(id.substring(0, i = id.lastIndexOf("#")));
+                                node.parent.children.push(node);
+                                node.key = id.substring(i + 1);
+                            }
                         }
+                        return node;
+                    }
+                    
+                    classes.forEach(function(d) {
+                        find(d.id, d);
+                    });
+                    
+                    return map[""];
+                }
+                
+                function packageImports(nodes) {
+                    var map = {}, imports = [];
+                    
+                    nodes.forEach(function(d) {
+                        map[d.data.id] = d;
+                    });
+                    
+                    nodes.forEach(function(d) {
+                        if (d.data.imports) Object.keys(d.data.imports).forEach(function(i) {    
+                            imports.push({source: map[d.data.id], target: map[i]});
+                        });
+                    });
+                    
+                    return imports;
+                }
+                
+                return linkLine;
+            }
+            
+            function filterData(threshold, filtType) {
+                
+                const data = flareData.map(a => ({...a}));
+                            
+                var FlareData = []
+                
+                //Remove nodes from imports with weight below threshold
+                for (var i = 0; i < data.length; i++) {
+                    var flare = data[i];
+                    
+                    var links = flare.imports;
+                    var newLinks = {}
+                    
+                    for (const [key, value] of Object.entries(links)) {
                         
-                    } else if (filtType == 'score_pos') {
-                        if (link_score >= threshold) {
-                            newLinks[key] = {"link_score": link_score
-                                           , "link_pvalue": link_pvalue
-                                           , "link_color": link_color};
-                        }
-                                            
-                    } else if (filtType == 'pvalue') {
-                        if (link_pvalue <= threshold) {
-           		            newLinks[key] = {"link_score": link_score
-              	                            , "link_pvalue": link_pvalue
-                                            , "link_color": link_color};
+                        var link_score = value["link_score"];
+                        var link_pvalue = value["link_pvalue"];
+                        var link_color = value["link_color"];
+                        
+                        if (filtType == 'score_abs') {
+                            
+                            if (Math.abs(link_score) >= threshold) {
+                                newLinks[key] = {"link_score": link_score
+                                                , "link_pvalue": link_pvalue
+                                                , "link_color": link_color};
+                            }
+                                
+                        } else if (filtType == 'score_neg') {
+                            
+                            if (link_score <= threshold) {
+                                newLinks[key] = {"link_score": link_score
+                                                , "link_pvalue": link_pvalue
+                                                , "link_color": link_color};
+                            }
+                            
+                        } else if (filtType == 'score_pos') {
+                            if (link_score >= threshold) {
+                                newLinks[key] = {"link_score": link_score
+                                               , "link_pvalue": link_pvalue
+                                               , "link_color": link_color};
+                            }
+                                                
+                        } else if (filtType == 'pvalue') {
+                            if (link_pvalue <= threshold) {
+                                newLinks[key] = {"link_score": link_score
+                                                , "link_pvalue": link_pvalue
+                                                , "link_color": link_color};
+                            }
                         }
                     }
- 			    }
-            
-                flare.imports = newLinks;
                 
-                FlareData.push(flare)
+                    flare.imports = newLinks;
+                    
+                    FlareData.push(flare)
+                }
+            
+                return FlareData;
             }
+        }
         
-            return FlareData;
-        }        
+        redraw();
+        
+        window.addEventListener("resize", redraw);        
         '''
 
         return js_text
 
-    def __getHTMLbundle(self):
+    def __getHTML(self):
 
         html_text = '''
+        
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         
         <body>
     
             <style> $css_text </style>
     
             <div id="wrapper">
+            
                 <form id="filterType">
                     <input type='radio' id="scoreRadio" name="mode" checked/>Corr. coeff
                     <input type='radio' id="pvalueRadio" name="mode"/>Pvalue
                 </form>
-                
+                                
                 <form id="scoreSelect">
                     <input type='radio' id="PosScoreRadio" name="mode"/>Positive
                     <input type='radio' id="NegScoreRadio" name="mode"/>Negative
@@ -1080,7 +1261,7 @@ class edgeBundle:
             </div>
             
             <script src="https://d3js.org/d3.v5.min.js"></script>
-            <script src="https://unpkg.com/d3-simple-slider"></script>
+            <script src="https://unpkg.com/d3-simple-slider"></script>            
             <script src="https://github.com/canvg/canvg/blob/master/src/canvg.js"></script>
             <script src="https://exupero.org/saveSvgAsPng/src/saveSvgAsPng.js"></script>
     
@@ -1246,24 +1427,24 @@ class edgeBundle:
         # norm = plt.Normalize()
         return cmap(norm(x))
 
-    def __edge_color(self, edges, color_scale, edgeCmap):
+    def __edge_color(self, edges, edge_color_scale, edgeCmap):
         colorsHEX = []
 
-        signs = edges['Sign'].values
+        signs = edges['sign'].values
 
-        if "Pvalue" in edges.columns:
+        if "pvalue" in edges.columns:
             if "start_block" in edges.columns:
-                edges_color = edges[['start_index', 'start_name', 'start_color', 'start_label', 'start_block', 'end_index', 'end_name', 'end_color', 'end_label', 'end_block', 'Score', 'Sign', 'Pvalue']]
+                edges_color = edges[['start_index', 'start_name', 'start_color', 'start_label', 'start_block', 'end_index', 'end_name', 'end_color', 'end_label', 'end_block', 'score', 'sign', 'pvalue']]
             else:
-                edges_color = edges[['start_index', 'start_name', 'start_color', 'start_label', 'end_index', 'end_name', 'end_color', 'end_label', 'Score', 'Sign', 'Pvalue']]
+                edges_color = edges[['start_index', 'start_name', 'start_color', 'start_label', 'end_index', 'end_name', 'end_color', 'end_label', 'score', 'sign', 'pvalue']]
         else:
 
             if "start_block" in edges.columns:
-                edges_color = edges[['start_index', 'start_name', 'start_color', 'start_label', 'start_block', 'end_index', 'end_name', 'end_color', 'end_label', 'end_block', 'Score', 'Sign']]
+                edges_color = edges[['start_index', 'start_name', 'start_color', 'start_label', 'start_block', 'end_index', 'end_name', 'end_color', 'end_label', 'end_block', 'score', 'sign']]
             else:
-                edges_color = edges[['start_index', 'start_name', 'start_color', 'start_label', 'end_index', 'end_name', 'end_color', 'end_label', 'Score', 'Sign']]
+                edges_color = edges[['start_index', 'start_name', 'start_color', 'start_label', 'end_index', 'end_name', 'end_color', 'end_label', 'score', 'sign']]
 
-        if color_scale == "Score":
+        if edge_color_scale.lower() == "score":
 
             for i in range(edgeCmap.N):
                 colorsHEX.append(matplotlib.colors.rgb2hex(edgeCmap(i)[:3]))
@@ -1276,10 +1457,10 @@ class edgeBundle:
                     signColors.append(colorsHEX[0])
 
             edges_color = edges_color.assign(color=pd.Series(signColors, index=edges_color.index))
-        elif color_scale == "Pvalue":
+        elif edge_color_scale.lower() == "pvalue":
 
-            if "Pvalue" in edges_color.columns:
-                colorsRGB = get_colors(edges_color['Pvalue'].values, edgeCmap)[:, :3]
+            if "pvalue" in edges_color.columns:
+                colorsRGB = self.__get_colors(edges_color['pvalue'].values, edgeCmap)[:, :3]
 
                 for rgb in colorsRGB:
                     colorsHEX.append(matplotlib.colors.rgb2hex(rgb))
@@ -1287,7 +1468,7 @@ class edgeBundle:
                 edges_color = edges_color.assign(color=pd.Series(colorsHEX, index=edges_color.index))
 
             else:
-                print("Pvalue in not a column in this dataset. Now choosing Score as a color scale.")
+                print("Pvalue in not a column in this dataset. Now choosing score as a color scale.")
 
                 for i in range(edgeCmap.N):
                     colorsHEX.append(matplotlib.colors.rgb2hex(edgeCmap(i)[:3]))

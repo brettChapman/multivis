@@ -8,29 +8,37 @@ from .utils import *
 class Network(Edge):
     """Class for Network. Inherits from Edge.
 
-        Parameters
+        Initial_Parameters
         ----------
-        peaktable : Pandas dataframe containing peak data
-        scores : Pandas dataframe containing correlation coefficients
-        pvalues : Pandas dataframe containing correlation pvalues
+        peaktable : Pandas dataframe containing peak data. Must contain 'Name' and 'Label'.
+        similarities : Pandas dataframe matrix containing similarity scores
+        pvalues : Pandas dataframe matrix containing similarity pvalues
 
         Methods
         -------
-        set_params : Set parameters - filter score type, hard threshold, internal correlation flag and sign type.
+        set_params : Set parameters -
+            filterScoreType: Value type to filter similarities on (default: 'pvalue')
+            hard_threshold: Value to filter similarities on (default: 0.005)
+            link_type: The value type to represent links in the network (default: 'score')
+            internalSimilarities: Include similarities within blocks if building multi-block network (default: False)
+            sign: The sign of the similarity score to filter on ('pos', 'neg' or 'both') (default: 'both')
+            node_color_column: The Peak Table column to use for node colours (default: None sets to black)
+            node_cmap: The CMAP colour palette to use for nodes (default: 'brg')
+
         run : Builds nodes, edges and NetworkX graph.
         getNetworkx : Returns a NetworkX graph.
         getLinkType : Returns the link type parameter used in building the network.
     """
 
-    def __init__(self, peaks, scores, pvalues):
+    def __init__(self, peaktable, similarities, pvalues):
 
-        Edge.__init__(self, peaks, scores, pvalues)
+        Edge.__init__(self, peaktable, similarities, pvalues)
 
         self.set_params()
 
-    def set_params(self, filterScoreType='Pvalue', hard_threshold=0.005, link_type='Score', internalCorrelation=False, sign="both"):
+    def set_params(self, filterScoreType='pvalue', hard_threshold=0.005, link_type='score', internalSimilarities=False, sign='both', node_color_column=None, node_cmap='brg'):
 
-        Edge.set_params(self, filterScoreType, hard_threshold, internalCorrelation, sign)
+        Edge.set_params(self, filterScoreType, hard_threshold, internalSimilarities, sign, node_color_column, node_cmap)
 
         link_type = self.__paramCheck(link_type)
 
@@ -63,14 +71,14 @@ class Network(Edge):
         nodes = self.getNodes()
         edges = self.getEdges()
 
-        if 'Group' in nodes.columns:
-            blocks = list(nodes['Group'].unique())
+        if 'Block' in nodes.columns:
+            blocks = list(nodes['Block'].unique())
         else:
             blocks = [1]
 
         g = nx.Graph()
 
-        if "Pvalue" in edges.columns:
+        if "pvalue" in edges.columns:
 
             if len(blocks) > 1:
                 for source_index, _, _, source, source_block, target_index, _, _, target, target_block, score, _, pvalue in edges.values:

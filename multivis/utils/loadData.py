@@ -9,16 +9,13 @@ def loadData(filename, DataSheet, PeakSheet):
         Parameters
         ----------
         filename : The name of the excel file (.xlsx file) e.g. 'Data.xlsx'.
-
-        DataSheet : The name of the data sheet in the file e.g. 'Data'. The data sheet must contain an 'Idx', 'SampleID', and 'Class' column.
-
-        PeakSheet : The name of the peak sheet in the file e.g. 'Data'. The peak sheet must contain an 'Idx', 'Name', and 'Label' column.
+        DataSheet : The name of the data sheet in the file e.g. 'Data'. The data sheet must contain an 'Idx' and 'Class' column.
+        PeakSheet : The name of the peak sheet in the file e.g. 'Peak'. The peak sheet must contain an 'Idx', 'Name', and 'Label' column.
 
         Returns
         -------
         DataTable: Pandas dataFrame
         PeakTable: Pandas dataFrame
-
     """
 
     if path.isfile(filename) is False:
@@ -43,7 +40,7 @@ def loadData(filename, DataSheet, PeakSheet):
     DataTable = DataTable.replace(" ", np.nan)
 
     # Error checks
-    __checkData(DataTable, PeakTable)
+    DataTable, PeakTable = __checkData(DataTable, PeakTable)
 
     # Make the Idx column start from 1
     DataTable.index = np.arange(1, len(DataTable) + 1)
@@ -51,17 +48,10 @@ def loadData(filename, DataSheet, PeakSheet):
 
     print("TOTAL SAMPLES: {} TOTAL PEAKS: {}".format(len(DataTable), len(PeakTable)))
     print("Done!")
+
     return DataTable, PeakTable
 
 def __checkData(DataTable, PeakTable):
-    """Error checking for DataTable and PeakTable (used in load_dataXL).
-
-        Parameters
-        ----------
-        DataTable: Pandas dataFrame. Data sheet with the required columns.
-
-        PeakTable: Pandas dataFrame. Peak sheet with the required columns.
-    """
 
     # Check DataTable for Idx, Class and SampleID
     data_columns = DataTable.columns.values
@@ -80,10 +70,6 @@ def __checkData(DataTable, PeakTable):
 
     if "Class" not in data_columns:
         print("Data Table does not contain the required 'Class' column")
-        sys.exit()
-
-    if "SampleID" not in data_columns:
-        print("Data Table does not contain the required 'SampleID' column")
         sys.exit()
 
     # Check PeakTable for Idx, Name, Label
@@ -125,4 +111,6 @@ def __checkData(DataTable, PeakTable):
     if len(temp) != len(peak_list):
         print("The Peak Names in Data Table should exactly match the Peak Names in Peak Table. Remember that all Peak Names should be unique.")
         sys.exit()
+
+    return DataTable, PeakTable
 
