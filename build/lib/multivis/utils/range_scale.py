@@ -40,4 +40,4 @@ def __checkData(data, newMin, newMax):
             print("Error: The maximum value is not valid. Choose a float or integer value.")
             sys.exit()
 
-    return data, newMin, newMaxw
+    return data, newMin, newMax

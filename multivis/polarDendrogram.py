@@ -2,6 +2,9 @@ import sys
 import copy
 import matplotlib
 import matplotlib.pyplot as plt
+import seaborn as sns
+from collections import defaultdict
+from sklearn.preprocessing import StandardScaler
 from scipy.cluster.hierarchy import linkage, dendrogram
 import numpy as np
 import pandas as pd
@@ -35,13 +38,13 @@ class polarDendrogram:
 
     def __init__(self, dn):
 
-        self.__dn = self.__checkData(dn)
+        self.__dn = self.__checkDendrogram(dn)
 
         self.set_params()
 
-    def set_params(self, imageFileName='polarDendrogram.png', saveImage=True, branch_scale='linear', gap=0.1, grid=False, style_sheet='seaborn-white', dpi=200, figSize=(10,10), fontSize=15, PeakTable=pd.DataFrame(), Color_column=None, Label_column=None, text_cmap='brg'):
+    def set_params(self, imageFileName='polarDendrogram.png', saveImage=True, branch_scale='linear', gap=0.1, grid=False, style_sheet='seaborn-white', dpi=200, figSize=(10,10), fontSize=15, PeakTable=pd.DataFrame(), DataTable=pd.DataFrame(), Color_column=None, Label_column=None, text_cmap='brg'):
 
-        text_colors, labels = self.__checkPeakTable(PeakTable, Color_column, Label_column, text_cmap)
+        PeakTable, DataTable, text_colors, labels = self.__checkData(PeakTable, DataTable, Color_column, Label_column, text_cmap)
 
         imageFileName, saveImage, branch_scale, gap, grid, style_sheet, dpi, figSize, fontSize = self.__paramCheck(imageFileName, saveImage, branch_scale, gap, grid, style_sheet, dpi, figSize, fontSize)
 
@@ -54,8 +57,75 @@ class polarDendrogram:
         self.__dpi = dpi;
         self.__figSize = figSize;
         self.__fontSize = fontSize;
+        self.__peaktable = PeakTable;
+        self.__datatable = DataTable;
         self.__text_colors = text_colors;
         self.__labels = labels;
+
+    def getClusterPlots(self, column_numbers=2, log=True, autoscale=True, figSize=(10,20), saveImage=True, imageFileName='clusterPlots.jpg', dpi=200):
+
+        scaler = StandardScaler()
+
+        dendrogram = self.__dn
+        peaktable = self.__peaktable
+        datatable = self.__datatable
+
+        peaklist = peaktable['Name']
+        X = datatable[peaklist]
+
+        if log:
+            X = np.log10(X)
+
+        if autoscale:
+            X = scaler.fit_transform(X)
+
+        if not isinstance(X, pd.DataFrame):
+            X_data = pd.DataFrame(X, columns=peaklist)
+
+        if peaktable.empty or datatable.empty:
+            print("Error: Peak Table and/or Data Table is empty. Can not produce cluster plots. Please provide a populated Data and Peak Table.")
+            sys.exit()
+        else:
+            col_colors = self.__get_cluster_classes(dendrogram, peaktable.index)
+
+            col_palette = dict(zip(peaktable.index.unique(), col_colors))
+
+            ordered_list = dendrogram['ivl']
+
+            clusters = self.__getClusters(ordered_list, col_palette)
+
+            fig, axes = plt.subplots(nrows=len(clusters), ncols=column_numbers, sharey=True, figsize=figSize)
+
+            axes = self.__trim_axes(axes, len(clusters))
+
+            for cluster_index, cluster in enumerate(clusters):
+
+                peak_cluster = peaktable[peaktable.index.isin(cluster)]
+
+                x = X_data[peak_cluster['Name']]
+
+                df_merged = pd.DataFrame()
+
+                cluster_names = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
+
+                for index, peak in enumerate(x.columns):
+
+                    if df_merged.empty:
+                        df_merged = pd.merge(datatable.T[~datatable.T.index.isin(peaktable['Name'])].T.reset_index(drop=True), pd.Series(x.values[:, index], name='Peak').reset_index(drop=True), left_index=True, right_index=True)
+                    else:
+                        df_dat = pd.merge(datatable.T[~datatable.T.index.isin(peaktable['Name'])].T.reset_index(drop=True), pd.Series(x.values[:, index], name='Peak').reset_index(drop=True), left_index=True, right_index=True)
+                        df_merged = pd.concat([df_merged, df_dat], axis=0, sort=False).reset_index(drop=True)
+
+                ax = sns.pointplot(data=df_merged, x='Class', y='Peak', x_estimator=np.mean, capsize=0.1, ci=95, ax=axes[cluster_index])
+
+                ax.set(xlabel='', ylabel='Scaled Peak Area of cluster {}'.format(cluster_names[cluster_index]))
+
+            fig.tight_layout(h_pad=5, w_pad=2)
+
+            if saveImage:
+                plt.savefig(imageFileName, dpi=dpi)
+
+            plt.show()
 
     def run(self):
 
@@ -158,7 +228,7 @@ class polarDendrogram:
 
             plt.show()
 
-    def __checkData(self, dn):
+    def __checkDendrogram(self, dn):
 
         if not isinstance(dn, dict):
             print("Error: A dendrogram dictionary was not entered. Please check your data.")
@@ -166,7 +236,7 @@ class polarDendrogram:
 
         return dn
 
-    def __checkPeakTable(self, PeakTable, Color_column, Label_column, text_cmap):
+    def __checkData(self, PeakTable, DataTable, Color_column, Label_column, text_cmap):
 
         if not isinstance(text_cmap, str):
             print("Error: Text CMAP is not valid. Choose a string value.")
@@ -232,7 +302,11 @@ class polarDendrogram:
                     print("Error: Provided Label_column is not in Peak Table. Choose a valid label column.")
                     sys.exit()
 
-        return text_colors, labels
+        if not isinstance(DataTable, pd.DataFrame):
+            print("Error: Provided Data Table is not valid. Choose a Pandas dataframe.")
+            sys.exit()
+
+        return PeakTable, DataTable, text_colors, labels
 
     def __paramCheck(self, imageFileName, saveImage, branch_scale, gap, grid, style_sheet, dpi, figSize, fontSize):
 
@@ -296,3 +370,58 @@ class polarDendrogram:
         norm = matplotlib.colors.Normalize(vmin=x.min(), vmax=x.max())
 
         return cmap(norm(x))
+
+    def __get_cluster_classes(self, dn, labels, label='ivl'):
+        cluster_idxs = defaultdict(list)
+        for c, pi in zip(dn['color_list'], dn['icoord']):
+            for leg in pi[1:3]:
+                i = (leg - 5.0) / 10.0
+                if abs(i - int(i)) < 1e-5:
+                    cluster_idxs[c].append(int(i))
+
+        cluster_classes = {}
+        for c, l in cluster_idxs.items():
+            i_l = [dn[label][i] for i in l]
+            cluster_classes[c] = i_l
+
+        cluster = []
+        for i in labels:
+            included = False
+            for j in cluster_classes.keys():
+                if i in cluster_classes[j]:
+                    cluster.append(j)
+                    included = True
+            if not included:
+                cluster.append(None)
+
+        return cluster
+
+    def __getClusters(self, ordered_list, col_palette):
+
+        clusters = []
+        sub_cluster = []
+        prev_color = col_palette[ordered_list[0]]
+
+        for index, i in enumerate(ordered_list):
+            color = col_palette[i]
+
+            if color == prev_color:
+                sub_cluster.append(i)
+            else:
+                clusters.append(sub_cluster)
+                sub_cluster = []
+                sub_cluster.append(i)
+
+            if index == len(ordered_list) - 1:
+                clusters.append(sub_cluster)
+
+            prev_color = color
+
+        return clusters
+
+    def __trim_axes(self, axes, N):
+        """Reformat axes to mirror cluster number"""
+        axes = axes.flat
+        for ax in axes[N:]:
+            ax.remove()
+        return axes[:N]

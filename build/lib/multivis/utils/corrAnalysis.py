@@ -18,7 +18,7 @@ def corrAnalysis(df_data, correlationType):
         df_pval : Pandas dataframe matrix of all correlation pvalues
     """
 
-    df_data, correlationType = __checkData(df_data, correlationType)
+    df_data, correlationType = __checkData(df_data.astype(float), correlationType)
 
     df_corr = pd.DataFrame()
     df_pval = pd.DataFrame()
