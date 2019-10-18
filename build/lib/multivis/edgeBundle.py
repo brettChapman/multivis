@@ -93,9 +93,9 @@ class edgeBundle:
                                                          , 'mouseOver': mouse
                                                          , 'backgroundColor': backgroundColor})
 
-        css_text = css_text_template_bundle.substitute({'fontSize': str(fontSize) + 'vw'
-                                                           , 'backgroundColor': backgroundColor
-                                                           , 'foregroundColor': foregroundColor})
+        css_text = css_text_template_bundle.substitute({'fontSize': str(fontSize) + 'vmin'
+                                                         , 'backgroundColor': backgroundColor
+                                                         , 'foregroundColor': foregroundColor})
 
         html = html_template_bundle.substitute({'css_text': css_text, 'js_text': js_text})
 
@@ -176,7 +176,7 @@ class edgeBundle:
         css_text = '''
         .node {
             font: "Helvetica Neue", Helvetica, Arial, sans-serif;
-            font-size: $fontSize;
+            font-size: $fontSize;            
         }
         
         body {background-color: $backgroundColor;}
@@ -245,6 +245,8 @@ class edgeBundle:
        
         #wrapper {
             position: relative;
+            width: 100%;
+            height: 100%;
             margin: 0 auto;
             margin-top: auto;
             margin-bottom: auto;
@@ -344,11 +346,16 @@ class edgeBundle:
         var edgeBundle = d3.select(canvas).append("svg").attr("id", "edgeBundle");
         
         function redraw(){
-                    
-            var diameter = canvas.clientWidth;
-                  
-            //var diagonal = Math.sqrt(Math.pow(width, 2) + Math.pow(height, 2))
-                                    
+            
+            var width = canvas.clientWidth;
+            var height = canvas.clientHeight;
+            
+            if (height < width) {
+                diameter = height;
+            } else {
+                diameter = width;            
+            }
+                                                
             var radius = diameter / 2;
             var innerRadius = radius - $innerRadiusOffset;        
         
@@ -377,10 +384,16 @@ class edgeBundle:
                     
                         svgNodes = d3.select('svg#edgeBundle').selectAll(".node")
                                                 
-                        var currentFontSize = svgNodes.style('font-size');
+                        var currentFontSize = parseFloat(svgNodes.style('font-size'));
+                        
+                        var scaled_font_size = currentFontSize/scaleFactor
+                        
+                        var scaled_font_size = scaled_font_size.toString();
+                        
+                        var scaled_font_size = scaled_font_size.concat("", "px");
                         
                         //Scale down the font size prior to saving
-                        svgNodes.style('font-size', currentFontSize/scaleFactor);
+                        svgNodes.style('font-size', scaled_font_size);
                         
                         var options = {
                                 canvg: window.canvg,
@@ -395,6 +408,10 @@ class edgeBundle:
                         }
 		    
                         saveSvgAsPng(d3.select('svg#edgeBundle').node(), "edgeBundle.png", options);
+                        
+                        var currentFontSize = currentFontSize.toString();
+                        
+                        var currentFontSize = currentFontSize.concat("", "px");
                         
                         //Scale font size back to original after saving
                         svgNodes.style('font-size', currentFontSize);
@@ -1103,8 +1120,7 @@ class edgeBundle:
                         .classed("node--source", false);
                             
                     link.style('opacity', 1);
-                    node.style('opacity', 1);
-                    //node.style('font-weight', 'normal');
+                    node.style('opacity', 1);                    
                 }
                 
                 function packageHierarchy(classes) {

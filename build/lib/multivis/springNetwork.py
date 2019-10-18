@@ -1001,8 +1001,8 @@ class springNetwork:
                                 ignoreMouse : true,
                                 ignoreAnimation : true,
                         }
-		    
-                        saveSvgAsPng(d3.select('svg').node(), "networkPlot.png", options);
+		                		                
+                        saveSvgAsPng(d3.select('svg#springNetwork').node(), "networkPlot.png", options);
                     })
         
             function dragstarted(d) {

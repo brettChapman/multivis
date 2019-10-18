@@ -33,6 +33,15 @@ class polarDendrogram:
                 Label_column: The label column to use from Peak Table (default: use original Peak Table index from cartesian dendrogram)
                 text_cmap: The CMAP colour palette to use (default: 'brg')
 
+            getClusterPlots : Generates plots of mean peak area over the 'Class' variable for each cluster from the polar dendrogram
+                column_numbers: The number of columns to display in the plots (default: 2)
+                log: Setting to 'True' will log the data (default: True)
+                autoscale:  Setting to 'True' will scale the data to unit variance (Default: True)
+                figSize: The figure size as a tuple (width,height) (default: (10,20))
+                saveImage: Setting to 'True' will save the image to file (default: True)
+                imageFileName: The image file name to save to (default: 'clusterPlots.png')
+                dpi: The number of Dots Per Inch (DPI) for the image (default: 200)
+
             run : Generates and displays the Polar dendrogram.
     """
 
@@ -62,7 +71,7 @@ class polarDendrogram:
         self.__text_colors = text_colors;
         self.__labels = labels;
 
-    def getClusterPlots(self, column_numbers=2, log=True, autoscale=True, figSize=(10,20), saveImage=True, imageFileName='clusterPlots.jpg', dpi=200):
+    def getClusterPlots(self, column_numbers=2, log=True, autoscale=True, figSize=(10,20), saveImage=True, imageFileName='clusterPlots.png', dpi=200):
 
         scaler = StandardScaler()
 
@@ -108,7 +117,10 @@ class polarDendrogram:
 
                 cluster_names = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
 
+                peak_count = 0;
                 for index, peak in enumerate(x.columns):
+
+                    peak_count = peak_count+1;
 
                     if df_merged.empty:
                         df_merged = pd.merge(datatable.T[~datatable.T.index.isin(peaktable['Name'])].T.reset_index(drop=True), pd.Series(x.values[:, index], name='Peak').reset_index(drop=True), left_index=True, right_index=True)
@@ -118,7 +130,7 @@ class polarDendrogram:
 
                 ax = sns.pointplot(data=df_merged, x='Class', y='Peak', x_estimator=np.mean, capsize=0.1, ci=95, ax=axes[cluster_index])
 
-                ax.set(xlabel='', ylabel='Scaled Peak Area of cluster {}'.format(cluster_names[cluster_index]))
+                ax.set(xlabel='', ylabel='Scaled Peak Area', title='Cluster {} (N={})'.format(cluster_names[cluster_index],peak_count))
 
             fig.tight_layout(h_pad=5, w_pad=2)
 

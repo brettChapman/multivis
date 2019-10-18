@@ -178,6 +178,15 @@ For further detail on the usage refer to the docstring.
 			- [Color_column] : The colour column to use from Peak Table (Can be colour or numerical values such as 'pvalue') (default: 'black')
 			- [Label_column] : The label column to use from Peak Table (default: use original Peak Table index from cartesian dendrogram)
 			- [text_cmap] : The CMAP colour palette to use (default: 'brg')
+
+		- [getClusterPlots] : Generates plots of mean peak area over the 'Class' variable for each cluster from the polar dendrogram
+			- [column_numbers] : The number of columns to display in the plots (default: 2)
+			- [log] : Setting to 'True' will log the data (default: True)
+			- [autoscale] :  Setting to 'True' will scale the data to unit variance (Default: True)
+			- [figSize] : The figure size as a tuple (width,height) (default: (10,20))
+			- [saveImage] : Setting to 'True' will save the image to file (default: True)
+			- [imageFileName] : The image file name to save to (default: 'clusterPlots.png')
+			- [dpi] : The number of Dots Per Inch (DPI) for the image (default: 200)
 		
 		- [run] : Generates and displays the Polar dendrogram.
 
