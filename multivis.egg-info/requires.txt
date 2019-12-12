@@ -2,7 +2,7 @@ numpy>=1.12
 pandas
 matplotlib
 seaborn
-networkx
+networkx==2.3.0
 scipy
 scikit-learn
 tqdm

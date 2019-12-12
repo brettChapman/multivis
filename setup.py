@@ -6,7 +6,7 @@ def readme():
 
 setup(
     name="multivis",
-    version="0.1.11",
+    version="0.1.12",
     description="MultiVis is a data visualisation package that produces both static and interactive visualisations targeted towards the Omics community.",
     long_description=readme(),
     long_description_content_type='text/markdown',
@@ -18,7 +18,7 @@ setup(
                       "pandas",
 		      "matplotlib",
 		      "seaborn",
-	 	      "networkx",
+	 	      "networkx==2.3.0",
                       "scipy",
                       "scikit-learn",
 		      "tqdm",

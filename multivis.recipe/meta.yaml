@@ -1,6 +1,6 @@
 package:
   name: multivis
-  version: 0.1.11
+  version: 0.1.12
 
 source:
   path: ../
@@ -18,7 +18,7 @@ requirements:
     - pandas
     - matplotlib
     - seaborn
-    - networkx
+    - networkx==2.3.0
     - scipy
     - scikit-learn
     - tqdm
@@ -30,7 +30,7 @@ requirements:
     - pandas
     - matplotlib
     - seaborn
-    - networkx
+    - networkx ==2.3.0
     - scipy
     - scikit-learn
     - tqdm
