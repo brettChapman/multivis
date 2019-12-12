@@ -3,6 +3,7 @@ import sys
 import numpy as np
 import networkx as nx
 import matplotlib
+import webbrowser as wb
 from string import Template
 from ast import literal_eval
 import json
@@ -33,6 +34,7 @@ class springNetwork:
             neg_score_color: Colour value for negative similarity scores. Can be HTML/CSS name, hex code, and (R,G,B) tuples (default: 'black')
 
         run: : Generates the JavaScript embedded HTML code and writes to a HTML file
+        launchDashboard : Generates the JavaScript embedded HTML code in a dashboard format, writes to a HTML file and launches a new browser window
     """
 
     def __init__(self, g):
@@ -100,6 +102,10 @@ class springNetwork:
 
         css_text_network = css_text_template_network.substitute({'backgroundColor': backgroundColor, 'foregroundColor': foregroundColor})
 
+        #with open('test.txt', 'w') as f:
+        #    f.write(json.dumps(data))
+        #    f.close()
+
         js_text_network = js_text_template_network.substitute({'networkData': json.dumps(data)
                                                                   , 'backgroundColor': backgroundColor
                                                                   , 'foregroundColor': foregroundColor
@@ -111,6 +117,71 @@ class springNetwork:
         with open(html_file, 'w') as f:
             f.write(html)
             f.close()
+
+    def launchDashboard(self):
+
+        g = self.__g
+        link_type = self.__link_type.lower()
+        link_width = self.__link_width
+        chargeStrength = self.__chargeStrength
+        html_file = self.__html_file
+        backgroundColor = self.__backgroundColor
+        foregroundColor = self.__foregroundColor
+        node_text_size = self.__node_text_size
+        node_size_scale = self.__node_size_scale
+        fix_nodes = self.__fix_nodes
+        displayLabel = self.__displayLabel
+        node_data = self.__node_data
+
+        if fix_nodes:
+            fixed = "true";
+        else:
+            fixed = "false";
+
+        if link_type.lower() == 'pvalue':
+            operator = '<=';
+        else:
+            operator = '>=';
+
+        if displayLabel:
+            dispLabel = "true";
+        else:
+            dispLabel = "false";
+
+        paramDict = dict({"link_type": link_type, "link_width": link_width, "node_text_size": node_text_size,
+                          "displayLabel": dispLabel, "node_data": node_data, "node_size_scale": node_size_scale, "chargeStrength": chargeStrength, "fix_nodes": fixed})
+
+        data = json.dumps(self.__generateJson(g), cls=self.__graphEncoder)
+
+        css_text_template_network = Template(self.__getCSSdashboard());
+        js_text_template_network = Template(self.__getJSdashboard());
+
+        html_template_network = Template(self.__getHTMLdashboard());
+
+        css_text_network = css_text_template_network.substitute({'backgroundColor': backgroundColor, 'foregroundColor': foregroundColor})
+
+        #with open('test.txt', 'w') as f:
+        #    f.write(json.dumps(data))
+        #    f.close()
+
+        js_text_network = js_text_template_network.substitute({'networkData': json.dumps(data)
+                                                                  , 'backgroundColor': backgroundColor
+                                                                  , 'foregroundColor': foregroundColor
+                                                                  , 'operator': operator
+                                                                  , 'paramDict': paramDict})
+
+        html = html_template_network.substitute({'css_text': css_text_network, 'js_text': js_text_network})
+
+        html_file = html_file.split(".")[0] + "_dashboard.html"
+
+        with open(html_file, 'w') as f:
+            f.write(html)
+            f.close()
+
+        path = os.getcwd()
+        sep = path[0]
+
+        wb.open("file://" + path + sep + html_file, new=2)
 
     def __checkData(self, g):
 
@@ -379,7 +450,7 @@ class springNetwork:
             left: 0px;                 
         }  
         
-        #wrapper {
+        #springWrapper {
             position: relative;
             height: 100%;                        
             margin: 0 auto;
@@ -404,6 +475,95 @@ class springNetwork:
 
         return css_text
 
+    def __getCSSdashboard(self):
+
+        css_text = '''
+
+        body {
+            background-color: $backgroundColor;            
+        }
+
+        .links line {
+            stroke-opacity: 0.6;
+        }
+
+        .nodes circle {
+            stroke: #fff;
+            stroke-width: 1.5px;
+            opacity: 1.0;
+        }
+
+        .text {
+            stroke: #fff;
+            stroke-width: 1.5px;
+            opacity: 1.0;
+        }
+        
+        #nodeSizeDropdown {
+            position: relative;
+            top: 25px;
+        }
+
+        #nodeColorDropdown {
+            position: relative;
+            top: 30px;
+        }
+
+        #sliderText {
+            position: absolute;
+            top: 59px;
+            left: 0px;
+            color: 'black';
+        }
+
+        #slider {
+            position: absolute;
+            top: 40px;
+            left: 125px;
+        }
+
+        #sliderValue {
+            position: absolute;
+            top: 60px;
+            left: 350px;
+            color: 'black';
+        }
+
+        #save {
+            position: relative;
+            top: 35px;
+            left: 0px;                 
+        }  
+
+        #springPanel {
+            position: relative;
+            height: 500px;
+            margin: 0 auto;
+            margin-top: auto;
+            margin-bottom: auto;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        #sliderValue, text {
+
+            font-family: sans-serif;
+                -webkit-touch-callout: none; /* iOS Safari */
+                -webkit-user-select: none; /* Safari */
+                -khtml-user-select: none; /* Konqueror HTML */
+                -moz-user-select: none; /* Firefox */
+                -ms-user-select: none; /* Internet Explorer/Edge */
+                user-select: none; /* Non-prefixed version, currently supported by Chrome and Opera */
+        }
+        
+        td:nth-child(odd) {
+            background-color: #eee;
+            font-weight: bold;
+        }
+        '''
+
+        return css_text
+
     def __getJS(self):
 
         js_text = '''
@@ -412,15 +572,15 @@ class springNetwork:
             
         var networkData = $networkData
         
-        var canvas = document.getElementById("wrapper");
+        var canvas = document.getElementById("springWrapper");
         var springNetwork = d3.select(canvas).append("svg").attr("id", "springNetwork");
         
         function redraw(){
         
-            d3.select('#wrapper').select("#search").selectAll("*").remove();            
-            d3.select('#wrapper').select("#nodeSizeDropdown").selectAll("*").remove();
-            d3.select('#wrapper').select("#nodeColorDropdown").selectAll("*").remove();
-            d3.select('#wrapper').select("#save").selectAll("*").remove();
+            d3.select('#springWrapper').select("#search").selectAll("*").remove();            
+            d3.select('#springWrapper').select("#nodeSizeDropdown").selectAll("*").remove();
+            d3.select('#springWrapper').select("#nodeColorDropdown").selectAll("*").remove();
+            d3.select('#springWrapper').select("#save").selectAll("*").remove();
                         
             var colorBy = [];
                     
@@ -1105,6 +1265,695 @@ class springNetwork:
 
         return js_text
 
+    def __getJSdashboard(self):
+
+        js_text = '''
+
+        var params = JSON.parse(JSON.stringify($paramDict));
+
+        var networkData = $networkData
+
+        var canvas = document.getElementById("springPanel");
+        var springNetwork = d3.select(canvas).append("svg").attr("id", "springNetwork");
+
+        function redraw(){
+
+            d3.select('#sliderPanel').select("#search").selectAll("*").remove();            
+            d3.select('#sliderPanel').select("#nodeSizeDropdown").selectAll("*").remove();
+            d3.select('#sliderPanel').select("#nodeColorDropdown").selectAll("*").remove();
+            d3.select('#sliderPanel').select("#save").selectAll("*").remove();
+
+            var colorBy = [];
+
+            var width = canvas.clientWidth;
+            var height = canvas.clientHeight;
+
+            springNetwork.selectAll("*").remove();
+            
+            var svg = d3.select("svg#springNetwork")
+                                .attr("width", width)
+                                .attr("height", height);
+
+            svg.call(d3.zoom().on('zoom', zoomed))
+                .on("dblclick.zoom", null);
+
+            var simulation = d3.forceSimulation()
+                .force("link", d3.forceLink().id(d => d.id))            
+                .force("center", d3.forceCenter(width / 2, height / 2));        
+
+            var container = svg.append('g');
+
+            var search = d3.select("#search").attr('onsubmit', 'return false;');
+
+            var box = search.append('input')
+                .attr('type', 'text')
+                .attr('id', 'searchTerm')
+                .attr('placeholder', 'Type to search...');
+
+            var button = search.append('input')
+                .attr('type', 'button')
+                .attr('value', 'Search')
+                .on('click', function () { searchNodes(); });
+
+            var toggle = 0;
+            
+            var graph = JSON.parse(networkData);
+
+            if (params.link_type == "score") {            
+                var link_type_text = "Score";
+            } else if (params.link_type == "pvalue") {
+                var link_type_text = "Pvalue";
+            }
+
+            var graphRec = JSON.parse(JSON.stringify(graph));
+
+            var link = container.append("g")
+                .attr("class", "links")
+                .selectAll("line");
+
+            var node = container.append("g")
+                .attr("class", "nodes")
+                .selectAll("circle");
+
+            var label = container.selectAll(".text");
+
+            var linkedByIndex = {};
+
+            graphRec.links.forEach( function(d) {
+                linkedByIndex[d.source + ',' + d.target] = 1;
+                linkedByIndex[d.target + ',' + d.source] = 1;
+            });
+
+            if (Object.keys(params.node_size_scale).length === 0) {
+
+                graph.nodes.forEach( function (d) { d.size = 10; });
+
+            } else {
+
+                updateNodeSize(Object.keys(params.node_size_scale)[0])
+            }
+
+            function updateNodeSize(centrality) {
+
+                var scaleType = params.node_size_scale[centrality].scale
+                var range = params.node_size_scale[centrality].range
+
+                var centrality_values = []        
+                graph.nodes.forEach( function (d) { if (isNaN(d[centrality])) { centrality_values.push(parseFloat(0)); } else { centrality_values.push(parseFloat(d[centrality])); }});
+
+                initScale = d3.scaleLinear()
+                    .domain(d3.extent(centrality_values))
+                    .range([1,10]);
+
+                scaledValues = []
+                centrality_values.forEach( function (d) { scaledValues.push(initScale(parseFloat(d))); });
+
+                if (scaleType == "linear") {
+
+                    linearScale = d3.scaleLinear()
+                         .domain(d3.extent(scaledValues))
+                         .range(range);
+
+                    graph.nodes.forEach( function (d) { if (isNaN(d[centrality])) { d.size = linearScale(initScale(parseFloat(0))); } else { d.size = linearScale(initScale(parseFloat(d[centrality]))); }});
+
+                } else if (scaleType == "reverse_linear") {
+
+                    reversed_linear_values = []
+
+                    scaledValues.forEach( function (d) { reversed_linear_values.push(parseFloat(1/d)); });
+
+                    reversedLinearScale = d3.scaleLinear()
+                        .domain(d3.extent(reversed_linear_values))
+                        .range(range);
+
+                    graph.nodes.forEach( function (d) { if (isNaN(d[centrality])) { d.size = reversedLinearScale(1 / initScale(parseFloat(0))); } else { d.size = reversedLinearScale(1 / initScale(parseFloat(d[centrality]))); }});
+
+                } else if (scaleType == "log") {
+
+                    logScale = d3.scaleLog()
+                        .domain(d3.extent(scaledValues))
+                        .range(range);  	        
+
+                    graph.nodes.forEach( function (d) { if (isNaN(d[centrality])) { d.size = logScale(initScale(parseFloat(0))); } else { d.size = logScale(initScale(parseFloat(d[centrality]))); }});
+
+                } else if (scaleType == "reverse_log") {
+
+                    reversed_log_values = []
+
+                    scaledValues.forEach( function (d) { reversed_log_values.push(parseFloat(1/d)); });
+
+                    reversedLogScale = d3.scaleLog()
+                        .domain(d3.extent(reversed_log_values))
+                        .range(range);
+
+                    graph.nodes.forEach( function (d) { if (isNaN(d[centrality])) { d.size = reversedLogScale(1 / initScale(parseFloat(0))); } else { d.size = reversedLogScale(1 / initScale(parseFloat(d[centrality]))); }});
+
+                } else if (scaleType == "square") {
+
+                    squareScale = d3.scalePow()
+                        .domain(d3.extent(scaledValues))
+                        .exponent(2)
+                        .range(range);
+
+                    graph.nodes.forEach( function (d) { if (isNaN(d[centrality])) { d.size = squareScale(initScale(parseFloat(0))); } else { d.size = squareScale(initScale(parseFloat(d[centrality]))); }});
+
+                } else if (scaleType == "reverse_square") {
+
+                    reversed_squared_values = []
+
+                    scaledValues.forEach( function (d) { reversed_squared_values.push(parseFloat(1/d)); });
+
+                    reversedSquareScale = d3.scalePow()
+                        .domain(d3.extent(reversed_squared_values))
+                        .exponent(2)
+                        .range(range);
+
+                    graph.nodes.forEach( function (d) { if (isNaN(d[centrality])) { d.size = reversedSquareScale(1 / initScale(parseFloat(0))); } else { d.size = reversedSquareScale(1 / initScale(parseFloat(d[centrality]))); }});
+
+                } else if (scaleType == "area") {
+
+                    area_values = []
+
+                    scaledValues.forEach( function (d) { area_values.push(parseFloat(Math.PI * (d * d))); });
+
+                    areaScale = d3.scaleLinear()
+                        .domain(d3.extent(area_values))
+                        .range(range);
+
+                    graph.nodes.forEach( function (d) { if (isNaN(d[centrality])) { d.size = areaScale(Math.PI * (initScale(parseFloat(0)) * initScale(parseFloat(0)))); } else { d.size = areaScale(Math.PI * (initScale(parseFloat(d[centrality])) * initScale(parseFloat(d[centrality])))); }});
+
+                } else if (scaleType == "reverse_area") {
+
+                    reversed_area_values = []
+
+                    scaledValues.forEach( function (d) { reversed_area_values.push(parseFloat(Math.PI * (parseFloat(1/d) * parseFloat(1/d)))); });
+
+                    reversedAreaScale = d3.scaleLinear()
+                        .domain(d3.extent(reversed_area_values))
+                        .range(range);
+
+                    graph.nodes.forEach( function (d) { if (isNaN(d[centrality])) { d.size = reversedAreaScale(Math.PI * (1 / initScale(parseFloat(0))) * (1 / initScale(parseFloat(0)))); } else { d.size = reversedAreaScale(Math.PI * (1 / initScale(parseFloat(d[centrality]))) * (1 / initScale(parseFloat(d[centrality])))); }});
+
+                } else if (scaleType == "volume") {
+
+                    volume_values = []
+
+                    scaledValues.forEach( function (d) { volume_values.push(parseFloat(4 / 3 * (Math.PI * (d * d * d)))); });
+
+                    volumeScale = d3.scaleLinear()
+                        .domain(d3.extent(volume_values))
+                        .range(range);
+
+                    graph.nodes.forEach( function (d) { if (isNaN(d[centrality])) { d.size = volumeScale(4 / 3 * (Math.PI * (initScale(parseFloat(0)) * initScale(parseFloat(0)) * initScale(parseFloat(0))))); } else { d.size = volumeScale(4 / 3 * (Math.PI * (initScale(parseFloat(d[centrality])) * initScale(parseFloat(d[centrality])) * initScale(parseFloat(d[centrality]))))); }});
+
+                } else if (scaleType == "reverse_volume") {
+
+                    reversed_volume_values = []             
+
+                    scaledValues.forEach( function (d) { reversed_volume_values.push(parseFloat(4 / 3 * (Math.PI * (parseFloat(1/d) * parseFloat(1/d) * parseFloat(1/d))))); });
+
+                    reversedVolumeScale = d3.scaleLinear()
+                        .domain(d3.extent(reversed_volume_values))
+                        .range(range);
+
+                    graph.nodes.forEach( function (d) { if (isNaN(d[centrality])) { d.size = reversedVolumeScale(4 / 3 * (Math.PI * ((1 / initScale(parseFloat(0))) * (1 / initScale(parseFloat(0))) * (1 / initScale(parseFloat(0)))))); } else { d.size = reversedVolumeScale(4 / 3 * (Math.PI * ((1 / initScale(parseFloat(d[centrality]))) * (1 / initScale(parseFloat(d[centrality]))) * (1 / initScale(parseFloat(d[centrality])))))); }});
+
+                }    
+            }
+
+            var scaleLinksLinear = d3.scaleLinear()
+                .domain([d3.min(graph.links, function(d) {return d.weight; }),d3.max(graph.links, function(d) {return d.weight; })])
+                .range([1,1000])
+                .clamp(true);
+
+            var scaleLinksLog = d3.scaleLog()
+                .domain([Math.log(d3.min(graph.links, function(d) {return d.weight; })),Math.log(d3.max(graph.links, function(d) {return d.weight; }))])          	    
+                .range([1,1000])
+                .clamp(true);       
+
+            simulation
+                .force("charge", d3.forceManyBody().strength(params.chargeStrength).distanceMax(500))            
+                .force("collide", d3.forceCollide().radius( function (d) { return d.size; }));
+
+            graph.nodes.forEach(function(d) { if (typeof d.color !== 'undefined') { colorBy.push(d.color); } else { colorBy.push(1); } });
+
+            var colorBy = Array.from(new Set(colorBy)) 
+
+            update();
+
+            function update() {
+
+                node = node.data(graph.nodes, d => d.id);
+
+                node.exit().remove();
+
+                var newNode = node.enter().append("circle")
+                        .attr('r', function(d, i) { return d.size; })      		    
+                        .attr("fill", function(d) { return d.color; })
+                        .attr('class', 'node')
+                        .on('mouseover', function(d) {
+                                
+                                peak_data = params.node_data;
+
+                                if (Number.isNaN(Number(d[peak_data[0]]))) {                                
+                                    var init_value = d[peak_data[0]]                                    
+                                } else if (typeof Number(d[peak_data[0]]) == 'number') { 
+                                    var init_value = Number(d[peak_data[0]]).toFixed(3)
+                                }
+                                
+                                html_line = "\\""+ peak_data[0] + "\\",\\"" + init_value + "\\"";
+
+                                peak_data.forEach(function(p) { 
+
+                                    if (p !== peak_data[0]) {
+                                        if (Number.isNaN(Number(d[p]))) {
+                                            var data_value = d[p];
+                                        } else if (typeof Number(d[p]) == 'number') {
+                                            var data_value = Number(d[p]).toFixed(3);
+                                        }
+
+                                        html_line = html_line + "\\n\\"" + p + "\\",\\"" + data_value + "\\"";
+
+                                    }
+                                });
+                                
+                                displayNodeData(html_line)
+                        })      		    
+                        .on('dblclick', releaseNode)
+                        .on('click', fade(0.1))
+                        .on("mouseout", function() {
+                                d3.select('#nodedataPanel').selectAll("*").remove();                                
+                        })
+                        .call(d3.drag()
+                            .on("start", dragstarted)
+                            .on("drag", dragged)
+                            .on("end", dragended));
+
+                node = node.merge(newNode);
+
+                label = label.data(graph.nodes, d => d.id);
+
+                label.exit().remove();
+
+                var newLabel = label.enter().append("text")
+                        .text(function (d) { if (params.displayLabel == "true") { return d.Label; } else { return d.Name; } })
+                        .style("text-anchor", "middle")
+                            .style("fill", "$foregroundColor")
+                            .style("font-family", "Helvetica")
+                            .style("font-size", params.node_text_size)
+                        .attr('class', 'node')
+                        .on('mouseover', function(d) {
+                        
+                                peak_data = params.node_data;
+
+                                if (Number.isNaN(Number(d[peak_data[0]]))) {                                
+                                    var init_value = d[peak_data[0]]                                    
+                                } else if (typeof Number(d[peak_data[0]]) == 'number') { 
+                                    var init_value = Number(d[peak_data[0]]).toFixed(3)
+                                }
+
+                                html_line = "\\""+ peak_data[0] + "\\",\\"" + init_value + "\\"";
+
+                                peak_data.forEach(function(p) { 
+
+                                    if (p !== peak_data[0]) {
+                                        if (Number.isNaN(Number(d[p]))) {
+                                            var data_value = d[p];
+                                        } else if (typeof Number(d[p]) == 'number') {
+                                            var data_value = Number(d[p]).toFixed(3);
+                                        }
+
+                                        html_line = html_line + "\\n\\"" + p + "\\",\\"" + data_value + "\\"";
+
+                                    }
+                                });
+                                
+                                displayNodeData(html_line)                                
+                        })
+                        .on('dblclick', releaseNode)
+                        .on('click', fade(0.1))      		    
+                        .on("mouseout", function() {
+                                d3.select('#nodedataPanel').selectAll("*").remove();                                
+                        })
+                        .call(d3.drag()
+                            .on("start", dragstarted)
+                            .on("drag", dragged)
+                            .on("end", dragended));
+
+                label = label.merge(newLabel);
+
+                //Add no links
+                link = link.data([]);
+
+                //Remove all old links, leaving no links
+                link.exit().remove();
+
+                //Add new links
+                link = link.data(graph.links);
+
+                //Remove all old links, leaving only the new links
+                link.exit().remove();
+
+                var newLink = link.enter().append("line")
+                            .attr("class", "link")
+                            .attr("stroke-width", params.link_width)
+                            .style("stroke", function(d) { return d.color; })
+                            .on('mouseover', function(d) {
+                                    
+                                    if (params.displayLabel == "true") {                                                
+                                        var source = d.source.Label;
+                                        var target = d.target.Label;
+                                    } else { 
+                                        var source = d.source.Name;
+                                        var target = d.target.Name;
+                                    }
+                                    
+                                    html_line = "\\"Source\\",\\""+ source + "\\"\\n\\"Target\\",\\"" + target + "\\"\\n\\"" + link_type_text + "\\"," + d.weight.toPrecision(3)                 
+                                    
+                                    displayNodeData(html_line)                                    
+                            })
+                            .on("mouseout", function() {
+                                    d3.select('#nodedataPanel').selectAll("*").remove();                                    
+                            });                            
+
+                link = link.merge(newLink);
+
+                simulation
+                    .nodes(graph.nodes)
+                    .on("tick", ticked);
+
+                simulation.force("link")
+                    .links(graph.links);
+
+                simulation.alphaTarget(0.1).restart();
+            }
+
+            function ticked() {
+                link
+                    .attr("x1", function(d) { return d.source.x; })
+                    .attr("y1", function(d) { return d.source.y; })
+                    .attr("x2", function(d) { return d.target.x; })
+                    .attr("y2", function(d) { return d.target.y; });    
+
+                node       
+                    .attr("cx", function(d) { return d.x = Math.max(d3.select(this).attr("r"), Math.min(width - d3.select(this).attr("r"), d.x)); })
+                    .attr("cy", function(d) { return d.y = Math.max(d3.select(this).attr("r"), Math.min(height - d3.select(this).attr("r"), d.y)); });    
+
+                label.attr("x", function(d){ return d.x; })
+                     .attr("y", function (d) {return d.y + 5; });            
+
+            }
+
+            var sliderInitValue = '';
+            var sliderMin = '';
+            var sliderMax = '';
+            var sliderValue = '';
+
+            if (params.link_type == "score") {
+                sliderInitValue =  d3.min(graph.links, function(d) {return d.weight; }).toPrecision(5)
+                sliderMin = scaleLinksLinear(d3.min(graph.links, function(d) {return d.weight; }))
+                sliderMax = scaleLinksLinear(d3.max(graph.links, function(d) {return d.weight; }))
+                sliderValue = scaleLinksLinear(d3.min(graph.links, function(d) {return d.weight; }))
+            } else if (params.link_type == "pvalue") {
+                sliderInitValue =  d3.max(graph.links, function(d) {return d.weight; }).toPrecision(5)
+                sliderMin = scaleLinksLog(Math.log(d3.min(graph.links, function(d) {return d.weight; })))
+                sliderMax = scaleLinksLog(Math.log(d3.max(graph.links, function(d) {return d.weight; })))
+                sliderValue = scaleLinksLog(Math.log(d3.max(graph.links, function(d) {return d.weight; })))
+            }
+
+            d3.select('#sliderText').text(link_type_text + ' threshold: ');
+
+            d3.select('#sliderValue').text(sliderInitValue);
+
+            var sliderWidth = 225;
+            var sliderOffSet = 45;
+
+            var Slider = d3.sliderHorizontal()
+    	    					    .min(sliderMin)
+    							    .max(sliderMax)
+                                    .default(sliderInitValue)
+                                    .ticks(0)
+                                    .handle(d3.symbol().type(d3.symbolCircle).size(150)())
+    							    .step(0.0001)                        
+                                    .fill('#2196f3')
+    							    .width(sliderWidth - sliderOffSet)
+    							    .displayValue(false)
+    							    .on('onchange', value => {
+
+      							    	if (params.link_type == "score") {
+                                            var threshold = scaleLinksLinear.invert(value);
+                                        } else if (params.link_type == "pvalue")  {
+                                            var threshold = Math.exp(scaleLinksLog.invert(value));
+                                        }
+
+                					    d3.select('#sliderValue').text(threshold.toPrecision(5));
+
+                                        graph.links.splice(0, graph.links.length);
+                                        graphRec.links.forEach( function (d) { if (d.weight $operator threshold) { graph.links.push(d); }});
+
+                                        //Update link dictionary
+                                        linkedByIndex = {} 
+                                        graphRec.links.forEach( function (d) {
+                                            if (d.weight $operator threshold) {
+
+                                                var source = JSON.stringify(d.source.id);
+                                                var target = JSON.stringify(d.target.id);
+
+                                                if (typeof source == 'undefined') {
+                                                    source = JSON.stringify(d.source);
+                                                }
+
+                                                if (typeof target == 'undefined') {
+                                                    target = JSON.stringify(d.target);
+                                                }
+
+                                                linkedByIndex[source + ',' + target] = 1;
+                                                linkedByIndex[target + ',' + source] = 1;	  						         
+                                            }
+                                        });         
+
+                                        update(); 
+          						    });
+
+            d3.select('#slider').selectAll("*").remove();
+
+            d3.select('#slider')
+                    .append('svg')
+                    .attr('width', sliderWidth)    
+                    .append('g')    
+                    .attr('transform', 'translate(30,30)')
+                    .call(Slider);
+
+            if (Object.keys(params.node_size_scale).length != 0) {
+
+                var nodeSizeDropdown = d3.select('#nodeSizeDropdown')   
+                    .append('select')
+                    .attr("class","nodeSizeDropdown")
+                    .on('change', function() { 
+                        var centrality = this.value;
+
+                        updateNodeSize(centrality)
+
+                        node.attr('r', function(d) { return d.size; } );  
+
+                        simulation.force("collide", d3.forceCollide().radius( function (d) { return d.size; }));
+                        simulation.alphaTarget(0.1).restart();
+                    });
+
+                nodeSizeDropdown.selectAll('option')
+                    .data(Object.keys(params.node_size_scale))
+                    .enter().append('option')		
+                    .text(function(d) { return d; });
+            } else {
+
+                var nodeSizeDropdown = d3.select('#nodeSizeDropdown')
+                    .append('select')
+                    .attr("class","nodeSizeDropdown");
+
+                nodeSizeDropdown.selectAll('option')
+                    .data(['none'])
+                    .enter().append('option')		
+                    .text(function(d) { return d; });        
+            }
+
+            var colorDropDownValues = ['default','schemeCategory10','schemeAccent','schemeDark2','schemePaired','schemePastel1','schemePastel2','schemeSet1','schemeSet2','schemeSet3'];
+            var schemeLenCount = [];
+
+            //Get lengths of all color schemes used
+            colorDropDownValues.forEach( function(value) { if (value !== 'default') { schemeLenCount.push(d3[value].length); }});
+
+            var nodeColorDropdown = d3.select('#nodeColorDropdown')
+                .append('select')
+                .attr("class","nodeColorDropdown")
+                .on('change', function() { 
+                    var colorScheme = this.value;
+
+                    if (colorScheme == 'default') {
+                        node.attr("fill", function(d) { return d.color; })
+                    } else {
+
+                        //Slice color schemes to the minimum length across all color schemes for consistancy when switching color schemes
+                        colorSchemeSliced = d3[colorScheme].slice(0, d3.min(schemeLenCount));
+
+                        var color_palette = d3.scaleOrdinal()
+                                                   .domain(colorBy)
+                                                   .range(colorSchemeSliced);                                                        
+
+                        node.attr("fill", function(d) { if (typeof d.color !== 'undefined') { return color_palette(d.color); } else { return color_palette(1); } });                        
+                    }
+
+                    simulation.alphaTarget(0.1).restart();
+                });
+
+            nodeColorDropdown.selectAll('option')
+                .data(colorDropDownValues)
+                .enter().append('option')		
+                .text(function(d) { return d; });
+
+            d3.select("#save")
+                    .on('click', function(){
+
+                        var options = {
+                                canvg: window.canvg,
+                                backgroundColor: '$backgroundColor',
+                                height: height+100,
+                                width: width+100,
+                                left: -50,
+                                scale: 5/window.devicePixelRatio,
+                                encoderOptions: 1,
+                                ignoreMouse : true,
+                                ignoreAnimation : true,
+                        }
+
+                        saveSvgAsPng(d3.select('svg#springNetwork').node(), "networkPlot.png", options);
+                    })
+
+            function dragstarted(d) {
+
+                if (!d3.event.active) simulation.alphaTarget(0.3).restart();
+                d.fx = d.x;
+                d.fy = d.y;
+            }
+
+            function dragged(d) {
+                d.fx = d3.event.x;
+                d.fy = d3.event.y;
+            }
+
+            function dragended(d) {
+                if (!d3.event.active) simulation.alphaTarget(0);
+
+                if (params.fix_nodes == "true") {
+                    d.fx = d3.event.x;
+                    d.fy = d3.event.y;
+                } else {
+                    d.fx = null;
+                    d.fy = null;
+                }
+            }
+
+            function releaseNode(d) {        
+                d.fx = null;
+                d.fy = null;
+            }
+
+            function zoomed() {
+                container.attr("transform", "translate(" + d3.event.transform.x + ", " + d3.event.transform.y + ") scale(" + d3.event.transform.k + ")");
+            }
+
+            function neighboring(a, b) {
+                return linkedByIndex[a.id + ',' + b.id] || linkedByIndex[b.id + ',' + a.id] || a.id === b.id;
+            }          
+
+            function fade(opacity) {
+                return d => {
+
+                    if (toggle == 0) {
+
+                        node.style('stroke-opacity', function (o) {
+                            const nodeOpacity = neighboring(d, o) ? 1 : opacity;
+                            this.setAttribute('fill-opacity', nodeOpacity);
+                            return nodeOpacity;
+                        });
+
+                        label.style('stroke-opacity', function (o) {
+                            const labelOpacity = neighboring(d, o) ? 1 : opacity;
+                            this.setAttribute('fill-opacity', labelOpacity);
+                            return labelOpacity;
+                        });
+
+                        link.style('stroke-opacity', o => (o.source === d || o.target === d ? 1 : opacity));
+
+                        toggle = 1;
+                    } else {
+
+                        node.style('stroke-opacity', function (o) {
+                            const nodeOpacity = 1;
+                            this.setAttribute('fill-opacity', nodeOpacity);
+                            return nodeOpacity;
+                        });
+
+                        label.style('stroke-opacity', function (o) {
+                            const labelOpacity = 1;
+                            this.setAttribute('fill-opacity', labelOpacity);
+                            return labelOpacity;
+                        });          
+
+                        link.style('stroke-opacity', 0.6);
+
+                        toggle = 0;
+                    }
+                };
+            }         
+
+            function searchNodes() {
+                var term = document.getElementById('searchTerm').value;
+                var selected = container.selectAll('.node').filter(function (d, i) {
+                    return d.Label.toLowerCase().search(term.toLowerCase()) == -1;
+                });
+                selected.style('opacity', '0');
+                var link = container.selectAll('.link');
+                link.style('stroke-opacity', '0');
+                d3.selectAll('.node').transition()
+                        .duration(1000)
+                        .style('opacity', '1');
+                d3.selectAll('.link').transition().duration(5000).style('stroke-opacity', '0.6');
+            }
+            
+            function displayNodeData(datasetText) {
+            
+                d3.select('#nodedataPanel').selectAll("*").remove();
+            
+  				var rows  = d3.csvParseRows(datasetText),
+      			table = d3.select('#nodedataPanel').append('table')
+                						.style("border-collapse", "collapse")
+                						.style("border", "2px black solid");
+        				
+                var tablebody = table.append("tbody");
+        				
+                rows = tablebody
+                		.selectAll("tr")
+                		.data(rows)
+                		.enter()
+                		.append("tr");
+ 
+ 				cells = rows.selectAll("td")            		
+                		.data(function(d) { return d; })
+                		.enter()
+                		.append("td")
+                		.text(function(d) { return d; })
+                        .style("border", "1px black solid")
+                        .style("font-size", "20px");
+			};
+        }
+
+        redraw();
+
+        window.addEventListener("resize", redraw); 
+        '''
+
+        return js_text
+
     def __getHTML(self):
 
         html = '''
@@ -1112,7 +1961,7 @@ class springNetwork:
         
             <style> $css_text </style>
             
-            <div id="wrapper">
+            <div id="springWrapper">
             
                 <form id="search"></form>
             
@@ -1124,19 +1973,87 @@ class springNetwork:
                 
                 <div id="nodeColorDropdown"></div>
             
-                <button id='save'>Save</button>
-            
+                <button id='save'>Save</button>            
             
             </div>
             
             <script src="https://d3js.org/d3.v5.min.js"></script>
-            <script src="https://unpkg.com/d3-simple-slider"></script>
+            <script src="https://unpkg.com/d3-simple-slider@1.5.4/dist/d3-simple-slider.min.js"></script>
             <script src="https://github.com/canvg/canvg/blob/master/src/canvg.js"></script>
             <script src="https://exupero.org/saveSvgAsPng/src/saveSvgAsPng.js"></script>
              
             <script> $js_text </script>
                 
         </body>
+        '''
+
+        return html
+
+    def __getHTMLdashboard(self):
+
+        html = '''        
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        <style> $css_text </style>
+        
+        <head>
+	        <meta charset="utf-8">
+	        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+	        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css">
+        </head>
+        
+        <body ng-app="firstApplication">
+	        <div class="container-fluid py-5">
+		        <div class="row" ng-controller="sliderController as ctrl">
+			        <div class="col-lg-9 col-12">
+				        <div class="row">					
+					        <div class="col-lg-6 col-12 mb-3">
+						        <div class="card">
+							        <div class="card-header">
+								        <h4>Spring-embedded network</h4>
+							        </div>
+							        <div class="card-body">
+								        <div id="springPanel"></div>
+							        </div>
+						        </div>
+					        </div>
+					        <div class="col-lg-6 col-12 mb-3">
+						        <div class="card">
+							        <div class="card-header">
+								        <h4>Node Data</h4>
+							        </div>
+							        <div class="card-body">
+								        <div id="nodedataPanel"></div>
+							        </div>
+						        </div>
+					        </div>
+				        </div>		
+			        </div>
+
+                    <div class="col-lg-3 col-12 mb-3">
+				        <div class="card mb-3" style="min-width: 28rem; max-width: 28rem; min-height: 14rem;">							
+				            <div id='sliderPanel' class="card-body p-3">								
+                                <form id="search" whitespace="nowrap"></form>                        
+                                <h6 id="sliderText" class='ml-3'></h6>
+                                <div id="slider"></div>
+                                <h6><span style="white-space: nowrap;" id="sliderValue"></span></h6>                             
+                                <div id="nodeSizeDropdown"></div>                                        
+                                <div id="nodeColorDropdown"></div>                        
+                                <button id='save'>Save</button>                                
+                            <div>
+                        </div>
+			        </div>
+                </div>
+            </div>            
+        </body>
+        
+        <script src="https://d3js.org/d3.v5.min.js"></script>
+        <script src="https://unpkg.com/d3-simple-slider"></script>
+        <script src="https://github.com/canvg/canvg/blob/master/src/canvg.js"></script>
+        <script src="https://exupero.org/saveSvgAsPng/src/saveSvgAsPng.js"></script>
+        
+        <script> $js_text </script>
         '''
 
         return html

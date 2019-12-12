@@ -1,7 +1,9 @@
+import os
 import sys
 from string import Template
 import numpy as np
 import pandas as pd
+import webbrowser as wb
 import matplotlib
 import matplotlib.pyplot as plt
 import json
@@ -12,13 +14,14 @@ class edgeBundle:
         Parameters
         ----------
         edges : Pandas dataframe containing edges generated from Edge.
+        nodes : Pandas dataframe containing nodes generated from Edge.
 
         Methods
         -------
         set_params : Set parameters -
             html_file: Name to save the HTML file as (default: 'hEdgeBundle.html')
             innerRadiusOffset: Sets the inner radius based on the offset value from the canvas width/diameter (default: 120)
-            groupSeparation: Value to set the distance between different segmented groups (default: 1)
+            blockSeparation: Value to set the distance between different segmented blocks (default: 1)
             linkFadeOpacity: The link fade opacity when hovering over/clicking nodes (default: 0.05)
             mouseOver: Setting to 'True' swaps from clicking to hovering over nodes to select them (default: True)
             fontSize: The font size set to each node (default: 1)
@@ -28,35 +31,39 @@ class edgeBundle:
             edge_cmap: Set the CMAP colour palette to use for colouring the edges (default: 'brg')
 
         run : Generates the JavaScript embedded HTML code and writes to a HTML file
+        launchDashboard : Generates the JavaScript embedded HTML code in a dashboard format and writes to a HTML file and launches a new browser window
     """
 
-    def __init__(self, edges):
+    def __init__(self, nodes, edges):
 
+        self.__nodes = self.__checkData(nodes);
         self.__edges = self.__checkData(edges);
 
         self.set_params()
 
-    def set_params(self, html_file='hEdgeBundle.html', innerRadiusOffset=120, groupSeparation=1, linkFadeOpacity=0.05, mouseOver=True, fontSize=1, backgroundColor='white', foregroundColor='black', edge_color_scale='score', edge_cmap="brg"):
+    def set_params(self, html_file='hEdgeBundle.html', innerRadiusOffset=120, blockSeparation=1, linkFadeOpacity=0.05, mouseOver=True, fontSize=1, backgroundColor='white', foregroundColor='black', node_data=['Name', 'Label'], edge_color_scale='score', edge_cmap="brg"):
 
-        html_file, innerRadiusOffset, groupSeparation, linkFadeOpacity, mouseOver, fontSize, backgroundColor, foregroundColor, edge_color_scale, edge_cmap = self.__paramCheck(html_file, innerRadiusOffset, groupSeparation, linkFadeOpacity, mouseOver, fontSize, backgroundColor, foregroundColor, edge_color_scale, edge_cmap)
+        html_file, innerRadiusOffset, blockSeparation, linkFadeOpacity, mouseOver, fontSize, backgroundColor, foregroundColor, node_data, edge_color_scale, edge_cmap = self.__paramCheck(html_file, innerRadiusOffset, blockSeparation, linkFadeOpacity, mouseOver, fontSize, backgroundColor, foregroundColor, node_data, edge_color_scale, edge_cmap)
 
         self.__html_file = html_file;
         self.__innerRadiusOffset = innerRadiusOffset;
-        self.__groupSeparation = groupSeparation;
+        self.__blockSeparation = blockSeparation;
         self.__linkFadeOpacity = linkFadeOpacity;
         self.__mouseOver = mouseOver;
         self.__fontSize = fontSize;
         self.__backgroundColor = backgroundColor;
         self.__foregroundColor = foregroundColor;
+        self.__node_data = node_data;
         self.__edge_color_scale = edge_color_scale;
         self.__edge_cmap = edge_cmap;
 
     def run(self):
 
+        nodes = self.__nodes
         edges = self.__edges
         html_file = self.__html_file
         innerRadiusOffset = self.__innerRadiusOffset
-        groupSeparation = self.__groupSeparation
+        blockSeparation = self.__blockSeparation
         linkFadeOpacity = self.__linkFadeOpacity
         mouseOver = self.__mouseOver
         fontSize = self.__fontSize
@@ -80,7 +87,7 @@ class edgeBundle:
         else:
             mouse = "false";
 
-        bundleJson = self.__df_to_Json(edges);
+        bundleJson = self.__df_to_Json(nodes, edges);
 
         css_text_template_bundle = Template(self.__getCSS());
         js_text_template_bundle = Template(self.__getJS())
@@ -88,7 +95,7 @@ class edgeBundle:
 
         js_text = js_text_template_bundle.substitute({'flareData': bundleJson
                                                          , 'innerRadiusOffset': innerRadiusOffset
-                                                         , 'groupSeparation': groupSeparation
+                                                         , 'blockSeparation': blockSeparation
                                                          , 'linkFadeOpacity': linkFadeOpacity
                                                          , 'mouseOver': mouse
                                                          , 'backgroundColor': backgroundColor})
@@ -103,6 +110,68 @@ class edgeBundle:
             f.write(html)
             f.close()
 
+    def launchDashboard(self):
+
+        nodes = self.__nodes
+        edges = self.__edges
+        html_file = self.__html_file
+        innerRadiusOffset = self.__innerRadiusOffset
+        blockSeparation = self.__blockSeparation
+        linkFadeOpacity = self.__linkFadeOpacity
+        mouseOver = self.__mouseOver
+        fontSize = self.__fontSize
+        backgroundColor = self.__backgroundColor
+        foregroundColor = self.__foregroundColor
+        edge_color_scale = self.__edge_color_scale
+        edge_cmap = self.__edge_cmap
+        node_data = self.__node_data
+
+        edgeCmap = plt.cm.get_cmap(edge_cmap)  # Sets the color palette for the edges
+
+        if "pvalue" in edges.columns:
+            edges = self.__edge_color(edges, edge_color_scale, edgeCmap)
+        elif "score" in edges.columns:
+            edges = self.__edge_color(edges, 'score', edgeCmap)
+        else:
+            print("Error: Edges dataframe does not contain \"Pvalue\" or \"Score\".")
+            sys.exit()
+
+        if mouseOver:
+            mouse = "true";
+        else:
+            mouse = "false";
+
+        bundleJson = self.__df_to_Json(nodes, edges);
+
+        css_text_template_bundle = Template(self.__getCSSdashboard());
+        js_text_template_bundle = Template(self.__getJSdashboard())
+        html_template_bundle = Template(self.__getHTMLdashboard());
+
+        js_text = js_text_template_bundle.substitute({'flareData': bundleJson
+                                                         , 'innerRadiusOffset': innerRadiusOffset
+                                                         , 'blockSeparation': blockSeparation
+                                                         , 'linkFadeOpacity': linkFadeOpacity
+                                                         , 'mouseOver': mouse
+                                                         , 'node_data': node_data
+                                                         , 'backgroundColor': backgroundColor})
+
+        css_text = css_text_template_bundle.substitute({'fontSize': str(fontSize) + 'vmin'
+                                                           , 'backgroundColor': backgroundColor
+                                                           , 'foregroundColor': foregroundColor})
+
+        html = html_template_bundle.substitute({'css_text': css_text, 'js_text': js_text})
+
+        html_file = html_file.split(".")[0] + "_dashboard.html"
+
+        with open(html_file, 'w') as f:
+            f.write(html)
+            f.close()
+
+        path = os.getcwd()
+        sep = path[0]
+
+        wb.open("file://" + path + sep + html_file, new=2)
+
     def __checkData(self, df):
 
         if not isinstance(df, pd.DataFrame):
@@ -111,7 +180,9 @@ class edgeBundle:
 
         return df
 
-    def __paramCheck(self, html_file, innerRadiusOffset, groupSeparation, linkFadeOpacity, mouseOver, fontSize, backgroundColor, foregroundColor, edge_color_scale, edge_cmap):
+    def __paramCheck(self, html_file, innerRadiusOffset, blockSeparation, linkFadeOpacity, mouseOver, fontSize, backgroundColor, foregroundColor, node_data, edge_color_scale, edge_cmap):
+
+        col_list = self.__nodes.columns[:-1]
 
         if not isinstance(html_file, str):
             print("Error: Html file is not valid. Choose a string value.")
@@ -128,9 +199,9 @@ class edgeBundle:
                 print("Error: Inner radius offset is not valid. Choose a float or integer value.")
                 sys.exit()
 
-        if not isinstance(groupSeparation, float):
-            if not isinstance(groupSeparation, int):
-                print("Error: Group separation is not valid. Choose a float or integer value.")
+        if not isinstance(blockSeparation, float):
+            if not isinstance(blockSeparation, int):
+                print("Error: Block separation is not valid. Choose a float or integer value.")
                 sys.exit()
 
         if not isinstance(linkFadeOpacity, float):
@@ -155,6 +226,23 @@ class edgeBundle:
             print("Error: Slider text colour is not valid. Choose a valid colour value.")
             sys.exit()
 
+        if not isinstance(node_data, list):
+                print("Error: Node data is not valid. Use a list.")
+                sys.exit()
+        else:
+            for node_item in node_data:
+                if node_item not in col_list:
+                    print("Error: Node data item not valid. Choose one of {}.".format(', '.join(col_list)))
+                    sys.exit()
+
+            if "Name" not in node_data:
+                print("Error: Column \"Name\" should be node data. Please correct")
+                sys.exit()
+
+            if "Label" not in node_data:
+                print("Error: Column \"Label\" should be node data. Please correct")
+                sys.exit()
+
         if edge_color_scale.lower() not in ["pvalue", "score"]:
             print("Error: Colour scale type not valid. Choose either \"Pvalue\" or \"Score\".")
             sys.exit()
@@ -169,7 +257,7 @@ class edgeBundle:
                 print("Error: Edge CMAP is not valid. Choose one of the following: {}.".format(', '.join(cmap_list)))
                 sys.exit()
 
-        return html_file, innerRadiusOffset, groupSeparation, linkFadeOpacity, mouseOver, fontSize, backgroundColor, foregroundColor, edge_color_scale, edge_cmap
+        return html_file, innerRadiusOffset, blockSeparation, linkFadeOpacity, mouseOver, fontSize, backgroundColor, foregroundColor, node_data, edge_color_scale, edge_cmap
 
     def __getCSS(self):
 
@@ -181,62 +269,27 @@ class edgeBundle:
         
         body {background-color: $backgroundColor;}
 
-        .node:hover {
+        .node:hover,
+        .node--source,
+        .node--target {
             stroke-opacity: 1.0;
             font-weight: bold;
-        }
+            stroke-width: 4px;
+        }        
     
         .link {
             stroke-opacity: 0.4;
             fill: none;
             pointer-events: none;
         }
-    
-        .node:hover,
-        .node--source,
-        .node--target {
-            stroke-opacity: 1.0;
-            font-weight: bold;
-        }
-               
-        .node:hover,
-        .link--source,
-        .link--target {
-            stroke-opacity: 1.0;
-        }
-       
-        .node--source {
-            stroke-opacity: 1.0;
-            stroke-width: 2px;
-            font-weight: bold;
-        }
-    
-        .node--target {
-            stroke-opacity: 1.0;
-            stroke-width: 2px;
-            font-weight: bold;
-        }
-       
-        .node--both {
-            stroke-opacity: 1.0;
-            stroke-width: 2px;
-            font-weight: bold;
-        }
-       
-        .link--source,
-        .link--target {
-            stroke-opacity: 1.0;
-            stroke-width: 2px;
-        }
-    
+        
         .link--source {
             stroke-opacity: 1.0;
-            stroke-width: 2px;
+            stroke-width: 4px;
         }
     
         .link--target {
-            stroke-opacity: 1.0;
-            stroke-width: 2px;
+            stroke-opacity: 1.0;            
         }
         
         #edgeBundle {
@@ -331,6 +384,142 @@ class edgeBundle:
 
         return css_text
 
+    def __getCSSdashboard(self):
+
+        css_text = '''
+        .node {
+            font: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            font-size: $fontSize;
+        }    
+        
+        .node:hover,   
+        .node--source,
+        .node--target {
+            stroke-opacity: 1.0;
+            font-weight: bold;
+            stroke-width: 4px;
+        }
+
+        .link {
+            stroke-opacity: 0.4;
+            fill: none;
+        }
+        
+        .link--source {
+            stroke-opacity: 1.0;     
+            stroke-width: 4px;
+        }
+
+        .link--target {
+            stroke-opacity: 1.0;
+        }
+        
+        #edgeBundlePanel {
+            position: relative;
+            width: 100%;
+            height: 100%;            
+            margin: 0 auto;
+            margin-top: auto;
+            margin-bottom: auto;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        #filterType {
+            display: inline-block;
+            position: relative;
+            top: 0px;
+            left: 0px; 
+            color: $foregroundColor;
+        }
+        
+        #scoreSelect {
+            display: inline-block;
+            position: relative;
+            top: -6em;
+            left: 0px;
+            color: $foregroundColor;
+        }
+        
+        #abs_score, #p_score, #n_score, #pvalue {
+            position: relative;
+            top: 3em;
+            left: 0px;
+            color: $foregroundColor;
+        }
+   
+        #absScoreSlider, #posScoreSlider, #negScoreSlider, #pvalueSlider {
+            position: absolute;
+            bottom: -111px;     
+            left: 80px;
+        }
+        
+        #tension {
+            position: relative;
+            top: 4em;
+            left: 0px;
+            color: $foregroundColor;
+        }
+        
+        #tensionSlider {
+            position: absolute;
+            bottom: -112px;     
+            left: 80px;
+        }
+        
+        #abs_scoreValue, #p_scoreValue, #n_scoreValue, #pvalueValue, #tensionValue {
+            position: absolute;
+            bottom: 0px;
+            left: 310px;
+            color: $foregroundColor;
+        }
+        
+        #abs_scoreHide {
+            display: block;
+        }
+        
+        #p_scoreHide, #n_scoreHide {
+            display: none;
+        }
+        
+        #scoreSelect {
+            display: block;
+        }
+       
+        #pvalueHide {
+            display: none;
+        }
+        
+        #save {
+            position: relative;
+            top: 5em;
+            left: 0px;
+            color: $foregroundColor;
+        }
+        
+        h3, text {
+            font-family: sans-serif;
+            -webkit-touch-callout: none; /* iOS Safari */
+            -webkit-user-select: none; /* Safari */
+            -khtml-user-select: none; /* Konqueror HTML */
+            -moz-user-select: none; /* Firefox */
+            -ms-user-select: none; /* Internet Explorer/Edge */
+            user-select: none; /* Non-prefixed version, currently supported by Chrome and Opera */
+        }
+        
+        .row {   
+            overflow: auto;
+            white-space: nowrap;
+        }
+        
+        td:nth-child(odd) {
+            background-color: #eee;
+            font-weight: bold;
+        }
+        '''
+
+        return css_text
+
     def __getJS(self):
 
         js_text = '''
@@ -351,16 +540,16 @@ class edgeBundle:
             var height = canvas.clientHeight;
             
             if (height < width) {
-                diameter = height;
+                var diameter = height;
             } else {
-                diameter = width;            
+                var diameter = width;            
             }
                                                 
             var radius = diameter / 2;
             var innerRadius = radius - $innerRadiusOffset;        
         
             var cluster = d3.cluster()
-		                .separation(function(a, b) { return (a.parent == b.parent ? 1 : $groupSeparation ) })
+		                .separation(function(a, b) { return (a.parent == b.parent ? 1 : $blockSeparation ) })
                         .size([360, innerRadius]);
         
             edgeBundle.selectAll("*").remove();
@@ -466,10 +655,6 @@ class edgeBundle:
                 						                						
                                         //Filter with the new score threshold                						                						
                 					    var FlareData = filterData(absScoreValue, 'score_abs');      									
-      									
-      									//FlareData.forEach(function(d) { if (d.id == "flare#9") { console.log(d); } })
-      									//FlareData.forEach(function(d) { if (d.id == "flare#7") { console.log(d); } })
-      									//FlareData.forEach(function(d) { console.log(d); })
       									
                 					    var linkLine = updateBundle(FlareData);
       
@@ -1035,7 +1220,7 @@ class edgeBundle:
                                         .attr("dy", ".31em")
                                         .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + (d.y + 8) + ",0)" + (d.x < 180 ? "" : "rotate(180)"); })
                                         .style("text-anchor", function(d) { return d.x < 180 ? "start" : "end"; })
-                                        .text(function(d) { return d.data.name; })
+                                        .text(function(d) { return d.data.Label; })
                                         .style("fill", function(d) { return d.data.node_color; })
                                         .on("mouseover", mouseovered)
                                         .on("mouseout", mouseouted);
@@ -1046,7 +1231,7 @@ class edgeBundle:
                                         .attr("dy", ".31em")
                                         .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + (d.y + 8) + ",0)" + (d.x < 180 ? "" : "rotate(180)"); })
                                         .style("text-anchor", function(d) { return d.x < 180 ? "start" : "end"; })
-                                        .text(function(d) { return d.data.name; })
+                                        .text(function(d) { return d.data.Label; })
                                         .style("fill", function(d) { return d.data.node_color; })
                                         .on("click", mouseovered)
                                         .on("dblclick", mouseouted);
@@ -1232,6 +1417,776 @@ class edgeBundle:
 
         return js_text
 
+    def __getJSdashboard(self):
+
+        js_text = '''
+        
+        var flareData = $flareData
+        
+        var pvalues = [];
+        var p_scores = [];
+        var n_scores = [];
+        var abs_scores = [];
+
+        var canvas = document.getElementById("edgeBundlePanel");
+        var edgeBundle = d3.select(canvas).append("svg").attr("id", "edgeBundle");
+        
+        function redraw(){	
+
+            var diameter = canvas.clientWidth;
+            var height = canvas.clientHeight;
+  
+            var radius = diameter / 2;
+            var innerRadius = radius - 120;
+      
+            var cluster = d3.cluster()
+			        .separation(function(a, b) { return (a.parent == b.parent ? 1 : 5 ) })
+    	            .size([360, innerRadius]);
+
+            edgeBundle.selectAll("*").remove();
+
+            edgeBundle = d3.select("svg#edgeBundle")
+          	        .attr("width", diameter)
+    	            .attr("height", diameter)
+                    .append("g")      
+    	            .attr("transform", "translate(" + radius + "," + radius + ")")
+                    .append("g");
+        
+	        var node = edgeBundle.selectAll(".node");
+	        var link = edgeBundle.selectAll(".link");
+	        
+	        var linkLine = updateBundle(flareData); //Initial generation of bundle to populate arrays
+
+        d3.select("#save")
+                .on('click', function(){
+		
+                    var options = {
+                        canvg: window.canvg,
+                        backgroundColor: 'white',
+                        height: diameter+100,
+                        width: diameter+100,
+                        left: -50,
+                        scale: 2,
+                        encoderOptions: 1,
+                        ignoreMouse : true,
+                        ignoreAnimation : true,
+                    }
+		        
+                    saveSvgAsPng(d3.select('svg#edgeBundle').node(), "edgeBundle.png", options);
+        })
+        
+        var abs_scaleLinksLinear = d3.scaleLinear()
+                .domain(d3.extent(abs_scores))
+                .range([1,1000])
+                .clamp(true);
+
+        var pos_scaleLinksLinear = d3.scaleLinear()
+                .domain(d3.extent(p_scores))
+                .range([1,1000])
+                .clamp(true);
+
+        var neg_scaleLinksLinear = d3.scaleLinear()
+                .domain(d3.extent(n_scores))
+                .range([1,1000])
+                .clamp(true);
+
+        var pvalue_scaleLinksLog = d3.scaleLog()
+                .domain([Math.log(d3.min(pvalues)),Math.log(d3.max(pvalues))])          	    
+                .range([1,1000])
+                .clamp(true);
+        
+        var tension_scaleLinear = d3.scaleLinear()
+				.domain([0,1])
+                .range([0,20])
+                .clamp(true);
+            
+        var currValues = {'abs_score': 0               
+                        , 'p_score': 0                
+                        , 'n_score': 0                
+                        , 'pvalue': 1                
+                        , 'tension': 0.85};
+
+        d3.select('#abs_scoreValue').text(d3.min(abs_scores).toPrecision(5));
+
+        var sliderWidth = 225;
+
+        var abs_scoreSlider = d3.sliderHorizontal()
+    										.min(abs_scaleLinksLinear(d3.min(abs_scores)))
+    										.max(abs_scaleLinksLinear(d3.max(abs_scores)))
+                                            .default(abs_scaleLinksLinear(d3.min(abs_scores)))
+                                            .ticks(0)
+                                            .handle(d3.symbol().type(d3.symbolCircle).size(150)())
+    										.step(0.0001)                        
+                                            .fill('#2196f3')
+    										.width(sliderWidth - 41)
+    										.displayValue(false)
+    										.on('onchange', value => {
+      											
+                                                var absScoreValue = abs_scaleLinksLinear.invert(value);
+                                        
+                    				            var tension = currValues.tension;
+                						        currValues['abs_score'] = absScoreValue;
+                						        
+                						        d3.select('#abs_scoreValue').text(absScoreValue.toPrecision(5));
+                						        
+                						        var FlareData = filterData(absScoreValue, 'score_abs');
+      											
+                						        var linkLine = updateBundle(FlareData);
+                                                
+                						        var line = linkLine.line;
+                						        var link = linkLine.link;
+                                                
+                						        line.curve(d3.curveBundle.beta(tension));
+                    				            link.attr('d', d => line(d.source.path(d.target)));          
+          							        });
+        
+        d3.select('#absScoreSlider').selectAll("*").remove();
+        
+        d3.select('#absScoreSlider')
+            .append('svg')
+            .attr('width', sliderWidth)    
+            .append('g')    
+            .attr('transform', 'translate(30,30)')
+            .call(abs_scoreSlider);
+
+        d3.select('#p_scoreValue').text(d3.min(p_scores).toPrecision(5));
+
+        var pos_scoreSlider = d3.sliderHorizontal()
+										    .min(pos_scaleLinksLinear(d3.min(p_scores)))
+    										.max(pos_scaleLinksLinear(d3.max(p_scores)))
+                                            .default(pos_scaleLinksLinear(d3.min(p_scores)))
+                                            .ticks(0)
+                                            .handle(d3.symbol().type(d3.symbolCircle).size(150)())
+    										.step(0.0001)                        
+                                            .fill('#2196f3')
+    										.width(sliderWidth - 41)
+    										.displayValue(false)
+    										.on('onchange', value => {
+      											            
+                    				            var p_scoreValue = pos_scaleLinksLinear.invert(value);
+                						
+                						        var tension = currValues.tension;
+                						        currValues['p_score'] = p_scoreValue;
+    												
+                						        d3.select('#p_scoreValue').text(p_scoreValue.toPrecision(5));
+          									
+                						        var FlareData = filterData(p_scoreValue, 'score_pos');
+														      							
+                						        var linkLine = updateBundle(FlareData);
+														      							
+                						        var line = linkLine.line;
+                						        var link = linkLine.link;
+      											
+                						        line.curve(d3.curveBundle.beta(tension));
+                						        link.attr("d", d => line(d.source.path(d.target)));        
+          							        });
+
+        d3.select('#posScoreSlider').selectAll("*").remove();
+        
+        d3.select('#posScoreSlider')
+            .append('svg')
+            .attr('width', sliderWidth)
+            .append('g')    
+            .attr('transform', 'translate(30,30)')
+            .call(pos_scoreSlider);
+                
+        d3.select('#n_scoreValue').text(d3.max(n_scores).toPrecision(5));
+        
+        var neg_scoreSlider = d3.sliderHorizontal()
+		    								.min(neg_scaleLinksLinear(d3.min(n_scores)))
+    										.max(neg_scaleLinksLinear(d3.max(n_scores)))
+                                            .default(neg_scaleLinksLinear(d3.max(n_scores)))
+                                            .ticks(0)
+                                            .handle(d3.symbol().type(d3.symbolCircle).size(150)())
+    										.step(0.0001)                        
+                                            .fill('#2196f3')
+    										.width(sliderWidth - 41)
+    										.displayValue(false)
+    										.on('onchange', value => {
+      											                						
+                						        var n_scoreValue = neg_scaleLinksLinear.invert(value);
+                						        
+                						        var tension = currValues.tension;
+                						        currValues['n_score'] = n_scoreValue;
+                						        
+                						        d3.select('#n_scoreValue').text(n_scoreValue.toPrecision(5));
+                						        
+                						        var FlareData = filterData(n_scoreValue, 'score_neg');
+														      							
+                						        var linkLine = updateBundle(FlareData);
+      											
+                						        var line = linkLine.line;
+                						        var link = linkLine.link;
+      											
+                						        line.curve(d3.curveBundle.beta(tension));
+                						        link.attr("d", d => line(d.source.path(d.target)));          
+          							        });
+        
+        d3.select('#negScoreSlider').selectAll("*").remove();
+
+        d3.select('#negScoreSlider')
+            .append('svg')
+            .attr('width', sliderWidth)
+            .append('g')    
+            .attr('transform', 'translate(30,30)')
+            .call(neg_scoreSlider);
+
+        d3.select('#pvalueValue').text(d3.max(pvalues).toPrecision(5));
+
+        var pvalueSlider = d3.sliderHorizontal()
+										.min(pvalue_scaleLinksLog(Math.log(d3.min(pvalues))))
+    									.max(pvalue_scaleLinksLog(Math.log(d3.max(pvalues))))
+                                        .default(pvalue_scaleLinksLog(Math.log(d3.max(pvalues))))
+                                        .ticks(0)
+                                        .handle(d3.symbol().type(d3.symbolCircle).size(150)())
+    									.step(0.0001)                        
+                                        .fill('#2196f3')
+    									.width(sliderWidth - 41)
+    									.displayValue(false)
+    									.on('onchange', value => {
+      											
+                                            var pvalueValue = Math.exp(pvalue_scaleLinksLog.invert(value));
+                    				
+                    				        var tension = currValues.tension;
+                						    currValues['pvalue'] = pvalueValue;
+                						    
+                						    d3.select('#pvalueValue').text(pvalueValue.toPrecision(5));
+          									
+                						    var FlareData = filterData(pvalueValue, 'pvalue');
+      											
+                						    var linkLine = updateBundle(FlareData);
+      											
+                						    var line = linkLine.line;
+                						    var link = linkLine.link;
+      							
+                						    line.curve(d3.curveBundle.beta(tension));
+                						    link.attr("d", d => line(d.source.path(d.target)));                            
+          							    });
+        
+        d3.select('#pvalueSlider').selectAll("*").remove();
+        
+        d3.select('#pvalueSlider')
+            .append('svg')
+            .attr('width', sliderWidth )
+            .append('g')    
+            .attr('transform', 'translate(30,30)')
+            .call(pvalueSlider);
+        
+        d3.select('#tensionValue').text(currValues.tension);
+        
+        var tensionSlider = d3.sliderHorizontal()
+										.min(tension_scaleLinear(0.0))
+    									.max(tension_scaleLinear(1.0))
+                                        .default(tension_scaleLinear(0.85))
+                                        .ticks(0)
+                                        .handle(d3.symbol().type(d3.symbolCircle).size(150)())
+    									.step(0.01)                        
+                                        .fill('#2196f3')
+    									.width(sliderWidth - 41)
+    									.displayValue(false)
+    									.on('onchange', value => {
+      											            
+                    				        var tension =  tension_scaleLinear.invert(value);
+                						    currValues['tension'] = tension;
+      											
+                						    d3.select('#tensionValue').text(tension.toPrecision(2));
+                                            
+               							    var form = document.getElementById("filterType")
+                						    var form_val;
+      											
+                						    for(var i=0; i<form.length; i++) {
+                    					        if(form[i].checked) {
+                      					            form_val = form[i].id;        
+                    					        }
+                						    }
+      											
+                						    if (form_val == "scoreRadio") { 
+          									    
+                    					        var score_form = document.getElementById("scoreSelect")
+                    					        var score_form_val;
+      												
+                    					        for(var i=0; i<score_form.length; i++){
+                        				            if(score_form[i].checked){
+                            			                score_form_val = score_form[i].id;        
+                        				            }
+                    					        }
+      												
+                    					        if (score_form_val == "PosScoreRadio") {
+                              	                    var p_scoreValue = currValues.p_score;
+                        				            var FlareData = filterData(p_scoreValue, 'score_pos');
+                    					        } else if (score_form_val == "NegScoreRadio") {
+                              	                    var n_scoreValue = currValues.n_score;
+                        				            var FlareData = filterData(n_scoreValue, 'score_neg');
+                    					        } else if (score_form_val == "AbsScoreRadio") {
+                              	                    var abs_scoreValue = currValues.abs_score;
+                        				            var FlareData = filterData(abs_scoreValue, 'score_abs');
+                    					        }
+                						    } else if (form_val == "pvalueRadio") {
+                            	                var pvalueValue = currValues.pvalue;
+                    					        var FlareData = filterData(pvalueValue, 'pvalue');
+											}
+                
+                						    var linkLine = updateBundle(FlareData);
+                                            
+                						    var line = linkLine.line;
+                						    var link = linkLine.link;
+                                            
+                						    line.curve(d3.curveBundle.beta(tension));
+                						    link.attr("d", d => line(d.source.path(d.target)));     
+          							    });
+
+        d3.select('#tensionSlider').selectAll("*").remove();
+        
+        d3.select('#tensionSlider')
+            .append('svg')
+            .attr('width', sliderWidth)
+            .append('g')    
+            .attr('transform', 'translate(30,30)')
+            .call(tensionSlider);
+        
+        function changeFilter() {
+
+		    var form = document.getElementById("filterType")
+            var form_val;
+            
+            for(var i=0; i<form.length; i++){
+    	        if(form[i].checked){
+      	            form_val = form[i].id;        
+                }
+            }
+      
+            if (form_val == "scoreRadio") { 
+    	        d3.select('#abs_scoreHide').style("display", 'block');     
+                d3.select('#p_scoreHide').style("display", 'none');
+                d3.select('#n_scoreHide').style("display", 'none');
+                d3.select('#scoreSelect').style("display", 'block');
+                d3.select('#pvalueHide').style("display", 'none');
+                 
+                var form_score = document.getElementById("scoreSelect")
+                var form_val_score;
+                
+                for(var i=0; i<form_score.length; i++){
+      	            if(form_score[i].checked){
+        	            form_val_score = form_score[i].id;        
+                    }
+                }
+                
+                if (form_val_score == "PosScoreRadio") {
+      	            d3.select('#p_scoreHide').style("display", 'block');
+                    d3.select('#n_scoreHide').style("display", 'none');
+                    d3.select('#abs_scoreHide').style("display", 'none');
+        
+                    //Filter out all links prior to updating with the score threshold
+                    var FlareData = filterData(1, 'score_pos');
+    		        var linkLine = updateBundle(FlareData);
+    		        
+    		        var FlareData = filterData(currValues.p_score, 'score_pos');        
+    		        var linkLine = updateBundle(FlareData);
+                } else if (form_val_score == "NegScoreRadio") {
+                    d3.select('#p_scoreHide').style("display", 'none');
+                    d3.select('#n_scoreHide').style("display", 'block');
+                    d3.select('#abs_scoreHide').style("display", 'none');
+                    
+                    var FlareData = filterData(-1, 'score_neg');    
+    		        var linkLine = updateBundle(FlareData);
+    		        
+  			        var FlareData = filterData(currValues.n_score, 'score_neg');  
+  			        var linkLine = updateBundle(FlareData);       
+                } else if (form_val_score == "AbsScoreRadio") {
+                    d3.select('#p_scoreHide').style("display", 'none');
+                    d3.select('#n_scoreHide').style("display", 'none');
+                    d3.select('#abs_scoreHide').style("display", 'block');
+                    
+                    //Filter out all links prior to updating with the score threshold
+                    var FlareData = filterData(1, 'score_abs');
+    		        var linkLine = updateBundle(FlareData);
+                    
+    		        var FlareData = filterData(currValues.abs_score, 'score_abs');
+    		        var linkLine = updateBundle(FlareData);
+                }
+   	        } else if (form_val == "pvalueRadio") {
+       	        d3.select('#abs_scoreHide').style("display", 'none');
+                d3.select('#p_scoreHide').style("display", 'none');
+                d3.select('#n_scoreHide').style("display", 'none');
+                d3.select('#scoreSelect').style("display", 'none');
+                d3.select('#pvalueHide').style("display", 'block');
+                
+    		    //Filter out all links prior to updating with the pvalue threshold
+                var FlareData = filterData(-1, 'pvalue');
+    		    var linkLine = updateBundle(FlareData);
+                
+    		    var FlareData = filterData(currValues.pvalue, 'pvalue');
+                var linkLine = updateBundle(FlareData);
+            }
+                        
+            var tension = currValues.tension;
+      
+            var line = linkLine.line;
+            var link = linkLine.link;
+            
+            line.curve(d3.curveBundle.beta(tension));
+            link.attr("d", d => line(d.source.path(d.target)));
+        }
+        
+        function changeScore() {
+            
+	        var form = document.getElementById("scoreSelect")
+            var form_val;
+            
+            for(var i=0; i<form.length; i++) {
+  	            if(form[i].checked){
+    	            form_val = form[i].id;        
+                }
+            }
+            
+            if (form_val == "PosScoreRadio") { 
+  	            d3.select('#p_scoreHide').style("display", 'block');
+                d3.select('#n_scoreHide').style("display", 'none');
+                d3.select('#abs_scoreHide').style("display", 'none');
+                
+   	            //Filter out all links prior to updating with the score threshold
+                var FlareData = filterData(1, 'score_pos');
+                var linkLine = updateBundle(FlareData);
+                
+                var FlareData = filterData(currValues.p_score, 'score_pos');        
+                var linkLine = updateBundle(FlareData);      
+                
+            } else if (form_val == "NegScoreRadio") {
+                d3.select('#p_scoreHide').style("display", 'none');
+                d3.select('#n_scoreHide').style("display", 'block');
+                d3.select('#abs_scoreHide').style("display", 'none');
+                
+                //Filter out all links prior to updating with the score threshold
+                var FlareData = filterData(-1, 'score_neg');    
+                var linkLine = updateBundle(FlareData);
+                
+  	            var FlareData = filterData(currValues.n_score, 'score_neg');  
+  	            var linkLine = updateBundle(FlareData);        
+            } else if (form_val == "AbsScoreRadio") {
+                d3.select('#p_scoreHide').style("display", 'none');
+                d3.select('#n_scoreHide').style("display", 'none');
+                d3.select('#abs_scoreHide').style("display", 'block');
+                
+                //Filter out all links prior to updating with the score threshold
+                var FlareData = filterData(1, 'score_abs');
+                var linkLine = updateBundle(FlareData);
+                
+                var FlareData = filterData(currValues.abs_score, 'score_abs');
+                var linkLine = updateBundle(FlareData);
+            }
+            
+            var tension = currValues.tension;
+      
+            var line = linkLine.line;
+            var link = linkLine.link;
+            
+            line.curve(d3.curveBundle.beta(tension));
+            link.attr("d", d => line(d.source.path(d.target)));
+        }
+        
+        var filterDim = d3.select("#filterType");
+        filterDim.on("change", changeFilter);
+        
+        var selectDim = d3.select("#scoreSelect");
+        selectDim.on("change", changeScore);
+        
+        function updateBundle(data) {
+            
+	        pvalues = []
+            p_scores = []
+            n_scores = []
+            abs_scores = []
+            
+	        var line = d3.radialLine()
+    	        .curve(d3.curveBundle.beta(0.85))
+    	        .radius(function(d) { return d.y; })
+    	        .angle(function(d) { return d.x / 180 * Math.PI; });
+                
+            var root = d3.hierarchy(packageHierarchy(data), (d) => d.children);
+              
+            cluster(root)
+            
+            var nodes = root.descendants();
+            
+            node = node.data(nodes.filter(function(n) { return !n.children; }));
+            
+            node.exit().remove();
+            
+            var newNode = node.enter().append("text")
+                          	.attr("class", "node")
+    				    	.attr("dy", ".31em")
+    						.attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + (d.y + 8) + ",0)" + (d.x < 180 ? "" : "rotate(180)"); })
+    						.style("text-anchor", function(d) { return d.x < 180 ? "start" : "end"; })
+      					    .text(function(d) { return d.data.Label; })
+      						.style("fill", function(d) { return d.data.node_color; })
+    						.on("mouseover", mouseovered_node)
+    						.on("mouseout", mouseouted);
+            
+            node = node.merge(newNode);
+            
+            var links = packageImports(root.descendants());
+            
+            links = links.map(d=> ({ ...d
+  									, link_color : d.source.data.imports[d.target.data.id]["link_color"]
+                                    , link_score : d.source.data.imports[d.target.data.id]["link_score"]
+                                    , link_pvalue : d.source.data.imports[d.target.data.id]["link_pvalue"]}));
+            
+            links.forEach(function(d) { abs_scores.push(Math.abs(d.link_score))
+  										, pvalues.push(d.link_pvalue);
+                      				
+                                        if (d.link_score >= 0) {
+                                    
+                        					p_scores.push(d.link_score);
+                                     
+                        			    } else {
+                                
+   	                        			    n_scores.push(d.link_score);
+                                  
+                        			    }
+            	            });
+            
+            link = link.data(links);
+            
+            link.exit().remove();
+            
+            var newLink = link.enter().append("path")
+    	      				.attr("class", "link")                    
+            				.attr('d', d => line(d.source.path(d.target)))
+            				.style("stroke", function(d) { return d.link_color; })
+                            .on("mouseover", mouseovered_link)
+                            .on("mouseout", mouseouted);
+                     
+            link = link.merge(newLink);
+            
+            var linkLine = {"line": line, "link": link}
+            
+            function mouseovered_node(d) {
+  
+  	            peak_data = $node_data;
+  	            
+                if (Number.isNaN(Number(d.data[peak_data[0]]))) {                           
+    		        
+    		        console.log(d.data)
+    		        
+    		        
+    		        
+    		        var init_value = d.data[peak_data[0]]
+    		        
+    		                                      
+                } else if (typeof Number(d.data[peak_data[0]]) == 'number') { 
+      	            var init_value = Number(d.data[peak_data[0]]).toFixed(3)
+                }
+                            
+                html_line = "\\""+ peak_data[0] + "\\",\\"" + init_value + "\\"";
+                                
+		        peak_data.forEach(function(p) {
+                                
+    	            if (p !== peak_data[0]) {
+    		            if (Number.isNaN(Number(d.data[p]))) {
+        		            var data_value = d.data[p];
+                        } else if (typeof Number(d.data[p]) == 'number') {
+                            var data_value = Number(d.data[p]).toFixed(3);
+                        }
+                    
+       	                html_line = html_line + "\\n\\"" + p + "\\",\\"" + data_value + "\\"";
+			        }
+                });
+    
+                displayNodeData(html_line)
+  
+  	            node
+      	            .each(function(n) { n.target = n.source = false; });
+                
+  	            link
+      	            .classed("link--target", function(l) { if (l.target === d) return l.source.source = true; })
+      	            .classed("link--source", function(l) { if (l.source === d) return l.target.target = true; })
+    		        .filter(function(l) { return l.target === d || l.source === d; })
+      	            .each(function() { this.parentNode.appendChild(this); });
+                
+  	            node
+      	            .classed("node--both", function(n) { return n.source && n.target; })
+      	            .classed("node--target", function(n) { return n.target; })
+      	            .classed("node--source", function(n) { return n.source; });
+        
+                link.style('opacity', o => (o.source === d || o.target === d ? 1 : 0.15));
+	        }
+            
+            function mouseovered_link(d) {
+              	        
+                node
+     	            .each(function(n) { n.target = true; n.source = true; });
+                
+  	            link      	        
+      	            .classed("link--source", function(l) { if (l.source.data.id === d.source.data.id) return l.target.target = true; });
+                
+  	            node
+      	            .classed("node--target", function(n) { if (n.data.id == d.target.data.id) return n.target; })
+      	            .classed("node--source", function(n) { if (n.data.id == d.source.data.id) return n.source; });
+                            
+                link.style('opacity', o => (o.source === d.source || o.target === d.source ? 1 : 0.15))
+                
+                var source = d.source.data.Label;
+                var target = d.target.data.Label;    
+        
+                html_line = "\\"Source\\",\\""+ source + "\\"\\n\\"Target\\",\\"" + target + "\\"\\n\\"Pvalue\\"," + d.link_pvalue.toPrecision(3) + "\\n\\"Score\\"," + d.link_score.toPrecision(3)
+    
+                displayNodeData(html_line)
+            }
+            
+	        function mouseouted(d) {
+                
+  	            d3.select('#nodedataPanel').selectAll("*").remove();
+                
+  	            link
+      	            .classed("link--target", false)
+      	            .classed("link--source", false);
+                
+  	            node
+      	            .classed("node--both", false)
+                    .classed("node--target", false)
+      	            .classed("node--source", false);
+                
+                link.style('opacity', 1);    
+                node.style('opacity', 1);
+	        }
+  
+	        function packageHierarchy(classes) {
+  		        var map = {};
+                
+  		        function find(id, data) {
+    		        var node = map[id], i;
+    		        if (!node) {
+      		            node = map[id] = data || {id: id, children: []};
+      		            if (id.length) {
+        		            node.parent = find(id.substring(0, i = id.lastIndexOf("#")));
+        		            node.parent.children.push(node);
+        		            node.key = id.substring(i + 1);
+      		            }
+    		        }
+   			        return node;
+  		        }
+                
+  		        classes.forEach(function(d) {
+    		        find(d.id, d);
+  		        });
+                
+  		        return map[""];
+	        }
+            
+	        function packageImports(nodes) {
+  		        var map = {}, imports = [];
+                
+  		        nodes.forEach(function(d) {
+    		        map[d.data.id] = d;
+  		        });
+                
+  		        nodes.forEach(function(d) {
+      		        if (d.data.imports) Object.keys(d.data.imports).forEach(function(i) {    
+      				    imports.push({source: map[d.data.id], target: map[i]});
+    			    });
+  		        });
+                
+  		        return imports;
+	        }
+  
+            return linkLine;
+        }
+
+        function filterData(threshold, filtType) {
+    
+            const data = flareData.map(a => ({...a}));
+            
+            var FlareData = []
+            
+            //Remove nodes from imports with weight below threshold
+            for (var i = 0; i < data.length; i++) {
+    		    var flare = data[i];
+                
+                var links = flare.imports;
+                var newLinks = {}
+                
+                for (const [key, value] of Object.entries(links)) {
+                    
+        		    var link_score = value["link_score"];
+        		    var link_pvalue = value["link_pvalue"];
+        		    var link_color = value["link_color"];
+                    
+        		    if (filtType == 'score_abs') {
+                    
+            		    if (Math.abs(link_score) > threshold) {
+                                newLinks[key] = {"link_score": link_score
+                                                , "link_pvalue": link_pvalue
+                                                , "link_color": link_color};
+                        }
+                                   
+                    } else if (filtType == 'score_neg') {
+                    
+                        if (link_score < threshold) {
+                            newLinks[key] = {"link_score": link_score
+            	                           , "link_pvalue": link_pvalue
+                                           , "link_color": link_color};
+                        }
+                        
+                    } else if (filtType == 'score_pos') {
+                        if (link_score > threshold) {
+                            newLinks[key] = {"link_score": link_score
+                                           , "link_pvalue": link_pvalue
+                                           , "link_color": link_color};
+                        }
+                        
+                    } else if (filtType == 'pvalue') {
+                        if (link_pvalue <= threshold) {
+           		              newLinks[key] = {"link_score": link_score
+              	                           , "link_pvalue": link_pvalue
+                                           , "link_color": link_color};
+                        }
+                    }
+ 				}
+                
+                flare.imports = newLinks;
+                
+                FlareData.push(flare)
+            }
+            
+            return FlareData;
+        }
+        
+        function displayNodeData(datasetText) {
+            
+            d3.select('#nodedataPanel').selectAll("*").remove();
+            
+  			var rows  = d3.csvParseRows(datasetText),
+      		table = d3.select('#nodedataPanel').append('table')
+                						.style("border-collapse", "collapse")
+                						.style("border", "2px black solid");
+        				
+            var tablebody = table.append("tbody");
+        				
+            rows = tablebody
+                  		.selectAll("tr")
+                		.data(rows)
+                		.enter()
+                		.append("tr");
+ 
+ 			cells = rows.selectAll("td")            		
+                		.data(function(d) { return d; })
+                		.enter()
+                		.append("td")
+                		.text(function(d) { return d; })
+                        .style("border", "1px black solid")
+                        .style("font-size", "20px");
+        };
+
+        }
+
+        redraw();
+        
+        // Redraw based on the new size whenever the browser window is resized.
+        window.addEventListener("resize", redraw);        
+        '''
+
+        return js_text
+
     def __getHTML(self):
 
         html_text = '''
@@ -1289,10 +2244,124 @@ class edgeBundle:
 
         return html_text
 
-    def __df_to_flareJson(self, edges):
-        """Convert dataframe into nested JSON as in flare files used for D3.js"""
+    def __getHTMLdashboard(self):
+
+        html_text = '''
+        
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        <style> $css_text </style>
+        
+        <head>
+	        <meta charset="utf-8">
+	        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+	        <meta name="viewport" content="width=device-width, initial-scale=1.0">	
+	        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css">	        
+        </head>
+
+        <body ng-app="firstApplication">
+	        <div class="container-fluid py-5">
+		        <div class="row" ng-controller="sliderController as ctrl">
+			        <div class="col-lg-9 col-12">
+				        <div class="row">
+					        
+					        <div class="col-lg-6 col-12 mb-3">
+						        <div class="card">
+							        <div class="card-header">
+								        <h4>Hierarchical Edge Bundle</h4>
+							        </div>
+							        <div class="card-body">
+								        <div id="edgeBundlePanel"></div>
+							        </div>
+						        </div>
+					        </div>
+					        <div class="col-lg-6 col-12 mb-3">
+						        <div class="card">
+							        <div class="card-header">
+								        <h4>Node Data</h4>
+							        </div>
+							        <div class="card-body">
+								        <div id="nodedataPanel"></div>
+							        </div>
+						        </div>
+					        </div>
+				        </div>		
+			        </div>
+
+                    <div class="col-lg-3 col-12 mb-3">
+				        <div class="card mb-3" style="min-width: 28rem; max-width: 28rem; min-height: 14rem;">
+							
+							<div class="card-body p-3">
+								<form id="filterType" class="ml-4" whitespace="nowrap">
+                                    <input type='radio' id="scoreRadio" name="mode" checked/> Corr. coeff
+                                    <input type='radio' id="pvalueRadio" name="mode"/> Pvalue                 
+                                    
+                                    <div id="abs_scoreHide">
+                                        <h6 id="abs_score">Corr. coeff: <div id="absScoreSlider"></div><span style="white-space: nowrap;" id="abs_scoreValue">0</span></h6>                 
+                                    </div>
+                                    
+                                    <div id="p_scoreHide">
+                                        <h6 id="p_score">Corr. coeff: <div id="posScoreSlider"></div><span style="white-space: nowrap;" id="p_scoreValue"></span></h6>
+                                    </div>
+                                    
+                                    <div id="n_scoreHide">
+                                        <h6 id="n_score">Corr. coeff: <div id="negScoreSlider"></div><span style="white-space: nowrap;" id="n_scoreValue"></span></h6>
+                                    </div>
+                                    
+                                    <div id="pvalueHide">
+                                        <h6 id="pvalue">Pvalue: <div id="pvalueSlider"></div><span style="white-space: nowrap;" id="pvalueValue"></span></h6>
+                                    </div>
+                                    
+                                    <h6 id="tension">Tension: <div id="tensionSlider"></div><span style="white-space: nowrap;" id="tensionValue"></span></h6>
+                                    
+                                    <button id='save'>Save</button>
+       
+                                </form>
+                                
+                                <form id="scoreSelect" class="ml-4 mb-1" whitespace="nowrap">
+                                    <input type='radio' id="PosScoreRadio" name="mode"/> Positive
+                                    <input type='radio' id="NegScoreRadio" name="mode"/> Negative
+                                    <input type='radio' id="AbsScoreRadio" name="mode" checked/> Absolute
+                                </form>
+                            <div>
+                        </div>
+					</div>
+				</div>   
+            </div>
+        </body>
+        
+        <script src="https://d3js.org/d3.v5.min.js"></script>
+        <script src="https://unpkg.com/d3-simple-slider"></script>
+        <script src="https://github.com/canvg/canvg/blob/master/src/canvg.js"></script>
+        <script src="https://exupero.org/saveSvgAsPng/src/saveSvgAsPng.js"></script>
+
+        <script> $js_text </script>               
+        '''
+
+        return html_text
+
+    def __df_to_flareJson(self, nodes, edges):
+        """Convert dataframes into nested JSON as in flare files used for D3.js"""
+
+        nodeList = list(nodes.columns)
+
+        if "Idx" in nodeList:
+            nodeList.remove('Idx')
+
+        if "Label" in nodeList:
+            nodeList.remove('Label')
+
+        if "color" in nodeList:
+            nodeList.remove('color')
+
+        if "block" in nodeList:
+            nodeList.remove('block')
+
+        nodeData = nodes[nodeList]
+        nodeDataList = list(nodeData.drop(columns=['Name']).columns)
+
         flare = dict()
-        d = {"name": "flare", "children": []}
+        d = {"Name": "flare", "children": []}
 
         for index, row in edges.iterrows():
 
@@ -1301,12 +2370,12 @@ class edgeBundle:
                 parent_name = row[1]
                 parent_color = row[2]
                 parent_label = row[3]
-                parent_group = row[4]
+                parent_block = row[4]
                 child_index = row[5]
                 child_name = row[6]
                 child_color = row[7]
                 child_label = row[8]
-                child_group = row[9]
+                child_block = row[9]
                 link_score = row[10]
                 link_sign = row[11]
                 link_pvalue = row[12]
@@ -1319,11 +2388,30 @@ class edgeBundle:
 
                 # if parent index is NOT a key in flare.JSON, append it
                 if not parent_index in key_list:
-                    d['children'].append({"id": parent_index, "name": parent_label, "node_color": parent_color, "group": parent_group, "children": [{"id": child_index, "name": child_label, "node_color": child_color, "link_score": link_score, "link_sign": link_sign, "link_pvalue": link_pvalue, "group": child_group, "link_color": link_color}]})
+
+                    parent_dic = {"id": parent_index, "Name": parent_name, "Label": parent_label, "node_color": parent_color, "block": parent_block}
+
+                    for col in nodeDataList:
+                        parent_dic[col] = list(nodeData[nodeData.Name.isin([parent_name])][col])[0]
+
+                    child_dic = {"id": child_index, "Name": child_name, "Label": child_label, "node_color": child_color, "link_score": link_score, "link_sign": link_sign, "link_pvalue": link_pvalue, "block": child_block, "link_color": link_color}
+
+                    for col in nodeDataList:
+                        child_dic[col] = list(nodeData[nodeData.Name.isin([child_name])][col])[0]
+
+                    parent_dic["children"] = [child_dic]
+
+                    d['children'].append(parent_dic)
 
                 # if parent index IS a key in flare.json, add a new child to it
                 else:
-                    d['children'][key_list.index(parent_index)]['children'].append({"id": child_index, "name": child_label, "node_color": child_color, "link_score": link_score, "link_sign": link_sign, "link_pvalue": link_pvalue, "group": child_group, "link_color": link_color})
+
+                    child_dic = {"id": child_index, "Name": child_name, "Label": child_label, "node_color": child_color, "link_score": link_score, "link_sign": link_sign, "link_pvalue": link_pvalue, "block": child_block, "link_color": link_color}
+
+                    for col in nodeDataList:
+                        child_dic[col] = list(nodeData[nodeData.Name.isin([child_name])][col])[0]
+
+                    d['children'][key_list.index(parent_index)]['children'].append(child_dic)
             else:
                 parent_index = row[0]
                 parent_name = row[1]
@@ -1345,19 +2433,55 @@ class edgeBundle:
 
                 # if parent index is NOT a key in flare.JSON, append it
                 if not parent_index in key_list:
-                    d['children'].append({"id": parent_index, "name": parent_label, "node_color": parent_color, "children": [{"id": child_index, "name": child_label, "node_color": child_color, "link_score": link_score, "link_sign": link_sign, "link_pvalue": link_pvalue, "link_color": link_color}]})
+
+                    parent_dic = {"id": parent_index, "Name": parent_name, "Label": parent_label, "node_color": parent_color}
+
+                    for col in nodeDataList:
+                        parent_dic[col] = list(nodeData[nodeData.Name.isin([parent_name])][col])[0]
+
+                    child_dic =  {"id": child_index, "Name": child_name, "Label": child_label, "node_color": child_color, "link_score": link_score, "link_sign": link_sign, "link_pvalue": link_pvalue, "link_color": link_color}
+
+                    for col in nodeDataList:
+                        child_dic[col] = list(nodeData[nodeData.Name.isin([child_name])][col])[0]
+
+                    parent_dic["children"] = [child_dic]
+
+                    d['children'].append(parent_dic)
 
                 # if parent index IS a key in flare.json, add a new child to it
                 else:
-                    d['children'][key_list.index(parent_index)]['children'].append({"id": child_index, "name": child_label, "node_color": child_color, "link_score": link_score, "link_sign": link_sign, "link_pvalue": link_pvalue, "link_color": link_color})
+
+                    child_dic = {"id": child_index, "Name": child_name, "Label": child_label, "node_color": child_color, "link_score": link_score, "link_sign": link_sign, "link_pvalue": link_pvalue, "link_color": link_color}
+
+                    for col in nodeDataList:
+                        child_dic[col] = list(nodeData[nodeData.Name.isin([child_name])][col])[0]
+
+                    d['children'][key_list.index(parent_index)]['children'].append(child_dic)
 
         flare = d
 
         return flare
 
-    def __df_to_Json(self, edges):
+    def __df_to_Json(self, nodes, edges):
 
-        flare = self.__df_to_flareJson(edges);
+        flare = self.__df_to_flareJson(nodes, edges);
+
+        nodeList = list(nodes.columns)
+
+        if "Idx" in nodeList:
+            nodeList.remove('Idx')
+
+        if "Label" in nodeList:
+            nodeList.remove('Label')
+
+        if "color" in nodeList:
+            nodeList.remove('color')
+
+        if "block" in nodeList:
+            nodeList.remove('block')
+
+        nodeData = nodes[nodeList]
+        nodeDataList = list(nodeData.drop(columns=['Name']).columns)
 
         flareString = ""
 
@@ -1373,26 +2497,43 @@ class edgeBundle:
                 for idx, val in enumerate(value):
 
                     if "start_block" in edges.columns:
-                        dParent = {"id": "", "name": "", "node_color": "", "group": "", "imports": {}}
+                        dParent = {"id": "", "Name": "", "Label": "", "node_color": "", "block": ""}
+
+                        for col in nodeDataList:
+                            dParent[col] = ""
+
+                        dParent["imports"] = {}
+
                         parent_index = str(value[idx]['id'])
-                        parentGroup = str(value[idx]['group'])
+                        parentBlock = str(value[idx]['block'])
 
-                        flareParentIndex = flareString + "#" + parentGroup + "#" + parent_index
+                        flareParentIndex = flareString + "#" + parentBlock + "#" + parent_index
 
-                        dParent["group"] = parentGroup
+                        dParent["block"] = parentBlock
 
                     else:
                         parent_index = str(value[idx]['id'])
-                        dParent = {"id": "", "name": "", "node_color": "", "imports": {}}
+
+                        dParent = {"id": "", "Name": "", "Label": "", "node_color": ""}
+
+                        for col in nodeDataList:
+                            dParent[col] = ""
+
+                        dParent["imports"] = {}
 
                         flareParentIndex = flareString + "#" + parent_index
 
-                    parentName = str(value[idx]['name'])
+                    parentName = str(value[idx]['Name'])
+                    parentLabel = str(value[idx]['Label'])
                     parentColor = str(value[idx]['node_color'])
 
                     dParent["id"] = flareParentIndex
-                    dParent["name"] = parentName
+                    dParent["Name"] = parentName
+                    dParent["Label"] = parentLabel
                     dParent["node_color"] = parentColor
+
+                    for col in nodeDataList:
+                        dParent[col] = str(value[idx][col])
 
                     childList = value[idx]['children']
 
@@ -1403,29 +2544,44 @@ class edgeBundle:
                         link_color = str(child['link_color'])
 
                         if "start_block" in edges.columns:
-                            dChild = {"id": "", "name": "", "node_color": "", "group": "", "imports": {}}
+                            dChild = {"id": "", "Name": "", "Label": "", "node_color": "", "block": ""}
+
+                            for col in nodeDataList:
+                                dChild[col] = ""
+
+                            dChild["imports"] = {}
+
                             child_index = str(child['id'])
-                            childGroup = str(child['group'])
+                            childBlock = str(child['block'])
 
-                            flareChildIndex = flareString + "#" + childGroup + "#" + child_index
+                            flareChildIndex = flareString + "#" + childBlock + "#" + child_index
 
-                            dChild["group"] = childGroup
+                            dChild["block"] = childBlock
 
                         else:
                             child_index = str(child['id'])
-                            dChild = {"id": "", "name": "", "node_color": "", "imports": {}}
+                            dChild = {"id": "", "Name": "", "Label": "", "node_color": ""}
+
+                            for col in nodeDataList:
+                                dChild[col] = ""
+
+                            dChild["imports"] = {}
 
                             flareChildIndex = flareString + "#" + child_index
 
-
-                        childName = str(child['name'])
+                        childName = str(child['Name'])
+                        childLabel = str(child['Label'])
                         childColor = str(child['node_color'])
 
                         dParent["imports"][flareChildIndex] = {"link_score": link_score, "link_sign": link_sign, "link_pvalue": link_pvalue, "link_color": link_color}
 
                         dChild["id"] = flareChildIndex
-                        dChild["name"] = childName
+                        dChild["Name"] = childName
+                        dChild["Label"] = childLabel
                         dChild["node_color"] = childColor
+
+                        for col in nodeDataList:
+                            dChild[col] = str(child[col])
 
                         dChild["imports"][flareParentIndex] = {"link_score": link_score, "link_sign": link_sign, "link_pvalue": link_pvalue, "link_color": link_color}
 

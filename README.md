@@ -88,6 +88,7 @@ For further detail on the usage refer to the docstring.
 			- [edge_cmap] : Set the CMAP colour palette to use for colouring the edges (default: 'brg')
 
 		- [run] : Generates the JavaScript embedded HTML code and writes to a HTML file
+		- [launchDashboard] : Generates the JavaScript embedded HTML code in a dashboard format, writes to a HTML file and launches a new browser window
 		
 - [plotNetwork](https://github.com/brettChapman/multivis/blob/master/multivis/plotNetwork.py): Generates and displays a static NetworkX graph given a user defined layout.
 	- [init_parameters](https://github.com/brettChapman/multivis/blob/master/multivis/plotNetwork.py#L41-L45)
@@ -135,6 +136,7 @@ For further detail on the usage refer to the docstring.
 			- [neg_score_color] : Colour value for negative similarity scores. Can be HTML/CSS name, hex code, and (R,G,B) tuples (default: 'black')
 		
 		- [run] : Generates the JavaScript embedded HTML code and writes to a HTML file
+		- [launchDashboard] : Generates the JavaScript embedded HTML code in a dashboard format, writes to a HTML file and launches a new browser window
 
 - [clustermap](https://github.com/brettChapman//multivis/blob/master/multivis/clustermap.py): Hierarchical Clustered Heatmap.
 	- [init_parameters](https://github.com/brettChapman//multivis/blob/master/multivis/clustermap.py#L42-L50)
