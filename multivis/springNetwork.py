@@ -3,6 +3,7 @@ import sys
 import numpy as np
 import networkx as nx
 import matplotlib
+import matplotlib.pyplot as plt
 import webbrowser as wb
 from string import Template
 from ast import literal_eval
@@ -18,8 +19,9 @@ class springNetwork:
         Methods
         -------
         set_params : Set parameters -
-            node_size_scale: dictionary(Peak Table column name as index: dictionary('scale': ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume")
-                                                                                    'range': a number array of length 2 - minimum size to maximum size)) (default: sizes all nodes to 10 with no dropdown menu)
+            node_size_scale: dictionary(Peak Table column name as index: dictionary('scale': ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal")
+                                                                                    , 'range': a number array of length 2 - minimum size to maximum size)) (default: sizes all nodes to 10 with no dropdown menu)
+            node_color_scale: dictionary(Peak Table column name as index: dictionary('scale': ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal")
             html_file: Name to save the HTML file as (default: 'springNetwork.html')
             backgroundColor: Set the background colour of the plot (default: 'white')
             foregroundColor: Set the foreground colour of the plot (default: 'black')
@@ -33,8 +35,8 @@ class springNetwork:
             pos_score_color: Colour value for positive similarity scores. Can be HTML/CSS name, hex code, and (R,G,B) tuples (default: 'red')
             neg_score_color: Colour value for negative similarity scores. Can be HTML/CSS name, hex code, and (R,G,B) tuples (default: 'black')
 
-        run: : Generates the JavaScript embedded HTML code and writes to a HTML file
-        launchDashboard : Generates the JavaScript embedded HTML code in a dashboard format, writes to a HTML file and launches a new browser window
+        build: : Generates the JavaScript embedded HTML code and writes to a HTML file and opens it in a browser.
+        buildDashboard : Generates the JavaScript embedded HTML code in a dashboard format, writes to a HTML file and opens it in a browser.
     """
 
     def __init__(self, g):
@@ -43,11 +45,12 @@ class springNetwork:
 
         self.set_params()
 
-    def set_params(self, node_size_scale={}, html_file='springNetwork.html', backgroundColor='white', foregroundColor='black', chargeStrength=-120, node_text_size=15, fix_nodes=False, displayLabel=False, node_data=['Name', 'Label'], link_type='score', link_width=0.5, pos_score_color='red', neg_score_color='black'):
+    def set_params(self, node_size_scale={}, node_color_scale={}, html_file='springNetwork.html', backgroundColor='white', foregroundColor='black', chargeStrength=-120, node_text_size=15, fix_nodes=False, displayLabel=False, node_data=['Name', 'Label'], link_type='score', link_width=0.5, pos_score_color='red', neg_score_color='black'):
 
-        node_size_scale, html_file, backgroundColor, foregroundColor, chargeStrength, node_text_size, fix_nodes, displayLabel, node_data, link_type, link_width, pos_score_color, neg_score_color = self.__paramCheck(node_size_scale, html_file, backgroundColor, foregroundColor, chargeStrength, node_text_size, fix_nodes, displayLabel, node_data, link_type, link_width, pos_score_color, neg_score_color)
+        node_size_scale, node_color_scale, html_file, backgroundColor, foregroundColor, chargeStrength, node_text_size, fix_nodes, displayLabel, node_data, link_type, link_width, pos_score_color, neg_score_color = self.__paramCheck(node_size_scale, node_color_scale, html_file, backgroundColor, foregroundColor, chargeStrength, node_text_size, fix_nodes, displayLabel, node_data, link_type, link_width, pos_score_color, neg_score_color)
 
         self.__node_size_scale = node_size_scale;
+        self.__node_color_scale = node_color_scale;
         self.__html_file = html_file;
         self.__backgroundColor = backgroundColor;
         self.__foregroundColor = foregroundColor;
@@ -61,17 +64,15 @@ class springNetwork:
         self.__pos_score_color = pos_score_color;
         self.__neg_score_color = neg_score_color;
 
-    def run(self):
+    def __process_params(self):
 
         g = self.__g
         link_type = self.__link_type.lower()
         link_width = self.__link_width
         chargeStrength = self.__chargeStrength
-        html_file = self.__html_file
-        backgroundColor = self.__backgroundColor
-        foregroundColor = self.__foregroundColor
         node_text_size = self.__node_text_size
         node_size_scale = self.__node_size_scale
+        node_color_scale = self.__node_color_scale
         fix_nodes = self.__fix_nodes
         displayLabel = self.__displayLabel
         node_data = self.__node_data
@@ -91,10 +92,20 @@ class springNetwork:
         else:
             dispLabel = "false";
 
-        paramDict = dict({"link_type": link_type, "link_width": link_width, "node_text_size": node_text_size,
-                          "displayLabel": dispLabel, "node_data": node_data, "node_size_scale": node_size_scale, "chargeStrength": chargeStrength, "fix_nodes": fixed})
+        paramDict = dict({"link_type": link_type, "link_width": link_width, "node_text_size": node_text_size, "node_size_scale": node_size_scale, "node_color_scale": node_color_scale,
+                          "displayLabel": dispLabel, "node_data": node_data, "chargeStrength": chargeStrength, "fix_nodes": fixed})
 
         data = json.dumps(self.__generateJson(g), cls=self.__graphEncoder)
+
+        return data, paramDict, operator
+
+    def build(self):
+
+        backgroundColor = self.__backgroundColor
+        foregroundColor = self.__foregroundColor
+        html_file = self.__html_file
+
+        data, paramDict, operator = self.__process_params()
 
         css_text_template_network = Template(self.__getCSS());
         js_text_template_network = Template(self.__getJS());
@@ -118,44 +129,20 @@ class springNetwork:
             f.write(html)
             f.close()
 
-    def launchDashboard(self):
+        print("HTML writen to {}".format(html_file))
 
-        g = self.__g
-        link_type = self.__link_type.lower()
-        link_width = self.__link_width
-        chargeStrength = self.__chargeStrength
-        html_file = self.__html_file
+        wb.open_new('file://' + os.path.realpath(html_file))
+
+    def buildDashboard(self):
+
         backgroundColor = self.__backgroundColor
         foregroundColor = self.__foregroundColor
-        node_text_size = self.__node_text_size
-        node_size_scale = self.__node_size_scale
-        fix_nodes = self.__fix_nodes
-        displayLabel = self.__displayLabel
-        node_data = self.__node_data
+        html_file = self.__html_file
 
-        if fix_nodes:
-            fixed = "true";
-        else:
-            fixed = "false";
-
-        if link_type.lower() == 'pvalue':
-            operator = '<=';
-        else:
-            operator = '>=';
-
-        if displayLabel:
-            dispLabel = "true";
-        else:
-            dispLabel = "false";
-
-        paramDict = dict({"link_type": link_type, "link_width": link_width, "node_text_size": node_text_size,
-                          "displayLabel": dispLabel, "node_data": node_data, "node_size_scale": node_size_scale, "chargeStrength": chargeStrength, "fix_nodes": fixed})
-
-        data = json.dumps(self.__generateJson(g), cls=self.__graphEncoder)
+        data, paramDict, operator = self.__process_params()
 
         css_text_template_network = Template(self.__getCSSdashboard());
         js_text_template_network = Template(self.__getJSdashboard());
-
         html_template_network = Template(self.__getHTMLdashboard());
 
         css_text_network = css_text_template_network.substitute({'backgroundColor': backgroundColor, 'foregroundColor': foregroundColor})
@@ -178,10 +165,9 @@ class springNetwork:
             f.write(html)
             f.close()
 
-        path = os.getcwd()
-        sep = path[0]
+        print("HTML writen to {}".format(html_file))
 
-        wb.open("file://" + path + sep + html_file, new=2)
+        wb.open('file://' + os.path.realpath(html_file))
 
     def __checkData(self, g):
 
@@ -191,10 +177,10 @@ class springNetwork:
 
         return g
 
-    def __paramCheck(self, node_size_scale, html_file, backgroundColor, foregroundColor, chargeStrength, node_text_size, fix_nodes, displayLabel, node_data, link_type, link_width, pos_score_color, neg_score_color):
+    def __paramCheck(self, node_size_scale, node_color_scale, html_file, backgroundColor, foregroundColor, chargeStrength, node_text_size, fix_nodes, displayLabel, node_data, link_type, link_width, pos_score_color, neg_score_color):
 
         g = self.__g
-        col_list = list(g.nodes[list(g.nodes.keys())[0]].keys())[:-1]
+        col_list = list(g.nodes[list(g.nodes.keys())[0]].keys()) + ['none']
 
         if node_size_scale:
             if not isinstance(node_size_scale, dict):
@@ -207,38 +193,64 @@ class springNetwork:
                     sys.exit()
                 else:
                     for idx, node in enumerate(g.nodes()):
-                        try:
-                            float(g.node[node][column])
-                        except ValueError:
-                            print(
-                            "Error: Node size scale column {} contains invalid values. Choose a node size scale column containing float or integer values.".format(column))
-                            sys.exit()
+                        if node_size_scale[column]['scale'] != 'ordinal':
+                            try:
+                                float(g.node[node][column])
+                            except ValueError:
+                                print("Error: Node size scale column {} contains invalid values. While scale is not ordinal, choose a column containing float or integer values.".format(column))
+                                sys.exit()
 
                         for key in node_size_scale[column].keys():
 
                             if key not in ['scale', 'range']:
-                                print(
-                                "Error: Node size scale column {} dictionary keys are not valid. Use \"scale\" and \"range\".".format(column))
+                                print("Error: Node size scale column {} dictionary keys are not valid. Use \"scale\" and \"range\".".format(column))
                                 sys.exit()
 
-                        if node_size_scale[column]['scale'].lower() not in ["linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume"]:
-                            print("Error: Node size scale column {} dictionary scale value not valid. Choose either \"linear\", \"reverse_linear\", \"log\", \"reverse_log\", \"square\", \"reverse_square\", \"area\", \"reverse_area\", \"volume\", \"reverse_volume\".".format(column))
+                        if node_size_scale[column]['scale'].lower() not in ["linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal"]:
+                            print("Error: Node size scale column {} dictionary scale value not valid. Choose either \"linear\", \"reverse_linear\", \"log\", \"reverse_log\", \"square\", \"reverse_square\", \"area\", \"reverse_area\", \"volume\", \"reverse_volume\", \"ordinal\".".format(column))
                             sys.exit()
 
                         if not isinstance(node_size_scale[column]['range'], list):
-                            print(
-                            "Error: Node size scale column {} dictionary range data type is not valid. Use a list of length 2.".format(
-                                column))
+                            print("Error: Node size scale column {} dictionary range data type is not valid. Use a list of length 2.".format(column))
                             sys.exit()
                         else:
                             for size in node_size_scale[column]['range']:
                                 if not isinstance(size, float):
                                     if not isinstance(size, int):
-                                        print(
-                                        "Error: Node size scale column {} dictionary range value is not valid. Choose a float or integer value.")
+                                        print("Error: Node size scale column {} dictionary range value is not valid. Choose a float or integer value.")
                                         sys.exit()
         else:
             node_size_scale = dict({})  # Default to an empty dict
+
+        if node_color_scale:
+            if not isinstance(node_color_scale, dict):
+                print("Error: Node color scale is not a valid data type. Provide a dictionary.")
+                sys.exit()
+
+            for column in node_color_scale.keys():
+                if column not in col_list:
+                    print("Error: Node color scale columns not valid. Choose one of {}.".format(', '.join(col_list)))
+                    sys.exit()
+                else:
+                    for idx, node in enumerate(g.nodes()):
+                        if node_color_scale[column]['scale'] != 'ordinal':
+                            try:
+                                float(g.node[node][column])
+                            except ValueError:
+                                print("Error: Node color scale column {} contains invalid values. While scale is not ordinal, choose a column containing float or integer values.".format(column))
+                                sys.exit()
+
+                        for key in node_color_scale[column].keys():
+
+                            if key not in ['scale']:
+                                print("Error: Node color scale column {} dictionary keys are not valid. Use \"scale\".".format(column))
+                                sys.exit()
+
+                        if node_color_scale[column]['scale'].lower() not in ["linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal"]:
+                            print("Error: Node color scale column {} dictionary scale value not valid. Choose either \"linear\", \"reverse_linear\", \"log\", \"reverse_log\", \"square\", \"reverse_square\", \"area\", \"reverse_area\", \"volume\", \"reverse_volume\", \"ordinal\".".format(column))
+                            sys.exit()
+        else:
+            node_color_scale = dict({})  # Default to an empty dict
 
         if not isinstance(html_file, str):
             print("Error: Html file is not valid. Choose a string value.")
@@ -309,7 +321,7 @@ class springNetwork:
 
         neg_score_color = self.__colorCheck(neg_score_color, "negative score")
 
-        return node_size_scale, html_file, backgroundColor, foregroundColor, chargeStrength, node_text_size, fix_nodes, displayLabel, node_data, link_type, link_width, pos_score_color, neg_score_color
+        return node_size_scale, node_color_scale, html_file, backgroundColor, foregroundColor, chargeStrength, node_text_size, fix_nodes, displayLabel, node_data, link_type, link_width, pos_score_color, neg_score_color
 
     def __colorCheck(self, colorValue, type):
 
@@ -379,7 +391,6 @@ class springNetwork:
     def __getCSS(self):
 
         css_text = '''
-        
         body {
             background-color: $backgroundColor;            
         }
@@ -413,46 +424,27 @@ class springNetwork:
             pointer-events: none;
         }
         
-        #nodeSizeDropdown {
-            position: relative;
-            top: 25px;
-            
-        }
-        
-        #nodeColorDropdown {
-            position: relative;
-            top: 30px;
-        }
-        
-        #sliderText {
-            position: absolute;
-            top: 18px;
-            left: 0px;
-            color: 'black';
-        }
-        
         #slider {
-            position: absolute;
-            top: 20px;
-            left: 125px;
+            position: relative;
+            top: 2px;
         }
         
-        #sliderValue {
-            position: absolute;
-            top: 38px;
-            left: 350px;
-            color: 'black';
+        #nodeSizeDropdown, #nodeColorDropdown {  
+            position: relative;
+            margin-bottom: 10px;
+            left: 0px;
+            color: $foregroundColor;
         }
         
         #save {
             position: relative;
-            top: 35px;
-            left: 0px;                 
-        }  
+            left: 0px;
+            color: $foregroundColor;
+        }
         
-        #springWrapper {
-            position: relative;
-            height: 100%;                        
+        #springPanel {
+            position: relative;            
+            height: 800px;
             margin: 0 auto;
             margin-top: auto;
             margin-bottom: auto;
@@ -460,17 +452,85 @@ class springNetwork:
             margin-right: auto;
         }
         
-        #sliderValue, text {
-                    
+        .row {
+            padding-left: 15px;
+        }  
+        
+        text {
+                        
             font-family: sans-serif;
-                -webkit-touch-callout: none; /* iOS Safari */
-                -webkit-user-select: none; /* Safari */
-                -khtml-user-select: none; /* Konqueror HTML */
-                -moz-user-select: none; /* Firefox */
-                -ms-user-select: none; /* Internet Explorer/Edge */
-                user-select: none; /* Non-prefixed version, currently supported by Chrome and Opera */
+            -webkit-touch-callout: none; /* iOS Safari */
+            -webkit-user-select: none; /* Safari */
+            -khtml-user-select: none; /* Konqueror HTML */
+            -moz-user-select: none; /* Firefox */
+            -ms-user-select: none; /* Internet Explorer/Edge */
+            user-select: none; /* Non-prefixed version, currently supported by Chrome and Opera */
         }
         
+        td:nth-child(odd) {
+            background-color: #eee;
+            font-weight: bold;
+        }
+               
+        .slider.rzslider .rz-bar {
+            background: #D3D3D3;
+            height: 2px;
+        }
+        
+        .slider.rzslider .rz-pointer {
+            width: 8px;
+            height: 20px;
+            top: auto; /* to remove the default positioning */
+            bottom: 0;
+            background-color: #333;
+            border-top-left-radius: 3px;
+            border-top-right-radius: 3px;
+        }
+        
+        .slider.rzslider .rz-pointer:after {
+            display: none;
+        }
+        
+        form.searchBar {
+            padding-top: 4px;
+        }
+        
+        /* Style the search field */
+        form.searchBar input[type=text] {
+            padding: 3px;
+            font-size: 17px;
+            border: 1px solid grey;
+            float: left;
+            top: 30px;
+            width: 80%;
+            height: 30px;
+            background: #f1f1f1;
+        }
+        
+        /* Style the submit button */
+        form.searchBar button {
+            float: left;
+            width: 20%;
+            height: 30px;
+            padding: 3px;
+            background: #2196F3;
+            color: white;
+            font-size: 17px;
+            border: 1px solid grey;
+            border-left: none; /* Prevent double borders */
+            cursor: pointer;
+        }
+        
+        form.searchBar button:hover {
+            background: #0b7dda;
+        }
+        
+        /* Clear floats */
+        form.searchBar::after {
+            content: "";
+            clear: both;
+            display: table;
+        }
         '''
 
         return css_text
@@ -478,7 +538,6 @@ class springNetwork:
     def __getCSSdashboard(self):
 
         css_text = '''
-
         body {
             background-color: $backgroundColor;            
         }
@@ -492,73 +551,106 @@ class springNetwork:
             stroke-width: 1.5px;
             opacity: 1.0;
         }
-
+        
         .text {
             stroke: #fff;
             stroke-width: 1.5px;
             opacity: 1.0;
         }
         
-        #nodeSizeDropdown {
-            position: relative;
-            top: 25px;
-        }
-
-        #nodeColorDropdown {
-            position: relative;
-            top: 30px;
-        }
-
-        #sliderText {
-            position: absolute;
-            top: 59px;
-            left: 0px;
-            color: 'black';
-        }
-
         #slider {
-            position: absolute;
-            top: 40px;
-            left: 125px;
-        }
-
-        #sliderValue {
-            position: absolute;
-            top: 60px;
-            left: 350px;
-            color: 'black';
-        }
-
-        #save {
             position: relative;
-            top: 35px;
-            left: 0px;                 
-        }  
-
+            top: 2px;
+        }
+        
+        #nodeSizeDropdown, #nodeColorDropdown {  
+            margin-bottom: 10px;
+        }
+        
+        #save {  
+            margin-bottom: -50px;
+        }
+        
         #springPanel {
             position: relative;
-            height: 500px;
+            width: 100%;
+            height: 100%;
+            /*height: 725px;*/
             margin: 0 auto;
             margin-top: auto;
             margin-bottom: auto;
             margin-left: auto;
             margin-right: auto;
         }
-
-        #sliderValue, text {
-
+        
+        text {            
             font-family: sans-serif;
-                -webkit-touch-callout: none; /* iOS Safari */
-                -webkit-user-select: none; /* Safari */
-                -khtml-user-select: none; /* Konqueror HTML */
-                -moz-user-select: none; /* Firefox */
-                -ms-user-select: none; /* Internet Explorer/Edge */
-                user-select: none; /* Non-prefixed version, currently supported by Chrome and Opera */
+            -webkit-touch-callout: none; /* iOS Safari */
+            -webkit-user-select: none; /* Safari */
+            -khtml-user-select: none; /* Konqueror HTML */
+            -moz-user-select: none; /* Firefox */
+            -ms-user-select: none; /* Internet Explorer/Edge */
+            user-select: none; /* Non-prefixed version, currently supported by Chrome and Opera */
         }
         
         td:nth-child(odd) {
             background-color: #eee;
             font-weight: bold;
+        }
+               
+        .slider.rzslider .rz-bar {
+            background: #D3D3D3;
+            height: 2px;
+        }
+        
+        .slider.rzslider .rz-pointer {
+            width: 8px;
+            height: 20px;
+            top: auto; /* to remove the default positioning */
+            bottom: 0;
+            background-color: #333;
+            border-top-left-radius: 3px;
+            border-top-right-radius: 3px;
+        }
+        
+        .slider.rzslider .rz-pointer:after {
+            display: none;
+        }
+        
+        /* Style the search field */
+        form.searchBar input[type=text] {
+            padding: 3px;
+            font-size: 17px;
+            border: 1px solid grey;
+            float: left;
+            width: 80%;
+            height: 30px;
+            background: #f1f1f1;
+        }
+        
+        /* Style the submit button */
+        form.searchBar button {
+            float: left;
+            width: 20%;
+            height: 30px;
+            padding: 3px;
+            background: #2196F3;
+            color: white;
+            font-size: 17px;
+            border: 1px solid grey;
+            border-left: none; /* Prevent double borders */
+            cursor: pointer;
+        }
+        
+        form.searchBar button:hover {
+            background: #0b7dda;
+        }
+        
+        /* Clear floats */
+        form.searchBar::after {
+            content: "";
+            clear: both;
+            display: table;
         }
         '''
 
@@ -567,22 +659,34 @@ class springNetwork:
     def __getJS(self):
 
         js_text = '''
+        var networkData = $networkData
                 
         var params = JSON.parse(JSON.stringify($paramDict));
             
-        var networkData = $networkData
-        
-        var canvas = document.getElementById("springWrapper");
+        var canvas = document.getElementById("springPanel");
         var springNetwork = d3.select(canvas).append("svg").attr("id", "springNetwork");
+        
+        var redrawCount = 0;
+        var prevRedrawCount = 0;
         
         function redraw(){
         
-            d3.select('#springWrapper').select("#search").selectAll("*").remove();            
-            d3.select('#springWrapper').select("#nodeSizeDropdown").selectAll("*").remove();
-            d3.select('#springWrapper').select("#nodeColorDropdown").selectAll("*").remove();
-            d3.select('#springWrapper').select("#save").selectAll("*").remove();
+            if (redrawCount !== prevRedrawCount) {
+                setTimeout(function(){
+                    window.location.reload();
+                });
+                window.location.reload(); 
+            }
+            
+            prevRedrawCount = redrawCount;
+
+			redrawCount = redrawCount+1;
+			
+			var scheme_list = ['Category10','Accent','Dark2','Paired','Pastel1','Pastel2','Set1','Set2','Set3', 'Tableau10']
+            var interpolate_list = ['BrBG', 'PRGn', 'PiYG', 'PuOr', 'RdBu', 'RdGy', 'RdYlBu', 'RdYlGn', 'Spectral', 'Blues', 'Greens', 'Greys', 'Oranges', 'Purples', 'Reds', 'Turbo', 'Viridis', 'Inferno', 'Magma', 'Plasma', 'Cividis', 'Warm', 'Cool', 'CubehelixDefault', 'BuGn', 'BuPu', 'GnBu', 'OrRd', 'PuBuGn', 'PuBu', 'PuRd', 'RdPu', 'YlGnBu', 'YlGn', 'YlOrBr', 'YlOrRd', 'Rainbow', 'Sinebow'];
+            var color_options = scheme_list.concat(interpolate_list)
                         
-            var colorBy = [];
+            var colorDomain = [];
                     
             var width = canvas.clientWidth;
             var height = canvas.clientHeight;
@@ -597,22 +701,10 @@ class springNetwork:
                 .on("dblclick.zoom", null);
         
             var simulation = d3.forceSimulation()
-                .force("link", d3.forceLink().id(d => d.id))            
-                .force("center", d3.forceCenter(width / 2, height / 2));        
+                    .force("link", d3.forceLink().id(d => d.id))            
+                    .force("center", d3.forceCenter(width / 2, height / 2));        
         
             var container = svg.append('g');
-        
-            var search = d3.select("#search").attr('onsubmit', 'return false;');
-        
-            var box = search.append('input')
-                .attr('type', 'text')
-                .attr('id', 'searchTerm')
-                .attr('placeholder', 'Type to search...');
-        
-            var button = search.append('input')
-                .attr('type', 'button')
-                .attr('value', 'Search')
-                .on('click', function () { searchNodes(); });
         
             var toggle = 0;
         
@@ -623,13 +715,13 @@ class springNetwork:
         
             var graph = JSON.parse(networkData);
             
+            var graphRec = JSON.parse(JSON.stringify(graph));
+            
             if (params.link_type == "score") {            
                 var link_type_text = "Score";
             } else if (params.link_type == "pvalue") {
                 var link_type_text = "Pvalue";
             }
-            
-            var graphRec = JSON.parse(JSON.stringify(graph));
             
             var link = container.append("g")
                 .attr("class", "links")
@@ -649,36 +741,47 @@ class springNetwork:
             });
             
             if (Object.keys(params.node_size_scale).length === 0) {
-            
-                graph.nodes.forEach( function (d) { d.size = 10; });
-            
+                graph.nodes.forEach( function (d) { d.size = 10; });                
             } else {
-                
-                updateNodeSize(Object.keys(params.node_size_scale)[0])
+                updateNodeSize(Object.keys(params.node_size_scale)[0])                
+            }
+            
+            if (Object.keys(params.node_color_scale).length === 0) {
+                graph.nodes.forEach( function (d) { d.color = "#808080"; }); 
+            } else {
+                updateNodeColor(Object.keys(params.node_color_scale)[0], color_options[0])
             }
             
             function updateNodeSize(centrality) {
-                    
+                
                 var scaleType = params.node_size_scale[centrality].scale
                 var range = params.node_size_scale[centrality].range
                 
-                var centrality_values = []        
-                graph.nodes.forEach( function (d) { if (isNaN(d[centrality])) { centrality_values.push(parseFloat(0)); } else { centrality_values.push(parseFloat(d[centrality])); }});
+                var centrality_values = []
+                graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { centrality_values.push(parseFloat(0)); } else { centrality_values.push(d[centrality]); }});
                 
-                initScale = d3.scaleLinear()
-                    .domain(d3.extent(centrality_values))
-                    .range([1,10]);
-                        
                 scaledValues = []
-                centrality_values.forEach( function (d) { scaledValues.push(initScale(parseFloat(d))); });
-                                   
+                if (scaleType != "ordinal") {
+                    centrality_values = centrality_values.map(function (x) {
+                            return parseFloat(x);
+                    });
+                    
+                    initScale = d3.scaleLinear()
+                                    .domain(d3.extent(centrality_values))
+                                    .range([1,10]);
+                    
+                    centrality_values.forEach( function (d) { scaledValues.push(initScale(parseFloat(d))); });
+                } else {                
+                    centrality_values.forEach( function (d) { scaledValues.push(d); });
+                }
+                                  
                 if (scaleType == "linear") {
                     
                     linearScale = d3.scaleLinear()
                          .domain(d3.extent(scaledValues))
                          .range(range);
                      
-                    graph.nodes.forEach( function (d) { if (isNaN(d[centrality])) { d.size = linearScale(initScale(parseFloat(0))); } else { d.size = linearScale(initScale(parseFloat(d[centrality]))); }});
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.size = linearScale(initScale(parseFloat(0))); } else { d.size = linearScale(initScale(parseFloat(d[centrality]))); }});
                   
                 } else if (scaleType == "reverse_linear") {
                     
@@ -690,7 +793,7 @@ class springNetwork:
                         .domain(d3.extent(reversed_linear_values))
                         .range(range);
                     
-                    graph.nodes.forEach( function (d) { if (isNaN(d[centrality])) { d.size = reversedLinearScale(1 / initScale(parseFloat(0))); } else { d.size = reversedLinearScale(1 / initScale(parseFloat(d[centrality]))); }});
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.size = reversedLinearScale(1 / initScale(parseFloat(0))); } else { d.size = reversedLinearScale(1 / initScale(parseFloat(d[centrality]))); }});
                      
                 } else if (scaleType == "log") {
                    
@@ -698,7 +801,7 @@ class springNetwork:
                         .domain(d3.extent(scaledValues))
                         .range(range);  	        
                              
-                    graph.nodes.forEach( function (d) { if (isNaN(d[centrality])) { d.size = logScale(initScale(parseFloat(0))); } else { d.size = logScale(initScale(parseFloat(d[centrality]))); }});
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.size = logScale(initScale(parseFloat(0))); } else { d.size = logScale(initScale(parseFloat(d[centrality]))); }});
                   
                 } else if (scaleType == "reverse_log") {
                     
@@ -710,7 +813,7 @@ class springNetwork:
                         .domain(d3.extent(reversed_log_values))
                         .range(range);
                      
-                    graph.nodes.forEach( function (d) { if (isNaN(d[centrality])) { d.size = reversedLogScale(1 / initScale(parseFloat(0))); } else { d.size = reversedLogScale(1 / initScale(parseFloat(d[centrality]))); }});
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.size = reversedLogScale(1 / initScale(parseFloat(0))); } else { d.size = reversedLogScale(1 / initScale(parseFloat(d[centrality]))); }});
                      
                 } else if (scaleType == "square") {
                    
@@ -719,7 +822,7 @@ class springNetwork:
                         .exponent(2)
                         .range(range);
                     
-                    graph.nodes.forEach( function (d) { if (isNaN(d[centrality])) { d.size = squareScale(initScale(parseFloat(0))); } else { d.size = squareScale(initScale(parseFloat(d[centrality]))); }});
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.size = squareScale(initScale(parseFloat(0))); } else { d.size = squareScale(initScale(parseFloat(d[centrality]))); }});
                   
                 } else if (scaleType == "reverse_square") {
                    
@@ -732,7 +835,7 @@ class springNetwork:
                         .exponent(2)
                         .range(range);
                     
-                    graph.nodes.forEach( function (d) { if (isNaN(d[centrality])) { d.size = reversedSquareScale(1 / initScale(parseFloat(0))); } else { d.size = reversedSquareScale(1 / initScale(parseFloat(d[centrality]))); }});
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.size = reversedSquareScale(1 / initScale(parseFloat(0))); } else { d.size = reversedSquareScale(1 / initScale(parseFloat(d[centrality]))); }});
                   
                 } else if (scaleType == "area") {
                     
@@ -744,7 +847,7 @@ class springNetwork:
                         .domain(d3.extent(area_values))
                         .range(range);
                      
-                    graph.nodes.forEach( function (d) { if (isNaN(d[centrality])) { d.size = areaScale(Math.PI * (initScale(parseFloat(0)) * initScale(parseFloat(0)))); } else { d.size = areaScale(Math.PI * (initScale(parseFloat(d[centrality])) * initScale(parseFloat(d[centrality])))); }});
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.size = areaScale(Math.PI * (initScale(parseFloat(0)) * initScale(parseFloat(0)))); } else { d.size = areaScale(Math.PI * (initScale(parseFloat(d[centrality])) * initScale(parseFloat(d[centrality])))); }});
                      
                 } else if (scaleType == "reverse_area") {
                     
@@ -756,7 +859,7 @@ class springNetwork:
                         .domain(d3.extent(reversed_area_values))
                         .range(range);
                      
-                    graph.nodes.forEach( function (d) { if (isNaN(d[centrality])) { d.size = reversedAreaScale(Math.PI * (1 / initScale(parseFloat(0))) * (1 / initScale(parseFloat(0)))); } else { d.size = reversedAreaScale(Math.PI * (1 / initScale(parseFloat(d[centrality]))) * (1 / initScale(parseFloat(d[centrality])))); }});
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.size = reversedAreaScale(Math.PI * (1 / initScale(parseFloat(0))) * (1 / initScale(parseFloat(0)))); } else { d.size = reversedAreaScale(Math.PI * (1 / initScale(parseFloat(d[centrality]))) * (1 / initScale(parseFloat(d[centrality])))); }});
                      
                 } else if (scaleType == "volume") {
                     
@@ -768,7 +871,7 @@ class springNetwork:
                         .domain(d3.extent(volume_values))
                         .range(range);
                      
-                    graph.nodes.forEach( function (d) { if (isNaN(d[centrality])) { d.size = volumeScale(4 / 3 * (Math.PI * (initScale(parseFloat(0)) * initScale(parseFloat(0)) * initScale(parseFloat(0))))); } else { d.size = volumeScale(4 / 3 * (Math.PI * (initScale(parseFloat(d[centrality])) * initScale(parseFloat(d[centrality])) * initScale(parseFloat(d[centrality]))))); }});
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.size = volumeScale(4 / 3 * (Math.PI * (initScale(parseFloat(0)) * initScale(parseFloat(0)) * initScale(parseFloat(0))))); } else { d.size = volumeScale(4 / 3 * (Math.PI * (initScale(parseFloat(d[centrality])) * initScale(parseFloat(d[centrality])) * initScale(parseFloat(d[centrality]))))); }});
                   
                 } else if (scaleType == "reverse_volume") {
                  
@@ -780,29 +883,188 @@ class springNetwork:
                         .domain(d3.extent(reversed_volume_values))
                         .range(range);
                     
-                    graph.nodes.forEach( function (d) { if (isNaN(d[centrality])) { d.size = reversedVolumeScale(4 / 3 * (Math.PI * ((1 / initScale(parseFloat(0))) * (1 / initScale(parseFloat(0))) * (1 / initScale(parseFloat(0)))))); } else { d.size = reversedVolumeScale(4 / 3 * (Math.PI * ((1 / initScale(parseFloat(d[centrality]))) * (1 / initScale(parseFloat(d[centrality]))) * (1 / initScale(parseFloat(d[centrality])))))); }});
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.size = reversedVolumeScale(4 / 3 * (Math.PI * ((1 / initScale(parseFloat(0))) * (1 / initScale(parseFloat(0))) * (1 / initScale(parseFloat(0)))))); } else { d.size = reversedVolumeScale(4 / 3 * (Math.PI * ((1 / initScale(parseFloat(d[centrality]))) * (1 / initScale(parseFloat(d[centrality]))) * (1 / initScale(parseFloat(d[centrality])))))); }});
                        
-                }    
+                } else if (scaleType == "ordinal") {
+                
+                    ordinalScale = d3.scaleOrdinal()
+                         .domain(scaledValues)
+                         .range(range);                  
+                                        
+                    graph.nodes.forEach( function (d) { d.size = ordinalScale(d[centrality]); });
+                }
             }
+            
+            function updateNodeColor(centrality, colorOption) {
+                var scaleType = params.node_color_scale[centrality].scale
+                var range = [0,1]
+                  
+                var centrality_values = []
+                graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { centrality_values.push(parseFloat(0)); } else { centrality_values.push(d[centrality]); }});
                 
-            var scaleLinksLinear = d3.scaleLinear()
-                .domain([d3.min(graph.links, function(d) {return d.weight; }),d3.max(graph.links, function(d) {return d.weight; })])
-                .range([1,1000])
-                .clamp(true);
+                scaledValues = []
+                if (scaleType != "ordinal") {
+                    centrality_values = centrality_values.map(function (x) {
+                            return parseFloat(x);
+                    });
+                    
+                    initScale = d3.scaleLinear()
+                                    .domain(d3.extent(centrality_values))
+                                    .range([1,10]);
+                    
+                    centrality_values.forEach( function (d) { scaledValues.push(initScale(parseFloat(d))); });
+                } else {                
+                    centrality_values.forEach( function (d) { scaledValues.push(d); });
+                }        
                 
-            var scaleLinksLog = d3.scaleLog()
-                .domain([Math.log(d3.min(graph.links, function(d) {return d.weight; })),Math.log(d3.max(graph.links, function(d) {return d.weight; }))])          	    
-                .range([1,1000])
-                .clamp(true);       
+                colorDomain = []                
+                if (scaleType == "linear") {
+                    
+                    linearScale = d3.scaleLinear()
+                         .domain(d3.extent(scaledValues))
+                         .range(range);
+                     
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.color = linearScale(initScale(parseFloat(0))); } else { d.color = linearScale(initScale(parseFloat(d[centrality]))); }});
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { colorDomain.push(linearScale(initScale(parseFloat(0)))); } else { colorDomain.push(linearScale(initScale(parseFloat(d[centrality])))); }});
+                  
+                } else if (scaleType == "reverse_linear") {
+                    
+                    reversed_linear_values = []
+                     
+                    scaledValues.forEach( function (d) { reversed_linear_values.push(parseFloat(1/d)); });
+                     
+                    reversedLinearScale = d3.scaleLinear()
+                        .domain(d3.extent(reversed_linear_values))
+                        .range(range);
+                    
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.color = reversedLinearScale(1 / initScale(parseFloat(0))); } else { d.color = reversedLinearScale(1 / initScale(parseFloat(d[centrality]))); }});
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { colorDomain.push(reversedLinearScale(1 / initScale(parseFloat(0)))); } else { colorDomain.push(reversedLinearScale(1 / initScale(parseFloat(d[centrality])))); }});
+                     
+                } else if (scaleType == "log") {
+                   
+                    logScale = d3.scaleLog()
+                        .domain(d3.extent(scaledValues))
+                        .range(range);  	        
+                    
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.color = logScale(initScale(parseFloat(0))); } else { d.color = logScale(initScale(parseFloat(d[centrality]))); }});
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { colorDomain.push(logScale(initScale(parseFloat(0)))); } else { colorDomain.push(logScale(initScale(parseFloat(d[centrality])))); }});
+                  
+                } else if (scaleType == "reverse_log") {
+                    
+                    reversed_log_values = []
+                     
+                    scaledValues.forEach( function (d) { reversed_log_values.push(parseFloat(1/d)); });
+                     
+                    reversedLogScale = d3.scaleLog()
+                        .domain(d3.extent(reversed_log_values))
+                        .range(range);
+                    
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.color = reversedLogScale(1 / initScale(parseFloat(0))); } else { d.color = reversedLogScale(1 / initScale(parseFloat(d[centrality]))); }});
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { colorDomain.push(reversedLogScale(1 / initScale(parseFloat(0)))); } else { colorDomain.push(reversedLogScale(1 / initScale(parseFloat(d[centrality])))); }});
+                     
+                } else if (scaleType == "square") {
+                   
+                    squareScale = d3.scalePow()
+                        .domain(d3.extent(scaledValues))
+                        .exponent(2)
+                        .range(range);
+                    
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.color = squareScale(initScale(parseFloat(0))); } else { d.color = squareScale(initScale(parseFloat(d[centrality]))); }});
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { colorDomain.push(squareScale(initScale(parseFloat(0)))); } else { colorDomain.push(squareScale(initScale(parseFloat(d[centrality])))); }});
+                  
+                } else if (scaleType == "reverse_square") {
+                   
+                    reversed_squared_values = []
+                     
+                    scaledValues.forEach( function (d) { reversed_squared_values.push(parseFloat(1/d)); });
+                     
+                    reversedSquareScale = d3.scalePow()
+                        .domain(d3.extent(reversed_squared_values))
+                        .exponent(2)
+                        .range(range);
+                    
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.color = reversedSquareScale(1 / initScale(parseFloat(0))); } else { d.color = reversedSquareScale(1 / initScale(parseFloat(d[centrality]))); }});
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { colorDomain.push(reversedSquareScale(1 / initScale(parseFloat(0)))); } else { colorDomain.push(reversedSquareScale(1 / initScale(parseFloat(d[centrality])))); }});
+                  
+                } else if (scaleType == "area") {
+                    
+                    area_values = []
+                     
+                    scaledValues.forEach( function (d) { area_values.push(parseFloat(Math.PI * (d * d))); });
+                     
+                    areaScale = d3.scaleLinear()
+                        .domain(d3.extent(area_values))
+                        .range(range);
+                                        
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.color = areaScale(Math.PI * (initScale(parseFloat(0)) * initScale(parseFloat(0)))); } else { d.color = areaScale(Math.PI * (initScale(parseFloat(d[centrality])) * initScale(parseFloat(d[centrality])))); }});
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { colorDomain.push(areaScale(Math.PI * (initScale(parseFloat(0)) * initScale(parseFloat(0))))); } else { colorDomain.push(areaScale(Math.PI * (initScale(parseFloat(d[centrality])) * initScale(parseFloat(d[centrality]))))); }});
+                     
+                } else if (scaleType == "reverse_area") {
+                    
+                    reversed_area_values = []
+                     
+                    scaledValues.forEach( function (d) { reversed_area_values.push(parseFloat(Math.PI * (parseFloat(1/d) * parseFloat(1/d)))); });
+                     
+                    reversedAreaScale = d3.scaleLinear()
+                        .domain(d3.extent(reversed_area_values))
+                        .range(range);
+                    
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.color = reversedAreaScale(Math.PI * (1 / initScale(parseFloat(0))) * (1 / initScale(parseFloat(0)))); } else { d.color = reversedAreaScale(Math.PI * (1 / initScale(parseFloat(d[centrality]))) * (1 / initScale(parseFloat(d[centrality])))); }});
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { colorDomain.push(reversedAreaScale(Math.PI * (1 / initScale(parseFloat(0))) * (1 / initScale(parseFloat(0))))); } else { colorDomain.push(reversedAreaScale(Math.PI * (1 / initScale(parseFloat(d[centrality]))) * (1 / initScale(parseFloat(d[centrality]))))); }});
+                     
+                } else if (scaleType == "volume") {
+                    
+                    volume_values = []
+                     
+                    scaledValues.forEach( function (d) { volume_values.push(parseFloat(4 / 3 * (Math.PI * (d * d * d)))); });
+                     
+                    volumeScale = d3.scaleLinear()
+                        .domain(d3.extent(volume_values))
+                        .range(range);
+                    
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.color = volumeScale(4 / 3 * (Math.PI * (initScale(parseFloat(0)) * initScale(parseFloat(0)) * initScale(parseFloat(0))))); } else { d.color = volumeScale(4 / 3 * (Math.PI * (initScale(parseFloat(d[centrality])) * initScale(parseFloat(d[centrality])) * initScale(parseFloat(d[centrality]))))); }});
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { colorDomain.push(volumeScale(4 / 3 * (Math.PI * (initScale(parseFloat(0)) * initScale(parseFloat(0)) * initScale(parseFloat(0)))))); } else { colorDomain.push(volumeScale(4 / 3 * (Math.PI * (initScale(parseFloat(d[centrality])) * initScale(parseFloat(d[centrality])) * initScale(parseFloat(d[centrality])))))); }});
+                  
+                } else if (scaleType == "reverse_volume") {
+                 
+                    reversed_volume_values = []             
+                    
+                    scaledValues.forEach( function (d) { reversed_volume_values.push(parseFloat(4 / 3 * (Math.PI * (parseFloat(1/d) * parseFloat(1/d) * parseFloat(1/d))))); });
+                     
+                    reversedVolumeScale = d3.scaleLinear()
+                        .domain(d3.extent(reversed_volume_values))
+                        .range(range);
+                    
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.color = reversedVolumeScale(4 / 3 * (Math.PI * ((1 / initScale(parseFloat(0))) * (1 / initScale(parseFloat(0))) * (1 / initScale(parseFloat(0)))))); } else { d.color = reversedVolumeScale(4 / 3 * (Math.PI * ((1 / initScale(parseFloat(d[centrality]))) * (1 / initScale(parseFloat(d[centrality]))) * (1 / initScale(parseFloat(d[centrality])))))); }});
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { colorDomain.push(reversedVolumeScale(4 / 3 * (Math.PI * ((1 / initScale(parseFloat(0))) * (1 / initScale(parseFloat(0))) * (1 / initScale(parseFloat(0))))))); } else { colorDomain.push(reversedVolumeScale(4 / 3 * (Math.PI * ((1 / initScale(parseFloat(d[centrality]))) * (1 / initScale(parseFloat(d[centrality]))) * (1 / initScale(parseFloat(d[centrality]))))))); }});
+                       
+                } else if (scaleType == "ordinal") {
+                
+                    ordinalScale = d3.scaleOrdinal()
+                        .domain(scaledValues)
+                        .range(range);
+                                        
+                    graph.nodes.forEach( function (d) { d.color = ordinalScale(d[centrality]); });
+                    graph.nodes.forEach( function (d) { colorDomain.push(ordinalScale(d[centrality])); });
+                }
+                
+                if (scheme_list.includes(colorOption)) {
+                    var color_palette = d3.scaleQuantize()
+                                            .domain(d3.extent(colorDomain))
+                                            .range(d3["scheme" + colorOption]);
+                } else if (interpolate_list.includes(colorOption)) {
+                    var color_palette = d3.scaleSequential()
+                                            .interpolator(d3["interpolate" + colorOption])
+                                            .domain(colorDomain);
+                }                
+                
+                node.attr("fill", function(d) { if (typeof d[centrality] === 'undefined') { return "#808080"; } else { return color_palette(d.color); }});
+            }
             
             simulation
                 .force("charge", d3.forceManyBody().strength(params.chargeStrength).distanceMax(500))            
                 .force("collide", d3.forceCollide().radius( function (d) { return d.size; }));
         
-            graph.nodes.forEach(function(d) { if (typeof d.color !== 'undefined') { colorBy.push(d.color); } else { colorBy.push(1); } });
-            
-            var colorBy = Array.from(new Set(colorBy)) 
-           
             update();
         
             function update() {
@@ -939,7 +1201,7 @@ class springNetwork:
         
                 //Remove all old links, leaving only the new links
                 link.exit().remove();
-                        
+                
                 var newLink = link.enter().append("line")
                             .attr("class", "link")
                             .attr("stroke-width", params.link_width)
@@ -1001,169 +1263,216 @@ class springNetwork:
                 
             }
             
+            Number.prototype.countDecimals = function () {
+                if(Math.floor(this.valueOf()) === this.valueOf()) return 0;
+        
+                var value = 0;
+                var check = this.toString().includes("e-");
+                
+                if (check) {
+                    
+    	            var value = this.toString().split("-")[1];
+                     
+                } else {
+    	            
+                    var value1 = this.toString().split(".")[1];
+                    var value2 = value1.trimLeft("0");
+                     
+                    var value = value1.length - value2.length + 1;
+                }        
+                
+                return value
+            }
+            
             var sliderInitValue = '';
             var sliderMin = '';
             var sliderMax = '';
             var sliderValue = '';
             
             if (params.link_type == "score") {
-                sliderInitValue =  d3.min(graph.links, function(d) {return d.weight; }).toPrecision(5)
-                sliderMin = scaleLinksLinear(d3.min(graph.links, function(d) {return d.weight; }))
-                sliderMax = scaleLinksLinear(d3.max(graph.links, function(d) {return d.weight; }))
-                sliderValue = scaleLinksLinear(d3.min(graph.links, function(d) {return d.weight; }))
+                sliderInitValue =  Number(d3.min(graph.links, function(d) {return d.weight; }).toFixed(4))
+                sliderMin = Number(d3.min(graph.links, function(d) {return d.weight; }).toFixed(4))
+                sliderMax = Number(d3.max(graph.links, function(d) {return d.weight; }).toFixed(4))
+                sliderStep = 0.01;
+                sliderPrecision = 4;
             } else if (params.link_type == "pvalue") {
-                sliderInitValue =  d3.max(graph.links, function(d) {return d.weight; }).toPrecision(5)
-                sliderMin = scaleLinksLog(Math.log(d3.min(graph.links, function(d) {return d.weight; })))
-                sliderMax = scaleLinksLog(Math.log(d3.max(graph.links, function(d) {return d.weight; })))
-                sliderValue = scaleLinksLog(Math.log(d3.max(graph.links, function(d) {return d.weight; })))
+                sliderInitValue = Number(d3.max(graph.links, function(d) {return d.weight; }).toFixed(Number(d3.min(graph.links, function(d) {return d.weight; }).countDecimals())))
+                sliderMin = Number(d3.min(graph.links, function(d) {return d.weight; }).toFixed(Number(d3.min(graph.links, function(d) {return d.weight; }).countDecimals())))
+                sliderMax = Number(d3.max(graph.links, function(d) {return d.weight; }).toFixed(Number(d3.min(graph.links, function(d) {return d.weight; }).countDecimals())))
+                sliderStep = Number(d3.min(graph.links, function(d) {return d.weight; }).toFixed(Number(d3.min(graph.links, function(d) {return d.weight; }).countDecimals())))
+                sliderPrecision = Number(d3.min(graph.links, function(d) {return d.weight; }).countDecimals())
             }
             
-            d3.select('#sliderText').text(link_type_text + ' threshold: ');
+            var app = angular.module('rzSliderDemo', ['rzSlider']);
             
-            d3.select('#sliderValue').text(sliderInitValue);
-        
-            var sliderWidth = 225;
-            var sliderOffSet = 45;
-        
-            var Slider = d3.sliderHorizontal()
-    	    					    .min(sliderMin)
-    							    .max(sliderMax)
-                                    .default(sliderInitValue)
-                                    .ticks(0)
-                                    .handle(d3.symbol().type(d3.symbolCircle).size(150)())
-    							    .step(0.0001)                        
-                                    .fill('#2196f3')
-    							    .width(sliderWidth - sliderOffSet)
-    							    .displayValue(false)
-    							    .on('onchange', value => {
-      							    	
-      							    	if (params.link_type == "score") {
-                                            var threshold = scaleLinksLinear.invert(value);
-                                        } else if (params.link_type == "pvalue")  {
-                                            var threshold = Math.exp(scaleLinksLog.invert(value));
-                                        }
-                                        
-                					    d3.select('#sliderValue').text(threshold.toPrecision(5));
-                						                						
-                                        graph.links.splice(0, graph.links.length);
-                                        graphRec.links.forEach( function (d) { if (d.weight $operator threshold) { graph.links.push(d); }});
-                                        
-                                        //Update link dictionary
-                                        linkedByIndex = {} 
-                                        graphRec.links.forEach( function (d) {
-                                            if (d.weight $operator threshold) {
-                                                                  
-                                                var source = JSON.stringify(d.source.id);
-                                                var target = JSON.stringify(d.target.id);
-                                                   
-                                                if (typeof source == 'undefined') {
-                                                    source = JSON.stringify(d.source);
-                                                }
-                                                
-                                                if (typeof target == 'undefined') {
-                                                    target = JSON.stringify(d.target);
-                                                }
-                                                                                        
-                                                linkedByIndex[source + ',' + target] = 1;
-                                                linkedByIndex[target + ',' + source] = 1;	  						         
-                                            }
-                                        });         
+            app.controller('MainCtrl', function ($$scope) {
                 
-                                        update(); 
-          						    });
-        
-            d3.select('#slider').selectAll("*").remove();
-        
-            d3.select('#slider')
-                    .append('svg')
-                    .attr('width', sliderWidth)    
-                    .append('g')    
-                    .attr('transform', 'translate(30,30)')
-                    .call(Slider);
-            
-            if (Object.keys(params.node_size_scale).length != 0) {
-            
-                var nodeSizeDropdown = d3.select('#nodeSizeDropdown')   
-                    .append('select')
-                    .attr("class","nodeSizeDropdown")
-                    .on('change', function() { 
-                        var centrality = this.value;
+                $$scope.node_size_options = Object.keys(params.node_size_scale);
+  				$$scope.selectedNodeSizeOption = $$scope.node_size_options[0];    
+                
+                $$scope.updateNodeSize = function() {
+                
+                    var centrality = $$scope.selectedNodeSizeOption;
                     
+                    if (typeof centrality != 'undefined') {
                         updateNodeSize(centrality)
-                        
-                        node.attr('r', function(d) { return d.size; } );  
-                    
-                        simulation.force("collide", d3.forceCollide().radius( function (d) { return d.size; }));
-                        simulation.alphaTarget(0.1).restart();
-                    });
-                                    
-                nodeSizeDropdown.selectAll('option')
-                    .data(Object.keys(params.node_size_scale))
-                    .enter().append('option')		
-                    .text(function(d) { return d; });
-            } else {
-            
-                var nodeSizeDropdown = d3.select('#nodeSizeDropdown')
-                    .append('select')
-                    .attr("class","nodeSizeDropdown");
-                
-                nodeSizeDropdown.selectAll('option')
-                    .data(['none'])
-                    .enter().append('option')		
-                    .text(function(d) { return d; });        
-            }
-            
-            var colorDropDownValues = ['default','schemeCategory10','schemeAccent','schemeDark2','schemePaired','schemePastel1','schemePastel2','schemeSet1','schemeSet2','schemeSet3'];
-            var schemeLenCount = [];
-            
-            //Get lengths of all color schemes used
-            colorDropDownValues.forEach( function(value) { if (value !== 'default') { schemeLenCount.push(d3[value].length); }});
-                        
-            var nodeColorDropdown = d3.select('#nodeColorDropdown')
-                .append('select')
-                .attr("class","nodeColorDropdown")
-                .on('change', function() { 
-                    var colorScheme = this.value;
-                    
-                    if (colorScheme == 'default') {
-                        node.attr("fill", function(d) { return d.color; })
-                    } else {
-                    
-                        //Slice color schemes to the minimum length across all color schemes for consistancy when switching color schemes
-                        colorSchemeSliced = d3[colorScheme].slice(0, d3.min(schemeLenCount));
-                    
-                        var color_palette = d3.scaleOrdinal()
-                                                   .domain(colorBy)
-                                                   .range(colorSchemeSliced);                                                        
-                                       
-                        node.attr("fill", function(d) { if (typeof d.color !== 'undefined') { return color_palette(d.color); } else { return color_palette(1); } });                        
                     }
-        
-                    simulation.alphaTarget(0.1).restart();
-                });
-        
-            nodeColorDropdown.selectAll('option')
-                .data(colorDropDownValues)
-                .enter().append('option')		
-                .text(function(d) { return d; });
-            
-            d3.select("#save")
-                    .on('click', function(){
+                        
+                    node.attr('r', function(d) { return d.size; } );  
                     
-                        var options = {
+                    simulation.force("collide", d3.forceCollide().radius( function (d) { return d.size; }));
+                    simulation.alphaTarget(0.1).restart();    										
+  				}
+  				
+  				var centrality = $$scope.selectedNodeSizeOption;
+  				
+  				if (typeof centrality != 'undefined') {
+                    updateNodeSize(centrality)                  
+                }
+  				
+  				node.attr('r', function(d) { return d.size; } );  
+                    
+                simulation.force("collide", d3.forceCollide().radius( function (d) { return d.size; }));
+                simulation.alphaTarget(0.1).restart();
+                
+                $$scope.node_coloring_options = Object.keys(params.node_color_scale);
+  				$$scope.selectedNodeColorOption = $$scope.node_coloring_options[0];
+  				
+  				$$scope.scheme_list = scheme_list;
+                   
+                $$scope.interpolate_list = interpolate_list;
+                    
+                $$scope.color_options = color_options;
+                              
+                $$scope.selectedColorOption = $$scope.color_options[0]; 				
+  				
+                $$scope.updateNodeColor = function() {
+                
+                    var nodeColorOption = $$scope.selectedNodeColorOption
+                
+                    if (typeof nodeColorOption != 'undefined') {                        
+                        var colorOption = $$scope.selectedColorOption             
+                        var scaleType = params.node_color_scale[nodeColorOption].scale                    
+                    
+                        if (scaleType == "ordinal") {
+                            $$scope.color_options = scheme_list;
+                        } else {
+                            $$scope.color_options = color_options;
+                        }
+                    
+                        updateNodeColor(nodeColorOption, colorOption)
+                    } else {
+                        $$scope.node_coloring_options = ['None']
+                        $$scope.selectedNodeColorOption = 'None'
+                        $$scope.color_options = ['Grey']
+                        $$scope.selectedColorOption = 'Grey'
+                        
+                        node.attr("fill", function(d) { return d.color; })           
+                    }
+                    
+                    simulation.alphaTarget(0.1).restart();
+                }
+                
+                var nodeColorOption = $$scope.selectedNodeColorOption         
+                    
+                if (typeof nodeColorOption != 'undefined') {
+                    var colorOption = $$scope.selectedColorOption             
+                    var scaleType = params.node_color_scale[nodeColorOption].scale
+                    
+                    if (scaleType == "ordinal") {
+                        $$scope.color_options = scheme_list;
+                    } else {
+                        $$scope.color_options = color_options;
+                    }
+                    
+                    updateNodeColor(nodeColorOption, colorOption)
+                } else {
+                    $$scope.node_coloring_options = ['None']
+                    $$scope.selectedNodeColorOption = 'None'
+                    $$scope.color_options = ['Grey']
+                    $$scope.selectedColorOption = 'Grey'
+                        
+                    node.attr("fill", function(d) { return d.color; })           
+                }
+                
+                simulation.alphaTarget(0.1).restart();
+                                
+                $$scope.savebutton = function () {
+                	
+                      var options = {
                                 canvg: window.canvg,
-                                backgroundColor: '$backgroundColor',
+                                backgroundColor: 'white',
                                 height: height+100,
                                 width: width+100,
                                 left: -50,
+                                top: -50,
                                 scale: 5/window.devicePixelRatio,
                                 encoderOptions: 1,
                                 ignoreMouse : true,
                                 ignoreAnimation : true,
                         }
 		                		                
-                        saveSvgAsPng(d3.select('svg#springNetwork').node(), "networkPlot.png", options);
-                    })
+                        saveSvgAsPng(d3.select('svg#springNetwork').node(), "networkPlot.png", options);           					
+        		}
+        		
+        		$$scope.searchNodes = function () {
+                		var term = document.getElementById('searchTerm').value;
+                		var selected = container.selectAll('.node').filter(function (d, i) {
+                    			return d.Label.toLowerCase().search(term.toLowerCase()) == -1;
+                		});
+                		selected.style('opacity', '0');
+						var link = container.selectAll('.link');
+                		link.style('stroke-opacity', '0');
+                		d3.selectAll('.node').transition()
+                        		.duration(1000)
+                        		.style('opacity', '1');
+                		d3.selectAll('.link').transition().duration(5000).style('stroke-opacity', '0.6');
+            	}
+            	
+            	$$scope.slider = {       
+        				value: sliderInitValue,                        
+                        options: {
+        					showSelectionBar: true,                    
+            				floor: sliderMin,
+                         	ceil: sliderMax,                          		
+                          	step: sliderStep,
+            				precision: sliderPrecision,                          	
+            				getSelectionBarColor: function() { return '#2AE02A'; },
+            				getPointerColor: function() { return '#D3D3D3'; },
+            				pointerSize: 1,
+            				onChange: function () {
+              
+                                var threshold = $$scope.slider.value
+                                
+                                graph.links.splice(0, graph.links.length);
+                                graphRec.links.forEach( function (d) { if (d.weight $operator threshold) { graph.links.push(d); }});
+                                
+                                //Update link dictionary
+                                linkedByIndex = {} 
+                                graphRec.links.forEach( function (d) {
+                                    if (d.weight $operator threshold) {
+                                                                  
+                                        var source = JSON.stringify(d.source.id);
+                                        var target = JSON.stringify(d.target.id);
+                                                   
+                                        if (typeof source == 'undefined') {
+                                            source = JSON.stringify(d.source);
+                                        }
+                                                
+                                        if (typeof target == 'undefined') {
+                                        	target = JSON.stringify(d.target);
+                                        }
+                                                                                        
+                                        linkedByIndex[source + ',' + target] = 1;
+                                        linkedByIndex[target + ',' + source] = 1;	  						         
+                                    }
+                                });
+                                  
+                                update(); 
+            				}
+        				}
+    			};
+			});
         
             function dragstarted(d) {
             
@@ -1268,25 +1577,37 @@ class springNetwork:
     def __getJSdashboard(self):
 
         js_text = '''
-
-        var params = JSON.parse(JSON.stringify($paramDict));
-
         var networkData = $networkData
-
+        
+        var params = JSON.parse(JSON.stringify($paramDict));
+        
         var canvas = document.getElementById("springPanel");
         var springNetwork = d3.select(canvas).append("svg").attr("id", "springNetwork");
-
+        
+        var redrawCount = 0;
+        var prevRedrawCount = 0;
+        
         function redraw(){
+        
+            if (redrawCount !== prevRedrawCount) {
+                setTimeout(function(){
+                    window.location.reload();
+                });
+                window.location.reload(); 
+            }
+            
+            prevRedrawCount = redrawCount;
 
-            d3.select('#sliderPanel').select("#search").selectAll("*").remove();            
-            d3.select('#sliderPanel').select("#nodeSizeDropdown").selectAll("*").remove();
-            d3.select('#sliderPanel').select("#nodeColorDropdown").selectAll("*").remove();
-            d3.select('#sliderPanel').select("#save").selectAll("*").remove();
-
-            var colorBy = [];
-
+			redrawCount = redrawCount+1;
+			
+			var scheme_list = ['Category10','Accent','Dark2','Paired','Pastel1','Pastel2','Set1','Set2','Set3', 'Tableau10']
+            var interpolate_list = ['BrBG', 'PRGn', 'PiYG', 'PuOr', 'RdBu', 'RdGy', 'RdYlBu', 'RdYlGn', 'Spectral', 'Blues', 'Greens', 'Greys', 'Oranges', 'Purples', 'Reds', 'Turbo', 'Viridis', 'Inferno', 'Magma', 'Plasma', 'Cividis', 'Warm', 'Cool', 'CubehelixDefault', 'BuGn', 'BuPu', 'GnBu', 'OrRd', 'PuBuGn', 'PuBu', 'PuRd', 'RdPu', 'YlGnBu', 'YlGn', 'YlOrBr', 'YlOrRd', 'Rainbow', 'Sinebow'];
+            var color_options = scheme_list.concat(interpolate_list)
+                        
+            var colorDomain = [];
+            
             var width = canvas.clientWidth;
-            var height = canvas.clientHeight;
+            var height = window.innerHeight/1.22;
 
             springNetwork.selectAll("*").remove();
             
@@ -1299,33 +1620,21 @@ class springNetwork:
 
             var simulation = d3.forceSimulation()
                 .force("link", d3.forceLink().id(d => d.id))            
-                .force("center", d3.forceCenter(width / 2, height / 2));        
-
+                .force("center", d3.forceCenter(width / 2, height / 2));
+                
             var container = svg.append('g');
-
-            var search = d3.select("#search").attr('onsubmit', 'return false;');
-
-            var box = search.append('input')
-                .attr('type', 'text')
-                .attr('id', 'searchTerm')
-                .attr('placeholder', 'Type to search...');
-
-            var button = search.append('input')
-                .attr('type', 'button')
-                .attr('value', 'Search')
-                .on('click', function () { searchNodes(); });
 
             var toggle = 0;
             
             var graph = JSON.parse(networkData);
+            
+            var graphRec = JSON.parse(JSON.stringify(graph));
 
             if (params.link_type == "score") {            
                 var link_type_text = "Score";
             } else if (params.link_type == "pvalue") {
                 var link_type_text = "Pvalue";
             }
-
-            var graphRec = JSON.parse(JSON.stringify(graph));
 
             var link = container.append("g")
                 .attr("class", "links")
@@ -1345,159 +1654,329 @@ class springNetwork:
             });
 
             if (Object.keys(params.node_size_scale).length === 0) {
-
-                graph.nodes.forEach( function (d) { d.size = 10; });
-
+                graph.nodes.forEach( function (d) { d.size = 10; });                
             } else {
-
-                updateNodeSize(Object.keys(params.node_size_scale)[0])
+                updateNodeSize(Object.keys(params.node_size_scale)[0])                
+            }
+                        
+            if (Object.keys(params.node_color_scale).length === 0) {
+                graph.nodes.forEach( function (d) { d.color = "#808080"; }); 
+            } else {
+                updateNodeColor(Object.keys(params.node_color_scale)[0], color_options[0])
             }
 
             function updateNodeSize(centrality) {
-
+                
                 var scaleType = params.node_size_scale[centrality].scale
                 var range = params.node_size_scale[centrality].range
-
-                var centrality_values = []        
-                graph.nodes.forEach( function (d) { if (isNaN(d[centrality])) { centrality_values.push(parseFloat(0)); } else { centrality_values.push(parseFloat(d[centrality])); }});
-
-                initScale = d3.scaleLinear()
-                    .domain(d3.extent(centrality_values))
-                    .range([1,10]);
-
+                
+                var centrality_values = []
+                graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { centrality_values.push(parseFloat(0)); } else { centrality_values.push(d[centrality]); }});
+                
                 scaledValues = []
-                centrality_values.forEach( function (d) { scaledValues.push(initScale(parseFloat(d))); });
-
+                if (scaleType != "ordinal") {
+                    centrality_values = centrality_values.map(function (x) {
+                            return parseFloat(x);
+                    });
+                    
+                    initScale = d3.scaleLinear()
+                                    .domain(d3.extent(centrality_values))
+                                    .range([1,10]);
+                    
+                    centrality_values.forEach( function (d) { scaledValues.push(initScale(parseFloat(d))); });
+                } else {                
+                    centrality_values.forEach( function (d) { scaledValues.push(d); });
+                }
+                                  
                 if (scaleType == "linear") {
-
+                    
                     linearScale = d3.scaleLinear()
                          .domain(d3.extent(scaledValues))
                          .range(range);
-
-                    graph.nodes.forEach( function (d) { if (isNaN(d[centrality])) { d.size = linearScale(initScale(parseFloat(0))); } else { d.size = linearScale(initScale(parseFloat(d[centrality]))); }});
-
+                     
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.size = linearScale(initScale(parseFloat(0))); } else { d.size = linearScale(initScale(parseFloat(d[centrality]))); }});
+                  
                 } else if (scaleType == "reverse_linear") {
-
+                    
                     reversed_linear_values = []
-
+                     
                     scaledValues.forEach( function (d) { reversed_linear_values.push(parseFloat(1/d)); });
-
+                     
                     reversedLinearScale = d3.scaleLinear()
                         .domain(d3.extent(reversed_linear_values))
                         .range(range);
-
-                    graph.nodes.forEach( function (d) { if (isNaN(d[centrality])) { d.size = reversedLinearScale(1 / initScale(parseFloat(0))); } else { d.size = reversedLinearScale(1 / initScale(parseFloat(d[centrality]))); }});
-
+                    
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.size = reversedLinearScale(1 / initScale(parseFloat(0))); } else { d.size = reversedLinearScale(1 / initScale(parseFloat(d[centrality]))); }});
+                     
                 } else if (scaleType == "log") {
-
+                   
                     logScale = d3.scaleLog()
                         .domain(d3.extent(scaledValues))
                         .range(range);  	        
-
-                    graph.nodes.forEach( function (d) { if (isNaN(d[centrality])) { d.size = logScale(initScale(parseFloat(0))); } else { d.size = logScale(initScale(parseFloat(d[centrality]))); }});
-
+                             
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.size = logScale(initScale(parseFloat(0))); } else { d.size = logScale(initScale(parseFloat(d[centrality]))); }});
+                  
                 } else if (scaleType == "reverse_log") {
-
+                    
                     reversed_log_values = []
-
+                     
                     scaledValues.forEach( function (d) { reversed_log_values.push(parseFloat(1/d)); });
-
+                     
                     reversedLogScale = d3.scaleLog()
                         .domain(d3.extent(reversed_log_values))
                         .range(range);
-
-                    graph.nodes.forEach( function (d) { if (isNaN(d[centrality])) { d.size = reversedLogScale(1 / initScale(parseFloat(0))); } else { d.size = reversedLogScale(1 / initScale(parseFloat(d[centrality]))); }});
-
+                     
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.size = reversedLogScale(1 / initScale(parseFloat(0))); } else { d.size = reversedLogScale(1 / initScale(parseFloat(d[centrality]))); }});
+                     
                 } else if (scaleType == "square") {
-
+                   
                     squareScale = d3.scalePow()
                         .domain(d3.extent(scaledValues))
                         .exponent(2)
                         .range(range);
-
-                    graph.nodes.forEach( function (d) { if (isNaN(d[centrality])) { d.size = squareScale(initScale(parseFloat(0))); } else { d.size = squareScale(initScale(parseFloat(d[centrality]))); }});
-
+                    
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.size = squareScale(initScale(parseFloat(0))); } else { d.size = squareScale(initScale(parseFloat(d[centrality]))); }});
+                  
                 } else if (scaleType == "reverse_square") {
-
+                   
                     reversed_squared_values = []
-
+                     
                     scaledValues.forEach( function (d) { reversed_squared_values.push(parseFloat(1/d)); });
-
+                     
                     reversedSquareScale = d3.scalePow()
                         .domain(d3.extent(reversed_squared_values))
                         .exponent(2)
                         .range(range);
-
-                    graph.nodes.forEach( function (d) { if (isNaN(d[centrality])) { d.size = reversedSquareScale(1 / initScale(parseFloat(0))); } else { d.size = reversedSquareScale(1 / initScale(parseFloat(d[centrality]))); }});
-
+                    
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.size = reversedSquareScale(1 / initScale(parseFloat(0))); } else { d.size = reversedSquareScale(1 / initScale(parseFloat(d[centrality]))); }});
+                  
                 } else if (scaleType == "area") {
-
+                    
                     area_values = []
-
+                     
                     scaledValues.forEach( function (d) { area_values.push(parseFloat(Math.PI * (d * d))); });
-
+                     
                     areaScale = d3.scaleLinear()
                         .domain(d3.extent(area_values))
                         .range(range);
-
-                    graph.nodes.forEach( function (d) { if (isNaN(d[centrality])) { d.size = areaScale(Math.PI * (initScale(parseFloat(0)) * initScale(parseFloat(0)))); } else { d.size = areaScale(Math.PI * (initScale(parseFloat(d[centrality])) * initScale(parseFloat(d[centrality])))); }});
-
+                     
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.size = areaScale(Math.PI * (initScale(parseFloat(0)) * initScale(parseFloat(0)))); } else { d.size = areaScale(Math.PI * (initScale(parseFloat(d[centrality])) * initScale(parseFloat(d[centrality])))); }});
+                     
                 } else if (scaleType == "reverse_area") {
-
+                    
                     reversed_area_values = []
-
+                     
                     scaledValues.forEach( function (d) { reversed_area_values.push(parseFloat(Math.PI * (parseFloat(1/d) * parseFloat(1/d)))); });
-
+                     
                     reversedAreaScale = d3.scaleLinear()
                         .domain(d3.extent(reversed_area_values))
                         .range(range);
-
-                    graph.nodes.forEach( function (d) { if (isNaN(d[centrality])) { d.size = reversedAreaScale(Math.PI * (1 / initScale(parseFloat(0))) * (1 / initScale(parseFloat(0)))); } else { d.size = reversedAreaScale(Math.PI * (1 / initScale(parseFloat(d[centrality]))) * (1 / initScale(parseFloat(d[centrality])))); }});
-
+                     
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.size = reversedAreaScale(Math.PI * (1 / initScale(parseFloat(0))) * (1 / initScale(parseFloat(0)))); } else { d.size = reversedAreaScale(Math.PI * (1 / initScale(parseFloat(d[centrality]))) * (1 / initScale(parseFloat(d[centrality])))); }});
+                     
                 } else if (scaleType == "volume") {
-
+                    
                     volume_values = []
-
+                     
                     scaledValues.forEach( function (d) { volume_values.push(parseFloat(4 / 3 * (Math.PI * (d * d * d)))); });
-
+                     
                     volumeScale = d3.scaleLinear()
                         .domain(d3.extent(volume_values))
                         .range(range);
-
-                    graph.nodes.forEach( function (d) { if (isNaN(d[centrality])) { d.size = volumeScale(4 / 3 * (Math.PI * (initScale(parseFloat(0)) * initScale(parseFloat(0)) * initScale(parseFloat(0))))); } else { d.size = volumeScale(4 / 3 * (Math.PI * (initScale(parseFloat(d[centrality])) * initScale(parseFloat(d[centrality])) * initScale(parseFloat(d[centrality]))))); }});
-
+                     
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.size = volumeScale(4 / 3 * (Math.PI * (initScale(parseFloat(0)) * initScale(parseFloat(0)) * initScale(parseFloat(0))))); } else { d.size = volumeScale(4 / 3 * (Math.PI * (initScale(parseFloat(d[centrality])) * initScale(parseFloat(d[centrality])) * initScale(parseFloat(d[centrality]))))); }});
+                  
                 } else if (scaleType == "reverse_volume") {
-
+                 
                     reversed_volume_values = []             
-
+                    
                     scaledValues.forEach( function (d) { reversed_volume_values.push(parseFloat(4 / 3 * (Math.PI * (parseFloat(1/d) * parseFloat(1/d) * parseFloat(1/d))))); });
-
+                     
                     reversedVolumeScale = d3.scaleLinear()
                         .domain(d3.extent(reversed_volume_values))
                         .range(range);
-
-                    graph.nodes.forEach( function (d) { if (isNaN(d[centrality])) { d.size = reversedVolumeScale(4 / 3 * (Math.PI * ((1 / initScale(parseFloat(0))) * (1 / initScale(parseFloat(0))) * (1 / initScale(parseFloat(0)))))); } else { d.size = reversedVolumeScale(4 / 3 * (Math.PI * ((1 / initScale(parseFloat(d[centrality]))) * (1 / initScale(parseFloat(d[centrality]))) * (1 / initScale(parseFloat(d[centrality])))))); }});
-
-                }    
+                    
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.size = reversedVolumeScale(4 / 3 * (Math.PI * ((1 / initScale(parseFloat(0))) * (1 / initScale(parseFloat(0))) * (1 / initScale(parseFloat(0)))))); } else { d.size = reversedVolumeScale(4 / 3 * (Math.PI * ((1 / initScale(parseFloat(d[centrality]))) * (1 / initScale(parseFloat(d[centrality]))) * (1 / initScale(parseFloat(d[centrality])))))); }});
+                       
+                } else if (scaleType == "ordinal") {
+                
+                    ordinalScale = d3.scaleOrdinal()
+                         .domain(scaledValues)
+                         .range(range);                  
+                                        
+                    graph.nodes.forEach( function (d) { d.size = ordinalScale(d[centrality]); });
+                }
             }
-
-            var scaleLinksLinear = d3.scaleLinear()
-                .domain([d3.min(graph.links, function(d) {return d.weight; }),d3.max(graph.links, function(d) {return d.weight; })])
-                .range([1,1000])
-                .clamp(true);
-
-            var scaleLinksLog = d3.scaleLog()
-                .domain([Math.log(d3.min(graph.links, function(d) {return d.weight; })),Math.log(d3.max(graph.links, function(d) {return d.weight; }))])          	    
-                .range([1,1000])
-                .clamp(true);       
-
+            
+            function updateNodeColor(centrality, colorOption) {
+                var scaleType = params.node_color_scale[centrality].scale
+                var range = [0,1]
+                  
+                var centrality_values = []
+                graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { centrality_values.push(parseFloat(0)); } else { centrality_values.push(d[centrality]); }});
+                
+                scaledValues = []
+                if (scaleType != "ordinal") {
+                    centrality_values = centrality_values.map(function (x) {
+                            return parseFloat(x);
+                    });
+                    
+                    initScale = d3.scaleLinear()
+                                    .domain(d3.extent(centrality_values))
+                                    .range([1,10]);
+                    
+                    centrality_values.forEach( function (d) { scaledValues.push(initScale(parseFloat(d))); });
+                } else {                
+                    centrality_values.forEach( function (d) { scaledValues.push(d); });
+                }        
+                
+                colorDomain = []                
+                if (scaleType == "linear") {
+                    
+                    linearScale = d3.scaleLinear()
+                         .domain(d3.extent(scaledValues))
+                         .range(range);
+                     
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.color = linearScale(initScale(parseFloat(0))); } else { d.color = linearScale(initScale(parseFloat(d[centrality]))); }});
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { colorDomain.push(linearScale(initScale(parseFloat(0)))); } else { colorDomain.push(linearScale(initScale(parseFloat(d[centrality])))); }});
+                  
+                } else if (scaleType == "reverse_linear") {
+                    
+                    reversed_linear_values = []
+                     
+                    scaledValues.forEach( function (d) { reversed_linear_values.push(parseFloat(1/d)); });
+                     
+                    reversedLinearScale = d3.scaleLinear()
+                        .domain(d3.extent(reversed_linear_values))
+                        .range(range);
+                    
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.color = reversedLinearScale(1 / initScale(parseFloat(0))); } else { d.color = reversedLinearScale(1 / initScale(parseFloat(d[centrality]))); }});
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { colorDomain.push(reversedLinearScale(1 / initScale(parseFloat(0)))); } else { colorDomain.push(reversedLinearScale(1 / initScale(parseFloat(d[centrality])))); }});
+                     
+                } else if (scaleType == "log") {
+                   
+                    logScale = d3.scaleLog()
+                        .domain(d3.extent(scaledValues))
+                        .range(range);  	        
+                    
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.color = logScale(initScale(parseFloat(0))); } else { d.color = logScale(initScale(parseFloat(d[centrality]))); }});
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { colorDomain.push(logScale(initScale(parseFloat(0)))); } else { colorDomain.push(logScale(initScale(parseFloat(d[centrality])))); }});
+                  
+                } else if (scaleType == "reverse_log") {
+                    
+                    reversed_log_values = []
+                     
+                    scaledValues.forEach( function (d) { reversed_log_values.push(parseFloat(1/d)); });
+                     
+                    reversedLogScale = d3.scaleLog()
+                        .domain(d3.extent(reversed_log_values))
+                        .range(range);
+                    
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.color = reversedLogScale(1 / initScale(parseFloat(0))); } else { d.color = reversedLogScale(1 / initScale(parseFloat(d[centrality]))); }});
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { colorDomain.push(reversedLogScale(1 / initScale(parseFloat(0)))); } else { colorDomain.push(reversedLogScale(1 / initScale(parseFloat(d[centrality])))); }});
+                     
+                } else if (scaleType == "square") {
+                   
+                    squareScale = d3.scalePow()
+                        .domain(d3.extent(scaledValues))
+                        .exponent(2)
+                        .range(range);
+                    
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.color = squareScale(initScale(parseFloat(0))); } else { d.color = squareScale(initScale(parseFloat(d[centrality]))); }});
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { colorDomain.push(squareScale(initScale(parseFloat(0)))); } else { colorDomain.push(squareScale(initScale(parseFloat(d[centrality])))); }});
+                  
+                } else if (scaleType == "reverse_square") {
+                   
+                    reversed_squared_values = []
+                     
+                    scaledValues.forEach( function (d) { reversed_squared_values.push(parseFloat(1/d)); });
+                     
+                    reversedSquareScale = d3.scalePow()
+                        .domain(d3.extent(reversed_squared_values))
+                        .exponent(2)
+                        .range(range);
+                    
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.color = reversedSquareScale(1 / initScale(parseFloat(0))); } else { d.color = reversedSquareScale(1 / initScale(parseFloat(d[centrality]))); }});
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { colorDomain.push(reversedSquareScale(1 / initScale(parseFloat(0)))); } else { colorDomain.push(reversedSquareScale(1 / initScale(parseFloat(d[centrality])))); }});
+                  
+                } else if (scaleType == "area") {
+                    
+                    area_values = []
+                     
+                    scaledValues.forEach( function (d) { area_values.push(parseFloat(Math.PI * (d * d))); });
+                     
+                    areaScale = d3.scaleLinear()
+                        .domain(d3.extent(area_values))
+                        .range(range);
+                                        
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.color = areaScale(Math.PI * (initScale(parseFloat(0)) * initScale(parseFloat(0)))); } else { d.color = areaScale(Math.PI * (initScale(parseFloat(d[centrality])) * initScale(parseFloat(d[centrality])))); }});
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { colorDomain.push(areaScale(Math.PI * (initScale(parseFloat(0)) * initScale(parseFloat(0))))); } else { colorDomain.push(areaScale(Math.PI * (initScale(parseFloat(d[centrality])) * initScale(parseFloat(d[centrality]))))); }});
+                     
+                } else if (scaleType == "reverse_area") {
+                    
+                    reversed_area_values = []
+                     
+                    scaledValues.forEach( function (d) { reversed_area_values.push(parseFloat(Math.PI * (parseFloat(1/d) * parseFloat(1/d)))); });
+                     
+                    reversedAreaScale = d3.scaleLinear()
+                        .domain(d3.extent(reversed_area_values))
+                        .range(range);
+                    
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.color = reversedAreaScale(Math.PI * (1 / initScale(parseFloat(0))) * (1 / initScale(parseFloat(0)))); } else { d.color = reversedAreaScale(Math.PI * (1 / initScale(parseFloat(d[centrality]))) * (1 / initScale(parseFloat(d[centrality])))); }});
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { colorDomain.push(reversedAreaScale(Math.PI * (1 / initScale(parseFloat(0))) * (1 / initScale(parseFloat(0))))); } else { colorDomain.push(reversedAreaScale(Math.PI * (1 / initScale(parseFloat(d[centrality]))) * (1 / initScale(parseFloat(d[centrality]))))); }});
+                     
+                } else if (scaleType == "volume") {
+                    
+                    volume_values = []
+                     
+                    scaledValues.forEach( function (d) { volume_values.push(parseFloat(4 / 3 * (Math.PI * (d * d * d)))); });
+                     
+                    volumeScale = d3.scaleLinear()
+                        .domain(d3.extent(volume_values))
+                        .range(range);
+                    
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.color = volumeScale(4 / 3 * (Math.PI * (initScale(parseFloat(0)) * initScale(parseFloat(0)) * initScale(parseFloat(0))))); } else { d.color = volumeScale(4 / 3 * (Math.PI * (initScale(parseFloat(d[centrality])) * initScale(parseFloat(d[centrality])) * initScale(parseFloat(d[centrality]))))); }});
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { colorDomain.push(volumeScale(4 / 3 * (Math.PI * (initScale(parseFloat(0)) * initScale(parseFloat(0)) * initScale(parseFloat(0)))))); } else { colorDomain.push(volumeScale(4 / 3 * (Math.PI * (initScale(parseFloat(d[centrality])) * initScale(parseFloat(d[centrality])) * initScale(parseFloat(d[centrality])))))); }});
+                  
+                } else if (scaleType == "reverse_volume") {
+                 
+                    reversed_volume_values = []             
+                    
+                    scaledValues.forEach( function (d) { reversed_volume_values.push(parseFloat(4 / 3 * (Math.PI * (parseFloat(1/d) * parseFloat(1/d) * parseFloat(1/d))))); });
+                     
+                    reversedVolumeScale = d3.scaleLinear()
+                        .domain(d3.extent(reversed_volume_values))
+                        .range(range);
+                    
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.color = reversedVolumeScale(4 / 3 * (Math.PI * ((1 / initScale(parseFloat(0))) * (1 / initScale(parseFloat(0))) * (1 / initScale(parseFloat(0)))))); } else { d.color = reversedVolumeScale(4 / 3 * (Math.PI * ((1 / initScale(parseFloat(d[centrality]))) * (1 / initScale(parseFloat(d[centrality]))) * (1 / initScale(parseFloat(d[centrality])))))); }});
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { colorDomain.push(reversedVolumeScale(4 / 3 * (Math.PI * ((1 / initScale(parseFloat(0))) * (1 / initScale(parseFloat(0))) * (1 / initScale(parseFloat(0))))))); } else { colorDomain.push(reversedVolumeScale(4 / 3 * (Math.PI * ((1 / initScale(parseFloat(d[centrality]))) * (1 / initScale(parseFloat(d[centrality]))) * (1 / initScale(parseFloat(d[centrality]))))))); }});
+                       
+                } else if (scaleType == "ordinal") {
+                
+                    ordinalScale = d3.scaleOrdinal()
+                        .domain(scaledValues)
+                        .range(range);
+                                        
+                    graph.nodes.forEach( function (d) { d.color = ordinalScale(d[centrality]); });
+                    graph.nodes.forEach( function (d) { colorDomain.push(ordinalScale(d[centrality])); });
+                }
+                
+                if (scheme_list.includes(colorOption)) {
+                    var color_palette = d3.scaleQuantize()
+                                            .domain(d3.extent(colorDomain))
+                                            .range(d3["scheme" + colorOption]);
+                } else if (interpolate_list.includes(colorOption)) {
+                    var color_palette = d3.scaleSequential()
+                                            .interpolator(d3["interpolate" + colorOption])
+                                            .domain(colorDomain);
+                }                
+                
+                node.attr("fill", function(d) { if (typeof d[centrality] === 'undefined') { return "#808080"; } else { return color_palette(d.color); }});
+            }
+            
             simulation
                 .force("charge", d3.forceManyBody().strength(params.chargeStrength).distanceMax(500))            
                 .force("collide", d3.forceCollide().radius( function (d) { return d.size; }));
-
-            graph.nodes.forEach(function(d) { if (typeof d.color !== 'undefined') { colorBy.push(d.color); } else { colorBy.push(1); } });
-
-            var colorBy = Array.from(new Set(colorBy)) 
 
             update();
 
@@ -1558,9 +2037,9 @@ class springNetwork:
                 var newLabel = label.enter().append("text")
                         .text(function (d) { if (params.displayLabel == "true") { return d.Label; } else { return d.Name; } })
                         .style("text-anchor", "middle")
-                            .style("fill", "$foregroundColor")
-                            .style("font-family", "Helvetica")
-                            .style("font-size", params.node_text_size)
+                        .style("fill", "$foregroundColor")
+                        .style("font-family", "Helvetica")
+                        .style("font-size", params.node_text_size)
                         .attr('class', 'node')
                         .on('mouseover', function(d) {
                         
@@ -1600,7 +2079,7 @@ class springNetwork:
                             .on("drag", dragged)
                             .on("end", dragended));
 
-                label = label.merge(newLabel);
+                label = label.merge(newLabel);  
 
                 //Add no links
                 link = link.data([]);
@@ -1663,170 +2142,217 @@ class springNetwork:
                      .attr("y", function (d) {return d.y + 5; });            
 
             }
-
+            
+            Number.prototype.countDecimals = function () {
+                if(Math.floor(this.valueOf()) === this.valueOf()) return 0;
+        
+                var value = 0;
+                var check = this.toString().includes("e-");
+                
+                if (check) {
+                    
+    	            var value = this.toString().split("-")[1];
+                     
+                } else {
+    	            
+                    var value1 = this.toString().split(".")[1];
+                    var value2 = value1.trimLeft("0");
+                     
+                    var value = value1.length - value2.length + 1;
+                }        
+                
+                return value
+            }
+            
             var sliderInitValue = '';
             var sliderMin = '';
             var sliderMax = '';
             var sliderValue = '';
-
+            
             if (params.link_type == "score") {
-                sliderInitValue =  d3.min(graph.links, function(d) {return d.weight; }).toPrecision(5)
-                sliderMin = scaleLinksLinear(d3.min(graph.links, function(d) {return d.weight; }))
-                sliderMax = scaleLinksLinear(d3.max(graph.links, function(d) {return d.weight; }))
-                sliderValue = scaleLinksLinear(d3.min(graph.links, function(d) {return d.weight; }))
+                sliderInitValue =  Number(d3.min(graph.links, function(d) {return d.weight; }).toFixed(4))
+                sliderMin = Number(d3.min(graph.links, function(d) {return d.weight; }).toFixed(4))
+                sliderMax = Number(d3.max(graph.links, function(d) {return d.weight; }).toFixed(4))
+                sliderStep = 0.01;
+                sliderPrecision = 4;
             } else if (params.link_type == "pvalue") {
-                sliderInitValue =  d3.max(graph.links, function(d) {return d.weight; }).toPrecision(5)
-                sliderMin = scaleLinksLog(Math.log(d3.min(graph.links, function(d) {return d.weight; })))
-                sliderMax = scaleLinksLog(Math.log(d3.max(graph.links, function(d) {return d.weight; })))
-                sliderValue = scaleLinksLog(Math.log(d3.max(graph.links, function(d) {return d.weight; })))
+                sliderInitValue = Number(d3.max(graph.links, function(d) {return d.weight; }).toFixed(Number(d3.min(graph.links, function(d) {return d.weight; }).countDecimals())))
+                sliderMin = Number(d3.min(graph.links, function(d) {return d.weight; }).toFixed(Number(d3.min(graph.links, function(d) {return d.weight; }).countDecimals())))
+                sliderMax = Number(d3.max(graph.links, function(d) {return d.weight; }).toFixed(Number(d3.min(graph.links, function(d) {return d.weight; }).countDecimals())))
+                sliderStep = Number(d3.min(graph.links, function(d) {return d.weight; }).toFixed(Number(d3.min(graph.links, function(d) {return d.weight; }).countDecimals())))
+                sliderPrecision = Number(d3.min(graph.links, function(d) {return d.weight; }).countDecimals())
             }
-
-            d3.select('#sliderText').text(link_type_text + ' threshold: ');
-
-            d3.select('#sliderValue').text(sliderInitValue);
-
-            var sliderWidth = 225;
-            var sliderOffSet = 45;
-
-            var Slider = d3.sliderHorizontal()
-    	    					    .min(sliderMin)
-    							    .max(sliderMax)
-                                    .default(sliderInitValue)
-                                    .ticks(0)
-                                    .handle(d3.symbol().type(d3.symbolCircle).size(150)())
-    							    .step(0.0001)                        
-                                    .fill('#2196f3')
-    							    .width(sliderWidth - sliderOffSet)
-    							    .displayValue(false)
-    							    .on('onchange', value => {
-
-      							    	if (params.link_type == "score") {
-                                            var threshold = scaleLinksLinear.invert(value);
-                                        } else if (params.link_type == "pvalue")  {
-                                            var threshold = Math.exp(scaleLinksLog.invert(value));
-                                        }
-
-                					    d3.select('#sliderValue').text(threshold.toPrecision(5));
-
-                                        graph.links.splice(0, graph.links.length);
-                                        graphRec.links.forEach( function (d) { if (d.weight $operator threshold) { graph.links.push(d); }});
-
-                                        //Update link dictionary
-                                        linkedByIndex = {} 
-                                        graphRec.links.forEach( function (d) {
-                                            if (d.weight $operator threshold) {
-
-                                                var source = JSON.stringify(d.source.id);
-                                                var target = JSON.stringify(d.target.id);
-
-                                                if (typeof source == 'undefined') {
-                                                    source = JSON.stringify(d.source);
-                                                }
-
-                                                if (typeof target == 'undefined') {
-                                                    target = JSON.stringify(d.target);
-                                                }
-
-                                                linkedByIndex[source + ',' + target] = 1;
-                                                linkedByIndex[target + ',' + source] = 1;	  						         
-                                            }
-                                        });         
-
-                                        update(); 
-          						    });
-
-            d3.select('#slider').selectAll("*").remove();
-
-            d3.select('#slider')
-                    .append('svg')
-                    .attr('width', sliderWidth)    
-                    .append('g')    
-                    .attr('transform', 'translate(30,30)')
-                    .call(Slider);
-
-            if (Object.keys(params.node_size_scale).length != 0) {
-
-                var nodeSizeDropdown = d3.select('#nodeSizeDropdown')   
-                    .append('select')
-                    .attr("class","nodeSizeDropdown")
-                    .on('change', function() { 
-                        var centrality = this.value;
-
+            
+            var app = angular.module('rzSliderDemo', ['rzSlider']);
+            
+            app.controller('MainCtrl', function ($$scope) {
+                
+                $$scope.node_size_options = Object.keys(params.node_size_scale);
+  				$$scope.selectedNodeSizeOption = $$scope.node_size_options[0];    
+                
+                $$scope.updateNodeSize = function() {
+                  
+                    var centrality = $$scope.selectedNodeSizeOption;
+                    
+                    if (typeof centrality != 'undefined') {
                         updateNodeSize(centrality)
-
-                        node.attr('r', function(d) { return d.size; } );  
-
-                        simulation.force("collide", d3.forceCollide().radius( function (d) { return d.size; }));
-                        simulation.alphaTarget(0.1).restart();
-                    });
-
-                nodeSizeDropdown.selectAll('option')
-                    .data(Object.keys(params.node_size_scale))
-                    .enter().append('option')		
-                    .text(function(d) { return d; });
-            } else {
-
-                var nodeSizeDropdown = d3.select('#nodeSizeDropdown')
-                    .append('select')
-                    .attr("class","nodeSizeDropdown");
-
-                nodeSizeDropdown.selectAll('option')
-                    .data(['none'])
-                    .enter().append('option')		
-                    .text(function(d) { return d; });        
-            }
-
-            var colorDropDownValues = ['default','schemeCategory10','schemeAccent','schemeDark2','schemePaired','schemePastel1','schemePastel2','schemeSet1','schemeSet2','schemeSet3'];
-            var schemeLenCount = [];
-
-            //Get lengths of all color schemes used
-            colorDropDownValues.forEach( function(value) { if (value !== 'default') { schemeLenCount.push(d3[value].length); }});
-
-            var nodeColorDropdown = d3.select('#nodeColorDropdown')
-                .append('select')
-                .attr("class","nodeColorDropdown")
-                .on('change', function() { 
-                    var colorScheme = this.value;
-
-                    if (colorScheme == 'default') {
-                        node.attr("fill", function(d) { return d.color; })
-                    } else {
-
-                        //Slice color schemes to the minimum length across all color schemes for consistancy when switching color schemes
-                        colorSchemeSliced = d3[colorScheme].slice(0, d3.min(schemeLenCount));
-
-                        var color_palette = d3.scaleOrdinal()
-                                                   .domain(colorBy)
-                                                   .range(colorSchemeSliced);                                                        
-
-                        node.attr("fill", function(d) { if (typeof d.color !== 'undefined') { return color_palette(d.color); } else { return color_palette(1); } });                        
                     }
-
+                        
+                    node.attr('r', function(d) { return d.size; } );  
+                    
+                    simulation.force("collide", d3.forceCollide().radius( function (d) { return d.size; }));
+                    simulation.alphaTarget(0.1).restart();    										
+  				}
+  				
+  				var centrality = $$scope.selectedNodeSizeOption;
+  				
+  				if (typeof centrality != 'undefined') {
+                    updateNodeSize(centrality)                  
+                }
+  				
+  				node.attr('r', function(d) { return d.size; } );  
+                    
+                simulation.force("collide", d3.forceCollide().radius( function (d) { return d.size; }));
+                simulation.alphaTarget(0.1).restart();
+                
+                $$scope.node_coloring_options = Object.keys(params.node_color_scale);
+  				$$scope.selectedNodeColorOption = $$scope.node_coloring_options[0];
+  				
+  				$$scope.scheme_list = scheme_list;
+                   
+                $$scope.interpolate_list = interpolate_list;
+                    
+                $$scope.color_options = color_options;
+                              
+                $$scope.selectedColorOption = $$scope.color_options[0];
+                
+                $$scope.updateNodeColor = function() {
+                
+                    var nodeColorOption = $$scope.selectedNodeColorOption
+                
+                    if (typeof nodeColorOption != 'undefined') {                        
+                        var colorOption = $$scope.selectedColorOption             
+                        var scaleType = params.node_color_scale[nodeColorOption].scale                    
+                    
+                        if (scaleType == "ordinal") {
+                            $$scope.color_options = scheme_list;
+                        } else {
+                            $$scope.color_options = color_options;
+                        }
+                    
+                        updateNodeColor(nodeColorOption, colorOption)
+                    } else {
+                        $$scope.node_coloring_options = ['None']
+                        $$scope.selectedNodeColorOption = 'None'
+                        $$scope.color_options = ['Grey']
+                        $$scope.selectedColorOption = 'Grey'
+                        
+                        node.attr("fill", function(d) { return d.color; })           
+                    }
+                    
                     simulation.alphaTarget(0.1).restart();
-                });
-
-            nodeColorDropdown.selectAll('option')
-                .data(colorDropDownValues)
-                .enter().append('option')		
-                .text(function(d) { return d; });
-
-            d3.select("#save")
-                    .on('click', function(){
-
-                        var options = {
+                }
+                
+                var nodeColorOption = $$scope.selectedNodeColorOption         
+                    
+                if (typeof nodeColorOption != 'undefined') {
+                    var colorOption = $$scope.selectedColorOption             
+                    var scaleType = params.node_color_scale[nodeColorOption].scale
+                    
+                    if (scaleType == "ordinal") {
+                        $$scope.color_options = scheme_list;
+                    } else {
+                        $$scope.color_options = color_options;
+                    }
+                    
+                    updateNodeColor(nodeColorOption, colorOption)
+                } else {
+                    $$scope.node_coloring_options = ['None']
+                    $$scope.selectedNodeColorOption = 'None'
+                    $$scope.color_options = ['Grey']
+                    $$scope.selectedColorOption = 'Grey'
+                        
+                    node.attr("fill", function(d) { return d.color; })           
+                }
+                
+                simulation.alphaTarget(0.1).restart();
+                
+                $$scope.savebutton = function () {
+                	
+                      var options = {
                                 canvg: window.canvg,
-                                backgroundColor: '$backgroundColor',
+                                backgroundColor: 'white',
                                 height: height+100,
                                 width: width+100,
                                 left: -50,
+                                top: -50,
                                 scale: 5/window.devicePixelRatio,
                                 encoderOptions: 1,
                                 ignoreMouse : true,
                                 ignoreAnimation : true,
                         }
-
-                        saveSvgAsPng(d3.select('svg#springNetwork').node(), "networkPlot.png", options);
-                    })
+		                		                
+                        saveSvgAsPng(d3.select('svg#springNetwork').node(), "networkPlot.png", options);           					
+        		}
+        		
+        		$$scope.searchNodes = function () {
+                		var term = document.getElementById('searchTerm').value;
+                		var selected = container.selectAll('.node').filter(function (d, i) {
+                    			return d.Label.toLowerCase().search(term.toLowerCase()) == -1;
+                		});
+                		selected.style('opacity', '0');
+						var link = container.selectAll('.link');
+                		link.style('stroke-opacity', '0');
+                		d3.selectAll('.node').transition()
+                        		.duration(1000)
+                        		.style('opacity', '1');
+                		d3.selectAll('.link').transition().duration(5000).style('stroke-opacity', '0.6');
+            	}
+            	
+            	$$scope.slider = {       
+        				value: sliderInitValue,                        
+                        options: {
+        					showSelectionBar: true,                    
+            				floor: sliderMin,
+                         	ceil: sliderMax,                          		
+                          	step: sliderStep,
+            				precision: sliderPrecision,                          	
+            				getSelectionBarColor: function() { return '#2AE02A'; },
+            				getPointerColor: function() { return '#D3D3D3'; },
+            				pointerSize: 1,
+            				onChange: function () {
+              
+                                var threshold = $$scope.slider.value
+                                
+                                graph.links.splice(0, graph.links.length);
+                                graphRec.links.forEach( function (d) { if (d.weight $operator threshold) { graph.links.push(d); }});
+                                
+                                //Update link dictionary
+                                linkedByIndex = {} 
+                                graphRec.links.forEach( function (d) {
+                                    if (d.weight $operator threshold) {
+                                                                  
+                                        var source = JSON.stringify(d.source.id);
+                                        var target = JSON.stringify(d.target.id);
+                                                   
+                                        if (typeof source == 'undefined') {
+                                            source = JSON.stringify(d.source);
+                                        }
+                                                
+                                        if (typeof target == 'undefined') {
+                                        	target = JSON.stringify(d.target);
+                                        }
+                                                                                        
+                                        linkedByIndex[source + ',' + target] = 1;
+                                        linkedByIndex[target + ',' + source] = 1;	  						         
+                                    }
+                                });
+                                  
+                                update(); 
+            				}
+        				}
+    			};
+			});
 
             function dragstarted(d) {
 
@@ -1943,7 +2469,7 @@ class springNetwork:
                 		.append("td")
                 		.text(function(d) { return d; })
                         .style("border", "1px black solid")
-                        .style("font-size", "20px");
+                        .style("font-size", "15px");
 			};
         }
 
@@ -1957,59 +2483,92 @@ class springNetwork:
     def __getHTML(self):
 
         html = '''
-        <body>
-        
-            <style> $css_text </style>
-            
-            <div id="springWrapper">
-            
-                <form id="search"></form>
-            
-                <h3 id="sliderText"></h3>
-                <div id="slider"></div>
-                <h3><span style="white-space: nowrap;" id="sliderValue"></span></h3>
-            
-                <div id="nodeSizeDropdown"></div>
-                
-                <div id="nodeColorDropdown"></div>
-            
-                <button id='save'>Save</button>            
-            
-            </div>
-            
-            <script src="https://d3js.org/d3.v5.min.js"></script>
-            <script src="https://unpkg.com/d3-simple-slider@1.5.4/dist/d3-simple-slider.min.js"></script>
-            <script src="https://github.com/canvg/canvg/blob/master/src/canvg.js"></script>
-            <script src="https://exupero.org/saveSvgAsPng/src/saveSvgAsPng.js"></script>
-             
-            <script> $js_text </script>
-                
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <head>
+	        <meta charset="utf-8">
+	        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+	        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css">
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+            <link rel="stylesheet" type="text/css" href="https://rawgit.com/rzajac/angularjs-slider/master/dist/rzslider.css">
+        </head>
+
+        <style> $css_text </style>
+
+        <body ng-app="rzSliderDemo">
+		        <div class="row" ng-controller="MainCtrl">
+			        <div class="col-4">
+				        <div class="row">
+                            <form class="searchBar">
+                                <input id="searchTerm" type="text" placeholder="Search.." name="search">
+                                <button type="submit" data-ng-click="searchNodes()"><i class="fa fa-search"></i></button>
+                            </form>
+                        </div>
+                        
+                        <rzslider id="slider" class="slider" rz-slider-model="slider.value" rz-slider-options="slider.options"></rzslider>
+                        
+                        <div id="nodeSizeDropdown" class="row">Size nodes by 
+                            <select ng-options="o for o in node_size_options" data-ng-model="selectedNodeSizeOption" ng-change="updateNodeSize()"></select>
+                        </div>
+                       
+                        <div id="nodeColorDropdown" class="row">Colour nodes by 
+                            <select ng-options="o for o in node_coloring_options" data-ng-model="selectedNodeColorOption" ng-change="updateNodeColor()"></select> using
+                            <select ng-options="o for o in color_options" data-ng-model="selectedColorOption" ng-change="updateNodeColor()"></select> colour palette
+                        </div>
+              
+                        <div id="save" class="row">
+                            <button class="mb-4" data-ng-click="savebutton()">Save</button>
+                        </div>
+					</div>		
+			    </div>
+			    
+                <div id="springPanel"></div>
         </body>
+	    
+	    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>	
+	    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js"></script>
+	    
+	    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>
+	    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular-animate.min.js"></script>
+	    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular-aria.min.js"></script>
+	    <script src="https://ajax.googleapis.com/ajax/libs/angular_material/1.0.0/angular-material.min.js"></script>        		
+	    <script src="https://rawgit.com/rzajac/angularjs-slider/master/dist/rzslider.js"></script>
+	    
+        <script src="https://d3js.org/d3.v5.min.js"></script>
+        
+        <script>
+            (function(){var g=typeof exports!="undefined"&&exports||this;var b='<?xml version="1.0" standalone="no"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">';function e(h){return h&&h.lastIndexOf("http",0)==0&&h.lastIndexOf(window.location.host)==-1}function a(k,m){var h=k.querySelectorAll("image");var l=h.length;if(l==0){m()}for(var j=0;j<h.length;j++){(function(q){var o=q.getAttributeNS("http://www.w3.org/1999/xlink","href");if(o){if(e(o.value)){console.warn("Cannot render embedded images linking to external hosts: "+o.value);return}}var p=document.createElement("canvas");var i=p.getContext("2d");var n=new Image();o=o||q.getAttribute("href");n.src=o;n.onload=function(){p.width=n.width;p.height=n.height;i.drawImage(n,0,0);q.setAttributeNS("http://www.w3.org/1999/xlink","href",p.toDataURL("image/png"));l--;if(l==0){m()}};n.onerror=function(){console.log("Could not load "+o);l--;if(l==0){m()}}})(h[j])}}function f(h,k){var r="";var q=document.styleSheets;for(var o=0;o<q.length;o++){try{var u=q[o].cssRules}catch(s){console.warn("Stylesheet could not be loaded: "+q[o].href);continue}if(u!=null){for(var n=0;n<u.length;n++){var t=u[n];if(typeof(t.style)!="undefined"){var p=null;try{p=h.querySelector(t.selectorText)}catch(m){console.warn('Invalid CSS selector "'+t.selectorText+'"',m)}if(p){var l=k?k(t.selectorText):t.selectorText;r+=l+" { "+t.style.cssText+" }\\n"}else{if(t.cssText.match(/^@font-face/)){r+=t.cssText+"\\n"}}}}}}return r}function d(i,k,j){var h=(i.viewBox.baseVal&&i.viewBox.baseVal[j])||(k.getAttribute(j)!==null&&!k.getAttribute(j).match(/%$$/)&&parseInt(k.getAttribute(j)))||i.getBoundingClientRect()[j]||parseInt(k.style[j])||parseInt(window.getComputedStyle(i).getPropertyValue(j));return(typeof h==="undefined"||h===null||isNaN(parseFloat(h)))?0:h}function c(h){h=encodeURIComponent(h);h=h.replace(/%([0-9A-F]{2})/g,function(i,j){var k=String.fromCharCode("0x"+j);return k==="%"?"%25":k});return decodeURIComponent(h)}g.svgAsDataUri=function(j,i,h){i=i||{};i.scale=i.scale||1;var k="http://www.w3.org/2000/xmlns/";a(j,function(){var u=document.createElement("div");var r=j.cloneNode(true);var l,t;if(j.tagName=="svg"){l=i.width||d(j,r,"width");t=i.height||d(j,r,"height")}else{if(j.getBBox){var o=j.getBBox();l=o.x+o.width;t=o.y+o.height;r.setAttribute("transform",r.getAttribute("transform").replace(/translate\(.*?\)/,""));var p=document.createElementNS("http://www.w3.org/2000/svg","svg");p.appendChild(r);r=p}else{console.error("Attempted to render non-SVG element",j);return}}r.setAttribute("version","1.1");r.setAttributeNS(k,"xmlns","http://www.w3.org/2000/svg");r.setAttributeNS(k,"xmlns:xlink","http://www.w3.org/1999/xlink");r.setAttribute("width",l*i.scale);r.setAttribute("height",t*i.scale);r.setAttribute("viewBox",[i.left||0,i.top||0,l,t].join(" "));u.appendChild(r);var q=f(j,i.selectorRemap);var v=document.createElement("style");v.setAttribute("type","text/css");v.innerHTML="<![CDATA[\\n"+q+"\\n]]>";var n=document.createElement("defs");n.appendChild(v);r.insertBefore(n,r.firstChild);var p=b+u.innerHTML;var m="data:image/svg+xml;base64,"+window.btoa(c(p));if(h){h(m)}})};g.svgAsPngUri=function(j,i,h){g.svgAsDataUri(j,i,function(k){var l=new Image();l.onload=function(){var n=document.createElement("canvas");n.width=l.width;n.height=l.height;var o=n.getContext("2d");if(i&&i.backgroundColor){o.fillStyle=i.backgroundColor;o.fillRect(0,0,n.width,n.height)}o.drawImage(l,0,0);var m=document.createElement("a");h(n.toDataURL("image/png"))};l.src=k})};g.saveSvgAsPng=function(j,i,h){h=h||{};g.svgAsPngUri(j,h,function(l){var k=document.createElement("a");k.download=i;k.href=l;document.body.appendChild(k);k.addEventListener("click",function(m){k.parentNode.removeChild(k)});k.click()})}})();
+        </script>
+
+        <script> $js_text </script>
         '''
 
         return html
 
     def __getHTMLdashboard(self):
 
-        html = '''        
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        
+        html = ''' 
+        <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0">
+
         <style> $css_text </style>
-        
+
         <head>
 	        <meta charset="utf-8">
 	        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-	        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-	        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css">
+	        <meta name="viewport" content="width=device-width, initial-scale=1.0">	
+	        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css">	
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+            <link rel="stylesheet" type="text/css" href="https://rawgit.com/rzajac/angularjs-slider/master/dist/rzslider.css">
         </head>
         
-        <body ng-app="firstApplication">
+        <body ng-app="rzSliderDemo">
 	        <div class="container-fluid py-5">
-		        <div class="row" ng-controller="sliderController as ctrl">
+		        <div class="row" ng-controller="MainCtrl">
 			        <div class="col-lg-9 col-12">
-				        <div class="row">					
-					        <div class="col-lg-6 col-12 mb-3">
-						        <div class="card">
+				        <div class="row">
+					        <div class="col-md-12 mb-3">
+						        <div class="card summary">
 							        <div class="card-header">
 								        <h4>Spring-embedded network</h4>
 							        </div>
@@ -2017,41 +2576,68 @@ class springNetwork:
 								        <div id="springPanel"></div>
 							        </div>
 						        </div>
-					        </div>
-					        <div class="col-lg-6 col-12 mb-3">
-						        <div class="card">
-							        <div class="card-header">
-								        <h4>Node Data</h4>
-							        </div>
-							        <div class="card-body">
-								        <div id="nodedataPanel"></div>
-							        </div>
-						        </div>
-					        </div>
+					        </div>					
 				        </div>		
 			        </div>
-
-                    <div class="col-lg-3 col-12 mb-3">
-				        <div class="card mb-3" style="min-width: 28rem; max-width: 28rem; min-height: 14rem;">							
-				            <div id='sliderPanel' class="card-body p-3">								
-                                <form id="search" whitespace="nowrap"></form>                        
-                                <h6 id="sliderText" class='ml-3'></h6>
-                                <div id="slider"></div>
-                                <h6><span style="white-space: nowrap;" id="sliderValue"></span></h6>                             
-                                <div id="nodeSizeDropdown"></div>                                        
-                                <div id="nodeColorDropdown"></div>                        
-                                <button id='save'>Save</button>                                
-                            <div>
-                        </div>
-			        </div>
-                </div>
-            </div>            
-        </body>
-        
-        <script src="https://d3js.org/d3.v5.min.js"></script>
-        <script src="https://unpkg.com/d3-simple-slider"></script>
-        <script src="https://github.com/canvg/canvg/blob/master/src/canvg.js"></script>
-        <script src="https://exupero.org/saveSvgAsPng/src/saveSvgAsPng.js"></script>
+			        <div class="col-lg-3 col-12">
+				        <div class="card mb-3">
+					        <div class="card-body">						
+						        <div class="input-group mb-3">
+							        <div class="card-body">
+                                        
+                                        <div class="row">
+                                            <form class="searchBar">
+                                                <input id="searchTerm" type="text" placeholder="Search.." name="search">
+                                                <button type="submit" data-ng-click="searchNodes()"><i class="fa fa-search"></i></button>
+                                            </form>
+                                        </div>
+                                        
+                                        <div class="row">
+                                            <rzslider id="slider" class="slider" rz-slider-model="slider.value" rz-slider-options="slider.options"></rzslider>
+                                        </div>
+                                        
+                                        <div id="nodeSizeDropdown" class="row">Size nodes by 
+                                            <select ng-options="o for o in node_size_options" data-ng-model="selectedNodeSizeOption" ng-change="updateNodeSize()"></select>
+                                        </div>
+                       
+                                        <div id="nodeColorDropdown" class="row">Colour nodes by 
+                                            <select ng-options="o for o in node_coloring_options" data-ng-model="selectedNodeColorOption" ng-change="updateNodeColor()"></select> using
+                                            <select ng-options="o for o in color_options" data-ng-model="selectedColorOption" ng-change="updateNodeColor()"></select> colour palette
+                                        </div>
+              
+                                        <div id="save" class="row">
+                                            <button class="mb-4" data-ng-click="savebutton()">Save</button>
+                                        </div>
+					                </div>
+				                </div>
+					        </div>
+				        </div>
+				        <div class="card">
+					        <div class="card-header">
+						        <h4>Node Data</h4>
+					        </div>
+					        <div class="card-body">
+						        <div id="nodedataPanel"></div>
+						    </div>
+					    </div>
+				    </div>
+			    </div>
+		    </div>
+	    </body>
+	    
+	    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>	
+	    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js"></script>
+	    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>
+	    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular-animate.min.js"></script>
+	    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular-aria.min.js"></script>
+	    <script src="https://ajax.googleapis.com/ajax/libs/angular_material/1.0.0/angular-material.min.js"></script>	
+	    <script src="https://rawgit.com/rzajac/angularjs-slider/master/dist/rzslider.js"></script>
+	    
+	    <script src="https://d3js.org/d3.v5.min.js"></script>
+	    
+        <script>
+            (function(){var g=typeof exports!="undefined"&&exports||this;var b='<?xml version="1.0" standalone="no"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">';function e(h){return h&&h.lastIndexOf("http",0)==0&&h.lastIndexOf(window.location.host)==-1}function a(k,m){var h=k.querySelectorAll("image");var l=h.length;if(l==0){m()}for(var j=0;j<h.length;j++){(function(q){var o=q.getAttributeNS("http://www.w3.org/1999/xlink","href");if(o){if(e(o.value)){console.warn("Cannot render embedded images linking to external hosts: "+o.value);return}}var p=document.createElement("canvas");var i=p.getContext("2d");var n=new Image();o=o||q.getAttribute("href");n.src=o;n.onload=function(){p.width=n.width;p.height=n.height;i.drawImage(n,0,0);q.setAttributeNS("http://www.w3.org/1999/xlink","href",p.toDataURL("image/png"));l--;if(l==0){m()}};n.onerror=function(){console.log("Could not load "+o);l--;if(l==0){m()}}})(h[j])}}function f(h,k){var r="";var q=document.styleSheets;for(var o=0;o<q.length;o++){try{var u=q[o].cssRules}catch(s){console.warn("Stylesheet could not be loaded: "+q[o].href);continue}if(u!=null){for(var n=0;n<u.length;n++){var t=u[n];if(typeof(t.style)!="undefined"){var p=null;try{p=h.querySelector(t.selectorText)}catch(m){console.warn('Invalid CSS selector "'+t.selectorText+'"',m)}if(p){var l=k?k(t.selectorText):t.selectorText;r+=l+" { "+t.style.cssText+" }\\n"}else{if(t.cssText.match(/^@font-face/)){r+=t.cssText+"\\n"}}}}}}return r}function d(i,k,j){var h=(i.viewBox.baseVal&&i.viewBox.baseVal[j])||(k.getAttribute(j)!==null&&!k.getAttribute(j).match(/%$$/)&&parseInt(k.getAttribute(j)))||i.getBoundingClientRect()[j]||parseInt(k.style[j])||parseInt(window.getComputedStyle(i).getPropertyValue(j));return(typeof h==="undefined"||h===null||isNaN(parseFloat(h)))?0:h}function c(h){h=encodeURIComponent(h);h=h.replace(/%([0-9A-F]{2})/g,function(i,j){var k=String.fromCharCode("0x"+j);return k==="%"?"%25":k});return decodeURIComponent(h)}g.svgAsDataUri=function(j,i,h){i=i||{};i.scale=i.scale||1;var k="http://www.w3.org/2000/xmlns/";a(j,function(){var u=document.createElement("div");var r=j.cloneNode(true);var l,t;if(j.tagName=="svg"){l=i.width||d(j,r,"width");t=i.height||d(j,r,"height")}else{if(j.getBBox){var o=j.getBBox();l=o.x+o.width;t=o.y+o.height;r.setAttribute("transform",r.getAttribute("transform").replace(/translate\(.*?\)/,""));var p=document.createElementNS("http://www.w3.org/2000/svg","svg");p.appendChild(r);r=p}else{console.error("Attempted to render non-SVG element",j);return}}r.setAttribute("version","1.1");r.setAttributeNS(k,"xmlns","http://www.w3.org/2000/svg");r.setAttributeNS(k,"xmlns:xlink","http://www.w3.org/1999/xlink");r.setAttribute("width",l*i.scale);r.setAttribute("height",t*i.scale);r.setAttribute("viewBox",[i.left||0,i.top||0,l,t].join(" "));u.appendChild(r);var q=f(j,i.selectorRemap);var v=document.createElement("style");v.setAttribute("type","text/css");v.innerHTML="<![CDATA[\\n"+q+"\\n]]>";var n=document.createElement("defs");n.appendChild(v);r.insertBefore(n,r.firstChild);var p=b+u.innerHTML;var m="data:image/svg+xml;base64,"+window.btoa(c(p));if(h){h(m)}})};g.svgAsPngUri=function(j,i,h){g.svgAsDataUri(j,i,function(k){var l=new Image();l.onload=function(){var n=document.createElement("canvas");n.width=l.width;n.height=l.height;var o=n.getContext("2d");if(i&&i.backgroundColor){o.fillStyle=i.backgroundColor;o.fillRect(0,0,n.width,n.height)}o.drawImage(l,0,0);var m=document.createElement("a");h(n.toDataURL("image/png"))};l.src=k})};g.saveSvgAsPng=function(j,i,h){h=h||{};g.svgAsPngUri(j,h,function(l){var k=document.createElement("a");k.download=i;k.href=l;document.body.appendChild(k);k.addEventListener("click",function(m){k.parentNode.removeChild(k)});k.click()})}})();
+        </script>
         
         <script> $js_text </script>
         '''

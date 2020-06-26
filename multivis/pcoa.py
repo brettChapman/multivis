@@ -1,11 +1,10 @@
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 from sklearn.manifold import MDS
 import seaborn as sns
 
-def pcoa(similarities, imageFileName='PCOA.png', saveImage=True, dpi=200, n_components=2, max_iter=300, eps=1e-3, seed=3, group_label=None, peak_label=None, markerSize=100, fontSize=12, figSize=(20,10)):
+def pcoa(similarities, imageFileName='PCOA.png', saveImage=True, dpi=200, n_components=2, max_iter=300, eps=1e-3, seed=3, group_label=None, peak_label=None, markerSize=100, fontSize=12, figSize=(20,10), cmap='Set1'):
     """Creates a PCoA scores plot.
 
     Parameters
@@ -23,6 +22,7 @@ def pcoa(similarities, imageFileName='PCOA.png', saveImage=True, dpi=200, n_comp
     markerSize: The size of each marker (default: 100)
     fontSize: The font size set for each node (default: 12)
     figSize: The figure size as a tuple (width,height) (default: (20,10))
+    cmap: The CMAP colour palette to use (default: 'Set1')
     """
 
     markers = ['o', 'v', '^', '<', '>', 'H', 'D', 'X', 'P', 'd', '8', 's', 'p', '*', 'h']
@@ -48,7 +48,7 @@ def pcoa(similarities, imageFileName='PCOA.png', saveImage=True, dpi=200, n_comp
         for i, txt in enumerate(list(peak_label)):
             ax.annotate(txt, (x_score[i]+.001, y_score[i]), fontsize=fontSize)
 
-    sns.scatterplot(x=x_score, y=y_score, hue=group_label, s=markerSize, markers=markers, style=group_label, palette='Set1')
+    sns.scatterplot(x=x_score, y=y_score, hue=group_label, s=markerSize, markers=markers, style=group_label, palette=cmap)
 
     ax.set_title('PCoA Plot')
 

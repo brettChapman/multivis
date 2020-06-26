@@ -2,6 +2,7 @@ import sys
 import networkx as nx
 import numpy as np
 import pandas as pd
+import matplotlib
 import matplotlib.pyplot as plt
 import copy
 from .utils import *
@@ -23,9 +24,12 @@ class plotNetwork:
             layout: Set the NetworkX layout type ('circular', 'kamada_kawai', 'random', 'spring', 'spectral') (default: 'spring')
             dpi: The number of Dots Per Inch (DPI) for the image (default: 200)
             figSize: The figure size as a tuple (width,height) (default: (30,20))
-            sizing_column: The node sizing colomn to use (default: sizes all nodes to 1)
-            sizeScale: The node size scale to apply ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume") (default: 'reverse_linear')
+            node_cmap: The CMAP colour palette to use for nodes (default: 'brg')
+            colorScale: The scale to use for colouring the nodes ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal") (default: 'linear')
+            node_color_column: The Peak Table column to use for node colours (default: None sets to black)
+            sizeScale: The node size scale to apply ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal") (default: 'reverse_linear')
             size_range: The node size scale range to apply. Tuple of length 2. Minimum size to maximum size (default: (150,2000))
+            sizing_column: The node sizing column to use (default: sizes all nodes to 1)
             alpha:  Node opacity value (default: 0.5)
             nodeLabels: Setting to 'True' will label the nodes (default: True)
             fontSize: The font size set for each node (default: 15)
@@ -35,7 +39,7 @@ class plotNetwork:
             operator: The comparison operator to use when filtering (default: '>')
             sign: The sign of the similarity score to filter on ('pos', 'neg' or 'both') (default: 'pos')
 
-        run : Generates and displays the NetworkX graph.
+        build : Generates and displays the NetworkX graph.
     """
 
     def __init__(self, g):
@@ -44,9 +48,9 @@ class plotNetwork:
 
         self.set_params()
 
-    def set_params(self, imageFileName='networkPlot.jpg', edgeLabels=True, saveImage=True, layout='spring', dpi=200, figSize=(30,20), sizing_column='none', sizeScale='reverse_linear', size_range=(150,2000), alpha=0.5, nodeLabels=True, fontSize=15, keepSingletons=True, column='none', threshold=0.01, operator='>', sign='pos'):
+    def set_params(self, imageFileName='networkPlot.jpg', edgeLabels=True, saveImage=True, layout='spring', dpi=200, figSize=(30,20), node_cmap='brg', colorScale='linear', node_color_column='none', sizeScale='reverse_linear', size_range=(150,2000), sizing_column='none', alpha=0.5, nodeLabels=True, fontSize=15, keepSingletons=True, column='none', threshold=0.01, operator='>', sign='pos'):
 
-        imageFileName, edgeLabels, saveImage, layout, dpi, figSize, sizing_column, sizeScale, size_range, alpha, nodeLabels, fontSize, keepSingletons, column, threshold, operator, sign = self.__paramCheck(imageFileName, edgeLabels, saveImage, layout, dpi, figSize, sizing_column, sizeScale, size_range, alpha, nodeLabels, fontSize, keepSingletons, column, threshold, operator, sign)
+        imageFileName, edgeLabels, saveImage, layout, dpi, figSize, node_cmap, colorScale, node_color_column, sizeScale, size_range, sizing_column, alpha, nodeLabels, fontSize, keepSingletons, column, threshold, operator, sign = self.__paramCheck(imageFileName, edgeLabels, saveImage, layout, dpi, figSize, node_cmap, colorScale, node_color_column, sizeScale, size_range, sizing_column, alpha, nodeLabels, fontSize, keepSingletons, column, threshold, operator, sign)
 
         self.__imageFileName = imageFileName;
         self.__edgeLabels = edgeLabels;
@@ -54,9 +58,12 @@ class plotNetwork:
         self.__layout = layout;
         self.__dpi = dpi
         self.__figSize = figSize;
-        self.__sizing_column = sizing_column;
+        self.__node_cmap = node_cmap;
+        self.__colorScale = colorScale;
+        self.__node_color_column = node_color_column;
         self.__sizeScale = sizeScale;
         self.__size_range = size_range;
+        self.__sizing_column = sizing_column;
         self.__alpha = alpha
         self.__nodeLabels = nodeLabels
         self.__fontSize = fontSize;
@@ -66,7 +73,7 @@ class plotNetwork:
         self.__operator = operator;
         self.__sign = sign;
 
-    def run(self):
+    def build(self):
 
         warnings.filterwarnings("ignore")
 
@@ -137,50 +144,12 @@ class plotNetwork:
             size_attr = np.ones(len(g.nodes()))
         else:
             size_attr = np.array(list(nx.get_node_attributes(g, str(self.__sizing_column)).values()))
-            df_size_attr = pd.Series(size_attr, dtype=np.float);
-            size_attr = np.array(list(df_size_attr.fillna(0).values))
 
-        size = np.array([x for x in list(range_scale(size_attr, 1, 10))])
+            if self.__sizeScale != "ordinal":
+                df_size_attr = pd.Series(size_attr, dtype=np.float);
+                size_attr = np.array(list(df_size_attr.fillna(0).values))
 
-        if self.__sizeScale == 'linear':
-            node_size = [x for x in list(range_scale(size, self.__size_range[0], self.__size_range[1]))]
-        if self.__sizeScale == 'reverse_linear':
-            size = np.divide(1, size)
-            node_size = [x for x in list(range_scale(size, self.__size_range[0], self.__size_range[1]))]
-        elif self.__sizeScale == 'log':
-            size = np.log(size)
-            node_size = [x for x in list(range_scale(size, self.__size_range[0], sellf.__size_range[1]))]
-        elif self.__sizeScale == 'reverse_log':
-            size = np.divide(1, size)
-            size = np.log(size)
-            node_size = [x for x in list(range_scale(size, self.__size_range[0], self.__size_range[1]))]
-        elif self.__sizeScale == 'square':
-            size = np.square(size)
-            node_size = [x for x in list(range_scale(size, self.__size_range[0], self.__size_range[1]))]
-        elif self.__sizeScale == 'reverse_square':
-            size = np.divide(1, size)
-            size = np.square(size)
-            node_size = [x for x in list(range_scale(size, self.__size_range[0], self.__size_range[1]))]
-        elif self.__sizeScale == 'area':
-            size = np.square(size)
-            size = [np.multiply(x, np.pi) for x in list(map(float, size))]
-            node_size = [round(x) for x in list(map(int, range_scale(size, self.__size_range[0], self.__size_range[1])))]
-        elif self.__sizeScale == 'reverse_area':
-            size = np.divide(1, size)
-            size = np.square(size)
-            size = [np.multiply(x, np.pi) for x in list(map(float, size))]
-            node_size = [round(x) for x in list(map(int, range_scale(size, self.__size_range[0], self.__size_range[1])))]
-        elif self.__sizeScale == 'volume':
-            size = [np.power(x, 3) for x in list(map(float, size))]
-            size = [np.multiply(x, np.pi) for x in list(map(float, size))]
-            size = [np.multiply(x, 4 / 3) for x in list(map(float, size))]
-            node_size = [round(x) for x in list(map(int, range_scale(size, self.__size_range[0], self.__size_range[1])))]
-        elif self.__sizeScale == 'reverse_volumn':
-            size = np.divide(1, size)
-            size = [np.power(x, 3) for x in list(map(float, size))]
-            size = [np.multiply(x, np.pi) for x in list(map(float, size))]
-            size = [np.multiply(x, 4 / 3) for x in list(map(float, size))]
-            node_size = [round(x) for x in list(map(int, range_scale(size, self.__size_range[0], self.__size_range[1])))]
+        node_size = scaleData(size_attr, self.__sizeScale, self.__size_range[0], self.__size_range[1])
 
         if self.__layout == "circular":
             pos = nx.circular_layout(g)
@@ -193,7 +162,43 @@ class plotNetwork:
         elif self.__layout == "spectral":
             pos = nx.spectral_layout(g)
 
-        nx.draw(g, pos=pos, labels=dict(zip(g.nodes(), list(nx.get_node_attributes(g, 'Label').values()))), node_size=node_size, font_size=self.__fontSize, node_color=list(nx.get_node_attributes(g, 'color').values()), alpha=self.__alpha, with_labels=self.__nodeLabels)
+        node_color = []
+        nodeCmap = plt.cm.get_cmap(self.__node_cmap)   # Sets the color palette for the nodes
+
+        if self.__node_color_column == 'none':
+            node_color = "#000000"
+        else:
+            colorsHEX = []
+
+            node_color_values = np.array(list(nx.get_node_attributes(g, str(self.__node_color_column)).values()))
+
+            try:
+                float(node_color_values[0])
+
+                node_color_values = np.array([float(i) for i in node_color_values])
+
+                colorsRGB = self.__get_colors(node_color_values, nodeCmap)[:, :3]
+
+                for rgb in colorsRGB:
+                    colorsHEX.append(matplotlib.colors.rgb2hex(rgb))
+
+                node_color = colorsHEX
+            except ValueError:
+                if matplotlib.colors.is_color_like(node_color_values[0]):
+                    node_color = node_color_values
+                else:
+                    if self.__colorScale != "ordinal":
+                        print("Error: Node colour column is not valid. While colorScale is not ordinal, choose a column containing colour values, floats or integer values.")
+                        sys.exit()
+                    else:
+                        colorsRGB = self.__get_colors(node_color_values, nodeCmap)[:, :3]
+
+                        for rgb in colorsRGB:
+                            colorsHEX.append(matplotlib.colors.rgb2hex(rgb))
+
+                        node_color = colorsHEX
+
+        nx.draw(g, pos=pos, labels=dict(zip(g.nodes(), list(nx.get_node_attributes(g, 'Label').values()))), node_size=node_size, font_size=self.__fontSize, node_color=node_color, alpha=self.__alpha, with_labels=self.__nodeLabels)
 
         if self.__edgeLabels:
 
@@ -218,10 +223,10 @@ class plotNetwork:
 
         return g
 
-    def __paramCheck(self, imageFileName, edgeLabels, saveImage, layout, dpi, figSize, sizing_column, sizeScale, size_range, alpha, nodeLabels, fontSize, keepSingletons, filter_column, filter_threshold, operator, sign):
+    def __paramCheck(self, imageFileName, edgeLabels, saveImage, layout, dpi, figSize, node_cmap, colorScale, node_color_column, sizeScale, size_range, sizing_column, alpha, nodeLabels, fontSize, keepSingletons, filter_column, filter_threshold, operator, sign):
 
         g = self.__g
-        col_list = list(g.nodes[list(g.nodes.keys())[0]].keys())[:-2] + ['none']
+        col_list = list(g.nodes[list(g.nodes.keys())[0]].keys()) + ['none']
 
         if not isinstance(imageFileName, str):
             print("Error: Image file name is not valid. Choose a string value.")
@@ -254,24 +259,37 @@ class plotNetwork:
                         print("Error: Figure size items not valid. Choose a float or integer value.")
                         sys.exit()
 
-        if sizing_column not in col_list:
-            print("Error: Sizing column not valid. Choose one of {}.".format(', '.join(col_list)))
+        if not isinstance(node_cmap, str):
+            print("Error: Node CMAP is not valid. Choose a string value.")
             sys.exit()
         else:
+            cmap_list = matplotlib.cm.cmap_d.keys()
 
-            if sizing_column != 'none':
-                for idx, node in enumerate(g.nodes()):
+            if node_cmap not in cmap_list:
+                print("Error: Node CMAP is not valid. Choose one of the following: {}.".format(', '.join(cmap_list)))
+                sys.exit()
+
+        if colorScale.lower() not in ["linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal"]:
+            print("Error: Color scale type not valid. Choose either \"linear\", \"reverse_linear\", \"log\", \"reverse_log\", \"square\", \"reverse_square\", \"area\", \"reverse_area\", \"volume\", \"reverse_volume\", \"ordinal\".")
+            sys.exit()
+
+        if node_color_column not in col_list:
+            print("Error: Node color column not valid. Choose one of {}.".format(', '.join(col_list)))
+            sys.exit()
+        else:
+            if node_color_column != 'none':
+                node_color_values = np.array(list(nx.get_node_attributes(g, str(node_color_column)).values()))
+
+                if colorScale != 'ordinal':
                     try:
-                        float(g.node[node][sizing_column])
+                        float(node_color_values[0])
                     except ValueError:
-                        print(
-                        "Error: Sizing column contains invalid values. Choose a sizing column containing float or integer values.")
-                        sys.exit()
+                        if not matplotlib.colors.is_color_like(node_color_values[0]):
+                            print("Error: Node colour column is not valid. While colorScale is not ordinal, choose a column containing colour values, floats or integer values.")
+                            sys.exit()
 
-        if sizeScale.lower() not in ["linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square",
-                                     "area", "reverse_area", "volume", "reverse_volume"]:
-            print(
-            "Error: Size scale type not valid. Choose either \"linear\", \"reverse_linear\", \"log\", \"reverse_log\", \"square\", \"reverse_square\", \"area\", \"reverse_area\", \"volume\", \"reverse_volume\".")
+        if sizeScale.lower() not in ["linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal"]:
+            print("Error: Size scale type not valid. Choose either \"linear\", \"reverse_linear\", \"log\", \"reverse_log\", \"square\", \"reverse_square\", \"area\", \"reverse_area\", \"volume\", \"reverse_volume\", \"ordinal\".")
             sys.exit()
 
         if not isinstance(size_range, tuple):
@@ -283,6 +301,20 @@ class plotNetwork:
                     if not isinstance(size, int):
                         print("Error: Size values not valid. Choose a float or integer value.")
                         sys.exit()
+
+        if sizing_column not in col_list:
+            print("Error: Sizing column not valid. Choose one of {}.".format(', '.join(col_list)))
+            sys.exit()
+        else:
+
+            if sizing_column != 'none':
+                for idx, node in enumerate(g.nodes()):
+                    if sizeScale != 'ordinal':
+                        try:
+                            float(g.node[node][sizing_column])
+                        except ValueError:
+                            print("Error: Sizing column contains invalid values. While sizeScale is not ordinal, choose a sizing column containing float or integer values.")
+                            sys.exit()
 
         if not isinstance(alpha, float):
             if not (alpha >= 0 and alpha <= 1):
@@ -312,8 +344,7 @@ class plotNetwork:
                     try:
                         float(g.node[node][filter_column])
                     except ValueError:
-                        print(
-                        "Error: Filter column contains invalid values. Choose a filter column containing float or integer values.")
+                        print("Error: Filter column contains invalid values. Choose a filter column containing float or integer values.")
                         sys.exit()
 
         if not isinstance(filter_threshold, float):
@@ -335,4 +366,10 @@ class plotNetwork:
             print("Error: Sign not valid. Choose either \"pos\", \"neg\", or \"both\".")
             sys.exit()
 
-        return imageFileName, edgeLabels, saveImage, layout, dpi, figSize, sizing_column, sizeScale, size_range, alpha, nodeLabels, fontSize, keepSingletons, filter_column, filter_threshold, operator, sign
+        return imageFileName, edgeLabels, saveImage, layout, dpi, figSize, node_cmap, colorScale, node_color_column, sizeScale, size_range, sizing_column, alpha, nodeLabels, fontSize, keepSingletons, filter_column, filter_threshold, operator, sign
+
+    def __get_colors(self, x, cmap):
+
+        scaled_colors = scaleData(x, self.__colorScale, 0, 1)
+
+        return cmap(scaled_colors)

@@ -1,10 +1,9 @@
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 import seaborn as sns
 
-def pca(data, imageFileName='PCA.png', saveImage=True, dpi=200, pcx=1, pcy=2, group_label=None, sample_label=None, peak_label=None, markerSize=100, fontSize=12, figSize=(20,10)):
+def pca(data, imageFileName='PCA.png', saveImage=True, dpi=200, pcx=1, pcy=2, group_label=None, sample_label=None, peak_label=None, markerSize=100, fontSize=12, figSize=(20,10), cmap='Set1'):
     """Creates a PCA scores and loadings biplot.
 
     Parameters
@@ -21,12 +20,12 @@ def pca(data, imageFileName='PCA.png', saveImage=True, dpi=200, pcx=1, pcy=2, gr
     markerSize: The size of each marker (default: 100)
     fontSize: The font size set for each node (default: 12)
     figSize: The figure size as a tuple (width,height) (default: (20,10))
+    cmap: The CMAP colour palette to use (default: 'Set1')
     """
 
     # Set model
     model = PCA()
-    #model.fit(data[data['Class']])
-    model.fit(data)#data[data['Class']])
+    model.fit(data)
     scores = model.transform(data)
     explained_variance = model.explained_variance_ratio_ * 100
 
@@ -54,7 +53,7 @@ def pca(data, imageFileName='PCA.png', saveImage=True, dpi=200, pcx=1, pcy=2, gr
         for i, txt in enumerate(list(sample_label)):
             ax1.annotate(txt, (x_score[i]+.04, y_score[i]), fontsize=fontSize)
 
-    sns.scatterplot(x=x_score, y=y_score, hue=group_label, s=markerSize, markers=markers, style=group_label, ax=ax1, alpha=0.7, palette='Set1')
+    sns.scatterplot(x=x_score, y=y_score, hue=group_label, s=markerSize, markers=markers, style=group_label, ax=ax1, alpha=0.7, palette=cmap)
 
     # Loadings plot
     ax2.set_title('PCA Loadings Biplot')

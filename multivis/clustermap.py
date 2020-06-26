@@ -36,7 +36,7 @@ class clustermap:
             row_color_threshold: The colouring threshold for the row dendrogram (default: 10)
             col_color_threshold: The colouring threshold for the column dendrogram (default: 10)
 
-        run: : Generates and displays the Hierarchical Clustered Heatmap (HCH).
+        build : Generates and displays the Hierarchical Clustered Heatmap (HCH).
     """
 
     def __init__(self, scores, row_linkage, col_linkage):
@@ -74,7 +74,7 @@ class clustermap:
         self.__row_color_threshold = row_color_threshold;
         self.__col_color_threshold = col_color_threshold;
 
-    def run(self):
+    def build(self):
 
         scores = self.__scores
         row_linkage = self.__row_linkage

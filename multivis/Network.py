@@ -17,15 +17,13 @@ class Network(Edge):
         Methods
         -------
         set_params : Set parameters -
-            filterScoreType: Value type to filter similarities on (default: 'pvalue')
+            filter_type: The value type to filter similarities on (default: 'pvalue')
             hard_threshold: Value to filter similarities on (default: 0.005)
             link_type: The value type to represent links in the network (default: 'score')
             internalSimilarities: Include similarities within blocks if building multi-block network (default: False)
             sign: The sign of the similarity score to filter on ('pos', 'neg' or 'both') (default: 'both')
-            node_color_column: The Peak Table column to use for node colours (default: None sets to black)
-            node_cmap: The CMAP colour palette to use for nodes (default: 'brg')
 
-        run : Builds nodes, edges and NetworkX graph.
+        build : Builds nodes, edges and NetworkX graph.
         getNetworkx : Returns a NetworkX graph.
         getLinkType : Returns the link type parameter used in building the network.
     """
@@ -36,17 +34,17 @@ class Network(Edge):
 
         self.set_params()
 
-    def set_params(self, filterScoreType='pvalue', hard_threshold=0.005, link_type='score', internalSimilarities=False, sign='both', node_color_column=None, node_cmap='brg'):
+    def set_params(self, filter_type='pvalue', hard_threshold=0.005, link_type='score', internalSimilarities=False, sign='both'):
 
-        Edge.set_params(self, filterScoreType, hard_threshold, internalSimilarities, sign, node_color_column, node_cmap)
+        Edge.set_params(self, filter_type, hard_threshold, internalSimilarities, sign)
 
         link_type = self.__paramCheck(link_type)
 
         self.__setLinkType(link_type)
 
-    def run(self):
+    def build(self):
 
-        Edge.run(self)
+        Edge.build(self)
 
         self.__networkXEdges()
 
@@ -81,13 +79,15 @@ class Network(Edge):
         if "pvalue" in edges.columns:
 
             if len(blocks) > 1:
-                for source_index, _, _, source, source_block, target_index, _, _, target, target_block, score, _, pvalue in edges.values:
+                #for source_index, _, _, source, source_block, target_index, _, _, target, target_block, score, _, pvalue in edges.values:
+                for source_index, _, source, source_block, target_index, _, target, target_block, score, _, pvalue in edges.values:
                     if self.getLinkType().lower() == "pvalue":
                         g.add_edge(source_index, target_index, weight=pvalue)
                     elif self.getLinkType().lower() == "score":
                         g.add_edge(source_index, target_index, weight=score)
             else:
-                for source_index, _, _, source, target_index, _, _, target, score, _, pvalue in edges.values:
+                #for source_index, _, _, source, target_index, _, _, target, score, _, pvalue in edges.values:
+                for source_index, _, source, target_index, _, target, score, _, pvalue in edges.values:
                     if self.getLinkType().lower() == "pvalue":
                         g.add_edge(source_index, target_index, weight=pvalue)
                     elif self.getLinkType().lower() == "score":
@@ -95,10 +95,12 @@ class Network(Edge):
         else:
 
             if len(blocks) > 1:
-                for source_index, _, _, source, source_block, target_index, _, _, target, target_block, score, _ in edges.values:
+                #for source_index, _, _, source, source_block, target_index, _, _, target, target_block, score, _ in edges.values:
+                for source_index, _, source, source_block, target_index, _, target, target_block, score, _ in edges.values:
                     g.add_edge(source_index, target_index, weight=score)
             else:
-                for source_index, _, _, source, target_index, _, _, target, score, _ in edges.values:
+                #for source_index, _, _, source, target_index, _, _, target, score, _ in edges.values:
+                for source_index, _, source, target_index, _, target, score, _ in edges.values:
                     g.add_edge(source_index, target_index, weight=score)
 
         nx.set_node_attributes(g, nodes.to_dict('index'))

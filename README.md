@@ -41,14 +41,12 @@ For further detail on the usage refer to the docstring.
 		- [pvalues] : Pandas dataframe matrix containing similarity pvalues.
 	- [methods](https://github.com/brettChapman/multivis/blob/master/multivis/Edge.py#L45-L122)
 		- [set_params] : Set parameters
-			- [filterScoreType] : Value type to filter similarities on (default: 'pvalue')
+			- [filter_type] : The value type to filter similarities on (default: 'pvalue')
 			- [hard_threshold] : Value to filter similarities on (default: 0.005)
 			- [internalSimilarities] : Include similarities within blocks if building multi-block network (default: False)
 			- [sign] : The sign of the similarity score to filter on ('pos', 'neg' or 'both') (default: 'both')
-			- [node_color_column] : The Peak Table column to use for node colours (default: None sets to black)
-			- [node_cmap] : The CMAP colour palette to use for nodes (default: 'brg')
-		
-		- [run] : Builds the nodes and edges.
+					
+		- [build] : Builds the nodes and edges.
 		- [getNodes] : Returns a Pandas dataframe of all nodes.
 		- [getEdges] : Returns a Pandas dataframe of all edges.        	
 
@@ -59,15 +57,13 @@ For further detail on the usage refer to the docstring.
 		- [pvalues] : Pandas dataframe matrix containing similarity pvalues.
 	- [methods](https://github.com/brettChapman/multivis/blob/master/multivis/Network.py#L39-L59)
 		- [set_params] : Set parameters
-			- [filterScoreType] : Value type to filter similarities on (default: 'pvalue')
+			- [filter_type] : The value type to filter similarities on (default: 'pvalue')
 			- [hard_threshold] : Value to filter similarities on (default: 0.005)
 			- [link_type] : The value type to represent links in the network (default: 'score')
 			- [internalSimilarities] : Include similarities within blocks if building multi-block network (default: False)
 			- [sign] : The sign of the similarity score to filter on ('pos', 'neg' or 'both') (default: 'both')
-			- [node_color_column] : The Peak Table column to use for node colours (default: None sets to black)
-			- [node_cmap] : The CMAP colour palette to use for nodes (default: 'brg')
-		
-		- [run] : Builds nodes, edges and NetworkX graph.
+					
+		- [build] : Builds nodes, edges and NetworkX graph.
 		- [getNetworkx] : Returns a NetworkX graph.
 		- [getLinkType] : Returns the link type parameter used in building the network.
 
@@ -78,17 +74,22 @@ For further detail on the usage refer to the docstring.
 		- [set_params] : Set parameters
 			- [html_file] : Name to save the HTML file as (default: 'hEdgeBundle.html')
 			- [innerRadiusOffset] : Sets the inner radius based on the offset value from the canvas width/diameter (default: 120)
-			- [groupSeparation] : Value to set the distance between different segmented groups (default: 1)
+			- [blockSeparation] : Value to set the distance between different segmented blocks (default: 1)
 			- [linkFadeOpacity] : The link fade opacity when hovering over/clicking nodes (default: 0.05)
 			- [mouseOver] : Setting to 'True' swaps from clicking to hovering over nodes to select them (default: True)
-			- [fontSize] : The font size set to each node (default: 1)
+			- [fontSize] : The font size in pixels set for each node (default: 10)
 			- [backgroundColor] : Set the background colour of the plot (default: 'white')
 			- [foregroundColor] : Set the foreground colour of the plot (default: 'black')
-			- [edge_color_scale] : Set the values to colour the edges by. Either 'score or 'pvalue' (default: 'score')
+			- [node_data] : Peak Table column names to include in the mouse over information (default: 'Name' and 'Label')			
+			- [nodeColorScale] : The scale to use for colouring the nodes ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal") (default: 'linear')
+			- [node_color_column] : The Peak Table column to use for node colours (default: None sets to black)
+			- [node_cmap] : Set the CMAP colour palette to use for colouring the nodes (default: 'brg')
+			- [edgeColorScale] : The scale to use for colouring the edges, if edge_color_value is 'pvalue' ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal") (default: 'linear')
+			- [edge_color_value] : Set the values to colour the edges by. Either 'score or 'pvalue' (default: 'score')
 			- [edge_cmap] : Set the CMAP colour palette to use for colouring the edges (default: 'brg')
 
-		- [run] : Generates the JavaScript embedded HTML code and writes to a HTML file
-		- [launchDashboard] : Generates the JavaScript embedded HTML code in a dashboard format, writes to a HTML file and launches a new browser window
+		- [build] : Generates the JavaScript embedded HTML code, writes to a HTML file and opens it in a browser.
+		- [buildDashboard] : Generates the JavaScript embedded HTML code in a dashboard format, writes to a HTML file and opens it in a browser.
 		
 - [plotNetwork](https://github.com/brettChapman/multivis/blob/master/multivis/plotNetwork.py): Generates and displays a static NetworkX graph given a user defined layout.
 	- [init_parameters](https://github.com/brettChapman/multivis/blob/master/multivis/plotNetwork.py#L41-L45)
@@ -101,9 +102,12 @@ For further detail on the usage refer to the docstring.
 			- [layout] : Set the NetworkX layout type ('circular', 'kamada_kawai', 'random', 'spring', 'spectral') (default: 'spring')
 			- [dpi] : The number of Dots Per Inch (DPI) for the image (default: 200)
 			- [figSize] : The figure size as a tuple (width,height) (default: (30,20))
-			- [sizing_column] : The node sizing colomn to use (default: sizes all nodes to 1)
-			- [sizeScale] : The node size scale to apply ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume") (default: 'reverse_linear')
+			- [node_cmap] : The CMAP colour palette to use for nodes (default: 'brg')
+			- [colorScale] : The node colour scale to apply ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal") (default: 'linear')
+			- [node_color_column] : The Peak Table column to use for node colours (default: None sets to black)
+			- [sizeScale] : The node size scale to apply ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal") (default: 'reverse_linear')
 			- [size_range] : The node size scale range to apply. Tuple of length 2. Minimum size to maximum size (default: (150,2000))
+			- [sizing_column] : The node sizing column to use (default: sizes all nodes to 1)	
 			- [alpha] :  Node opacity value (default: 0.5)
 			- [nodeLabels] : Setting to 'True' will label the nodes (default: True)
 			- [fontSize] : The font size set for each node (default: 15)
@@ -113,15 +117,16 @@ For further detail on the usage refer to the docstring.
 			- [operator] : The comparison operator to use when filtering (default: '>')
 			- [sign] : The sign of the similarity score to filter on ('pos', 'neg' or 'both') (default: 'pos')
 		
-		- [run] : Generates and displays the NetworkX graph.
+		- [build] : Generates and displays the NetworkX graph.
 
 - [springNetwork](https://github.com/brettChapman/multivis/blob/master/multivis/springNetwork.py): Interactive spring-embedded network which inherits data from the NetworkX graph.
 	- [init_parameters](https://github.com/brettChapman/multivis/blob/master/multivis/springNetwork.py#L38-L42)
 		- [g] : NetworkX graph.
 	- [methods](https://github.com/brettChapman/multivis/blob/master/multivis/springNetwork.py#L44-L113)
 		- [set_params] : Set parameters
-			- [node_size_scale]: dictionary(Peak Table column name as index: dictionary('scale': ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume")
+			- [node_size_scale] : dictionary(Peak Table column name as index: dictionary('scale': ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal")
                 	                                                                            'range': a number array of length 2 - minimum size to maximum size)) (default: sizes all nodes to 10 with no dropdown menu)
+			- [node_color_scale] : dictionary(Peak Table column name as index: dictionary('scale': ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal")
 			- [html_file] : Name to save the HTML file as (default: 'springNetwork.html')
 			- [backgroundColor] : Set the background colour of the plot (default: 'white')
 			- [foregroundColor] : Set the foreground colour of the plot (default: 'black')
@@ -135,8 +140,8 @@ For further detail on the usage refer to the docstring.
 			- [pos_score_color] : Colour value for positive similarity scores. Can be HTML/CSS name, hex code, and (R,G,B) tuples (default: 'red')
 			- [neg_score_color] : Colour value for negative similarity scores. Can be HTML/CSS name, hex code, and (R,G,B) tuples (default: 'black')
 		
-		- [run] : Generates the JavaScript embedded HTML code and writes to a HTML file
-		- [launchDashboard] : Generates the JavaScript embedded HTML code in a dashboard format, writes to a HTML file and launches a new browser window
+		- [build] : Generates the JavaScript embedded HTML code and writes to a HTML file and opens it in a browser.
+		- [buildDashboard] : Generates the JavaScript embedded HTML code in a dashboard format, writes to a HTML file and opens it in a browser.
 
 - [clustermap](https://github.com/brettChapman//multivis/blob/master/multivis/clustermap.py): Hierarchical Clustered Heatmap.
 	- [init_parameters](https://github.com/brettChapman//multivis/blob/master/multivis/clustermap.py#L42-L50)
@@ -160,7 +165,7 @@ For further detail on the usage refer to the docstring.
 			- [row_color_threshold] : The colouring threshold for the row dendrogram (default: 10)
 			- [col_color_threshold] : The colouring threshold for the column dendrogram (default: 10)
 		
-		- [run] : : Generates and displays the Hierarchical Clustered Heatmap (HCH).
+		- [build] : : Generates and displays the Hierarchical Clustered Heatmap (HCH).
 
 - [polarDendrogram](https://github.com/brettChapman/multivis/blob/master/multivis/polarDendrogram.py): Polar dendrogram
 	- [init_parameters](https://github.com/brettChapman/multivis/blob/master/multivis/polarDendrogram.py#L36-L40)
@@ -177,8 +182,9 @@ For further detail on the usage refer to the docstring.
 			- [figSize] : The figure size as a tuple (width,height) (default: (10,10))
 			- [fontSize] : The font size for all text (default: 15)
 			- [PeakTable] : The Peak Table Pandas dataframe (default: empty dataframe)
-			- [Color_column] : The colour column to use from Peak Table (Can be colour or numerical values such as 'pvalue') (default: 'black')
-			- [Label_column] : The label column to use from Peak Table (default: use original Peak Table index from cartesian dendrogram)
+			- [textColorScale] : The scale to use for colouring the text ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal") (default: 'linear')
+			- [text_color_column] : The colour column to use from Peak Table (Can be colour or numerical values such as 'pvalue') (default: 'black')
+			- [label_column] : The label column to use from Peak Table (default: use original Peak Table index from cartesian dendrogram)
 			- [text_cmap] : The CMAP colour palette to use (default: 'brg')
 
 		- [getClusterPlots] : Generates plots of mean peak area over the 'Class' variable for each cluster from the polar dendrogram
@@ -190,7 +196,7 @@ For further detail on the usage refer to the docstring.
 			- [imageFileName] : The image file name to save to (default: 'clusterPlots.png')
 			- [dpi] : The number of Dots Per Inch (DPI) for the image (default: 200)
 		
-		- [run] : Generates and displays the Polar dendrogram.
+		- [build] : Generates and displays the Polar dendrogram.
 
 - [pca](https://github.com/brettChapman/multivis/blob/master/multivis/pca.py): Principle Component Analysis (PCA) plot
 	- [parameters](https://github.com/brettChapman/multivis/blob/master/multivis/pca.py#L7)
@@ -206,6 +212,7 @@ For further detail on the usage refer to the docstring.
 		- [markerSize] : The size of each marker (default: 100)
 		- [fontSize] : The font size set for each node (default: 12)
 		- [figSize] : The figure size as a tuple (width,height) (default: (20,10))
+		- [cmap] : The CMAP colour palette to use (default: 'Set1')
 
 - [pcoa](https://github.com/brettChapman/multivis/blob/master/multivis/pcoa.py): Principle Coordinates Analysis (PCoA) plot
 	- [parameters](https://github.com/brettChapman/multivis/blob/master/multivis/pcoa.py#L8)
@@ -221,7 +228,8 @@ For further detail on the usage refer to the docstring.
 		- [peak_label] : Labels to assign to each peak (default: None)
 		- [markerSize] : The size of each marker (default: 100)
 		- [fontSize] : The font size set for each node (default: 12)
-		- [figSize] : The figure size as a tuple (width,height) (default: (20,10))   
+		- [figSize] : The figure size as a tuple (width,height) (default: (20,10))
+		- [cmap] : The CMAP colour palette to use (default: 'Set1')
 
 #### multivis.utils
 
@@ -242,12 +250,22 @@ For further detail on the usage refer to the docstring.
 		- [DataTable] : Merged Pandas dataFrame
 		- [PeakTable] : Merged Pandas dataFrame
 
-- [range_scale](https://github.com/brettChapman/multivis/blob/master/multivis/utils/range_scale.py): Scales a range of values in a numpy array between a minimum and maximum value.
-	- [parameters](https://github.com/brettChapman/multivis/blob/master/multivis/utils/range_scale.py#L4)
+- [scaleData](https://github.com/brettChapman/multivis/blob/master/multivis/utils/scaleData.py): Scales data in forward or reverse order based on different scaling options.
+	- [parameters](https://github.com/brettChapman/multivis/blob/master/multivis/utils/scaleData.py#L4)
 		- [data] : A 1D numpy array of values
-		- [newMin] : The minimum value to scale the numpy array to
-		- [newMax] : The maximum value to scale the number array to
-	- [Returns](https://github.com/brettChapman/multivis/blob/master/multivis/utils/range_scale.py#L25)
+		- [scale] : The scaling option chosen to apply to the data
+		- [min] : The minimum value for scaling
+		- [max] : The maximum value for scaling
+	- [Returns](https://github.com/brettChapman/multivis/blob/master/multivis/utils/scaler.py#L25)
+		- [scaled_data] : A scaled numpy array
+
+- [scaler](https://github.com/brettChapman/multivis/blob/master/multivis/utils/scaler.py): Scales a series of values in a numpy array based on different scaling functions.
+	- [parameters](https://github.com/brettChapman/multivis/blob/master/multivis/utils/scaler.py#L4)
+		- [data] : A 1D numpy array of values
+		- [type] : The scaler type to apply based on sklearn preprocessing functions
+		- [newMin] : The minimum value for scaling
+		- [newMax] : The maximum value for scaling
+	- [Returns](https://github.com/brettChapman/multivis/blob/master/multivis/utils/scaler.py#L25)
 		- [scaled_data] : A scaled numpy array
 
 - [corrAnalysis](https://github.com/brettChapman/multivis/blob/master/multivis/utils/corrAnalysis.py): Correlation analysis with Pearson, Spearman or Kendall's Tau.
@@ -278,8 +296,8 @@ Multivis is licensed under the MIT license.
 - https://scholar.google.com.au/citations?user=A_wYNAQAAAAJ&hl=en
 
 ### Correspondence
-Dr. Brett Chapman, Post-doctoral Research Fellow at the Centre for Integrative Metabolomics & Computational Biology at Edith Cowan University.
-E-mail: brett.chapman@ecu.edu.au, brett.chapman78@gmail.com
+Dr. Brett Chapman, Post-doctoral Research Fellow at the Western Barley Genetics Alliance, Murdoch University.
+E-mail: brett.chapman@murdoch.edu.au, brett.chapman78@gmail.com
 
 ### Citation
 If you would cite multivis in a scientific publication, you can use the following: [currently pending publication submission

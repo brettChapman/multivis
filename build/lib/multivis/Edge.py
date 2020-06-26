@@ -18,14 +18,12 @@ class Edge:
         Methods
         -------
         set_params : Set parameters
-            filterScoreType: Value type to filter similarities on (default: 'pvalue')
+            filter_type: The value type to filter similarities on (default: 'pvalue')
             hard_threshold: Value to filter similarities on (default: 0.005)
             internalSimilarities: Include similarities within blocks if building multi-block network (default: False)
             sign: The sign of the similarity score to filter on ('pos', 'neg' or 'both') (default: 'both')
-            node_color_column: The Peak Table column to use for node colours (default: None sets to black)
-            node_cmap: The CMAP colour palette to use for nodes (default: 'brg')
 
-        run : Builds the nodes and edges.
+        build : Builds the nodes and edges.
         getNodes : Returns a Pandas dataframe of all nodes.
         getEdges : Returns a Pandas dataframe of all edges.
     """
@@ -41,22 +39,22 @@ class Edge:
 
         self.set_params()
 
-    def set_params(self, filterScoreType='pvalue', hard_threshold=0.005, internalSimilarities=False, sign='both', node_color_column=None, node_cmap='brg'):
+    def set_params(self, filter_type='pvalue', hard_threshold=0.005, internalSimilarities=False, sign='both'):
 
-        filterScoreType, hard_threshold, internalCorrelation, sign = self.__paramCheck(filterScoreType, hard_threshold, internalSimilarities, sign, node_color_column, node_cmap)
+        filter_type, hard_threshold, internalCorrelation, sign = self.__paramCheck(filter_type, hard_threshold, internalSimilarities, sign)
 
-        self.__filterScoreType = filterScoreType;
+        self.__filter_type = filter_type;
         self.__hard_threshold = hard_threshold;
         self.__internalSimilarities = internalSimilarities;
         self.__sign = sign;
 
-    def run(self):
+    def build(self):
 
         peaktable = self.__peaktable
         similarities = self.__similarities
         pvalues = self.__pvalues
 
-        filterScoreType = self.__filterScoreType
+        filter_type = self.__filter_type
         hard_threshold = self.__hard_threshold
         sign = self.__sign
 
@@ -75,16 +73,16 @@ class Edge:
             for block2 in blocks[idx:]:
 
                 if pvalues is None:
-                    filterScoreType = 'score';
+                    filter_type = 'score';
 
                 if self.__internalSimilarities:
 
                     nodes, scoreBlocks_blocked2, pvalBlocks_blocked2 = self.__scoreBlock2(nodes, peaktable, scoreBlocks_blocked1, pvalBlocks_blocked1, blocks, block2, block1_labels);
 
                     if edges.empty:
-                        edges = self.__buildEdges(nodes, scoreBlocks_blocked2, pvalBlocks_blocked2, block1, block2, filterScoreType, hard_threshold, sign)
+                        edges = self.__buildEdges(nodes, scoreBlocks_blocked2, pvalBlocks_blocked2, block1, block2, filter_type, hard_threshold, sign)
                     else:
-                        dat_edges = self.__buildEdges(nodes, scoreBlocks_blocked2, pvalBlocks_blocked2, block1, block2, filterScoreType, hard_threshold, sign)
+                        dat_edges = self.__buildEdges(nodes, scoreBlocks_blocked2, pvalBlocks_blocked2, block1, block2, filter_type, hard_threshold, sign)
                         edges = pd.concat([edges, dat_edges], sort=False).reset_index(drop=True)
                 else:
 
@@ -93,13 +91,13 @@ class Edge:
                         nodes, scoreBlocks_blocked2, pvalBlocks_blocked2 = self.__scoreBlock2(nodes, peaktable, scoreBlocks_blocked1, pvalBlocks_blocked1, blocks, block2, block1_labels);
 
                         if edges.empty:
-                            edges = self.__buildEdges(nodes, scoreBlocks_blocked2, pvalBlocks_blocked2, block1, block2, filterScoreType, hard_threshold, sign)
+                            edges = self.__buildEdges(nodes, scoreBlocks_blocked2, pvalBlocks_blocked2, block1, block2, filter_type, hard_threshold, sign)
                         else:
-                            dat_edges = self.__buildEdges(nodes, scoreBlocks_blocked2, pvalBlocks_blocked2, block1, block2, filterScoreType, hard_threshold, sign)
+                            dat_edges = self.__buildEdges(nodes, scoreBlocks_blocked2, pvalBlocks_blocked2, block1, block2, filter_type, hard_threshold, sign)
                             edges = pd.concat([edges, dat_edges], sort=False).reset_index(drop=True)
                     else:
                         if len(blocks) == 1:
-                            edges = self.__buildEdges(nodes, scoreBlocks_blocked1, pvalBlocks_blocked1, block1, block2, filterScoreType, hard_threshold, sign)
+                            edges = self.__buildEdges(nodes, scoreBlocks_blocked1, pvalBlocks_blocked1, block1, block2, filter_type, hard_threshold, sign)
 
         self.__setNodes(nodes)
         self.__setEdges(edges)
@@ -131,10 +129,10 @@ class Edge:
 
         return PeakTable
 
-    def __paramCheck(self, filterScoreType, hard_threshold, internalSimilarities, sign, node_color_column, node_cmap):
+    def __paramCheck(self, filter_type, hard_threshold, internalSimilarities, sign):
 
-        if filterScoreType.lower() not in ["pvalue", "score"]:
-            print("Error: Filter score type not valid. Choose either \"Pvalue\" or \"Score\".")
+        if filter_type.lower() not in ["pvalue", "score"]:
+            print("Error: Filter type not valid. Choose either \"Pvalue\" or \"Score\".")
             sys.exit()
 
         if not isinstance(hard_threshold, float):
@@ -150,65 +148,7 @@ class Edge:
             print("Error: Sign is not valid. Choose either \"pos\" or \"neg\" or \"both\".")
             sys.exit()
 
-        if not isinstance(node_cmap, str):
-            print("Error: Node CMAP is not valid. Choose a string value.")
-            sys.exit()
-        else:
-            cmap_list = matplotlib.cm.cmap_d.keys()
-
-            if node_cmap not in cmap_list:
-                print("Error: Node CMAP is not valid. Choose one of the following: {}.".format(', '.join(cmap_list)))
-                sys.exit()
-
-        nodeCmap = plt.cm.get_cmap(node_cmap)  # Sets the color palette for the nodes
-
-        if "Default_color" in self.__peaktable.columns:
-            self.__peaktable["color"] = self.__peaktable["Default_color"]
-            self.__peaktable = self.__peaktable.drop("Default_color", axis=1)
-
-        if node_color_column == None:
-
-            if "color" in self.__peaktable.columns:
-                self.__peaktable["Default_color"] = self.__peaktable["color"]
-
-            self.__peaktable["color"] = "#000000"
-
-        elif node_color_column in self.__peaktable.columns:
-
-            colorsHEX = []
-
-            for colorValue in self.__peaktable[node_color_column].values:
-                if matplotlib.colors.is_color_like(colorValue):
-                    self.__peaktable["color"] =  self.__peaktable[node_color_column]
-                    break;
-                elif isinstance(colorValue, float):
-
-                    colorsRGB = self.__get_colors(self.__peaktable[node_color_column].values, nodeCmap)[:, :3]
-
-                    for rgb in colorsRGB:
-                        colorsHEX.append(matplotlib.colors.rgb2hex(rgb))
-
-                    self.__peaktable["color"] = colorsHEX
-
-                    break;
-                elif isinstance(colorValue, int):
-
-                    colorsRGB = self.__get_colors(self.__peaktable[node_color_column].values, nodeCmap)[:, :3]
-
-                    for rgb in colorsRGB:
-                        colorsHEX.append(matplotlib.colors.rgb2hex(rgb))
-
-                    self.__peaktable["color"] = colorsHEX
-
-                    break;
-                else:
-                    print("Error: Node colour column is not valid. Choose a column containing colour values, floats or integer values.")
-                    sys.exit()
-        else:
-            print("Error: Node colour column is not valid. The chosen node colour column is not in the Peak Table.")
-            sys.exit()
-
-        return filterScoreType, hard_threshold, internalSimilarities, sign
+        return filter_type, hard_threshold, internalSimilarities, sign
 
     def __scoreBlock1(self, nodes, peaks, similarities, pvalues, blocks, block1):
 
@@ -312,7 +252,7 @@ class Edge:
 
         return nodes, scoreBlocks_blocked2, pvalBlocks_blocked2
 
-    def __buildEdges(self, nodes, SCORE, PVAL, block1, block2, filterScoreType, hard_threshold, sign):
+    def __buildEdges(self, nodes, SCORE, PVAL, block1, block2, filter_type, hard_threshold, sign):
 
         if 'Block' in nodes.columns:
             blocks = list(nodes['Block'].unique())
@@ -337,8 +277,8 @@ class Edge:
             block1_names = list(block1_nodes['Name'])
             block2_names = list(block2_nodes['Name'])
 
-            block1_nodeColors = list(block1_nodes["color"].values)
-            block2_nodeColors = list(block2_nodes["color"].values)
+            #block1_nodeColors = list(block1_nodes["color"].values)
+            #block2_nodeColors = list(block2_nodes["color"].values)
 
             e = []
 
@@ -358,37 +298,44 @@ class Edge:
                         start_index = block1_indexes[i_idx]
                         end_index = block2_indexes[j_idx]
 
-                        start_color = block1_nodeColors[i_idx]
-                        end_color = block2_nodeColors[j_idx]
+                        #start_color = block1_nodeColors[i_idx]
+                        #end_color = block2_nodeColors[j_idx]
 
                         if start_index != end_index:
                             if PVAL is None:
 
                                 if len(blocks) > 1:
-                                    b = [start_index, start_name, start_color, i, block1, end_index, end_name, end_color, j, block2, SCORE.values[i_idx, j_idx], np.sign(SCORE.values[i_idx, j_idx])];
+                                    #b = [start_index, start_name, start_color, i, block1, end_index, end_name, end_color, j, block2, SCORE.values[i_idx, j_idx], np.sign(SCORE.values[i_idx, j_idx])];
+                                    b = [start_index, start_name, i, block1, end_index, end_name, j, block2, SCORE.values[i_idx, j_idx], np.sign(SCORE.values[i_idx, j_idx])];
                                 else:
-                                    b = [start_index, start_name, start_color, i, end_index, end_name, end_color, j, SCORE.values[i_idx, j_idx], np.sign(SCORE.values[i_idx, j_idx])];
+                                    #b = [start_index, start_name, start_color, i, end_index, end_name, end_color, j, SCORE.values[i_idx, j_idx], np.sign(SCORE.values[i_idx, j_idx])];
+                                    b = [start_index, start_name, i, end_index, end_name, j, SCORE.values[i_idx, j_idx], np.sign(SCORE.values[i_idx, j_idx])];
                             else:
 
                                 if len(blocks) > 1:
-                                    b = [start_index, start_name, start_color, i, block1, end_index, end_name, end_color, j, block2, SCORE.values[i_idx, j_idx], np.sign(SCORE.values[i_idx, j_idx]), PVAL.values[i_idx, j_idx]];
+                                    #b = [start_index, start_name, start_color, i, block1, end_index, end_name, end_color, j, block2, SCORE.values[i_idx, j_idx], np.sign(SCORE.values[i_idx, j_idx]), PVAL.values[i_idx, j_idx]];
+                                    b = [start_index, start_name, i, block1, end_index, end_name, j, block2, SCORE.values[i_idx, j_idx], np.sign(SCORE.values[i_idx, j_idx]), PVAL.values[i_idx, j_idx]];
                                 else:
-                                    b = [start_index, start_name, start_color, i, end_index, end_name, end_color, j, SCORE.values[i_idx, j_idx], np.sign(SCORE.values[i_idx, j_idx]), PVAL.values[i_idx, j_idx]];
-
+                                    #b = [start_index, start_name, start_color, i, end_index, end_name, end_color, j, SCORE.values[i_idx, j_idx], np.sign(SCORE.values[i_idx, j_idx]), PVAL.values[i_idx, j_idx]];
+                                    b = [start_index, start_name, i, end_index, end_name, j, SCORE.values[i_idx, j_idx], np.sign(SCORE.values[i_idx, j_idx]), PVAL.values[i_idx, j_idx]];
                             e.append(b)
 
             if PVAL is None:
 
                 if len(blocks) > 1:
-                    score = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_color', 'start_label', 'start_block', 'end_index', 'end_name', 'end_color', 'end_label', 'end_block', 'score', 'sign'])
+                    #score = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_color', 'start_label', 'start_block', 'end_index', 'end_name', 'end_color', 'end_label', 'end_block', 'score', 'sign'])
+                    score = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_label', 'start_block', 'end_index', 'end_name', 'end_label', 'end_block', 'score', 'sign'])
                 else:
-                    score = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_color', 'start_label', 'end_index', 'end_name', 'end_color', 'end_label', 'score', 'sign'])
+                    #score = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_color', 'start_label', 'end_index', 'end_name', 'end_color', 'end_label', 'score', 'sign'])
+                    score = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_label', 'end_index', 'end_name', 'end_label', 'score', 'sign'])
             else:
 
                 if len(blocks) > 1:
-                    score = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_color', 'start_label', 'start_block', 'end_index', 'end_name', 'end_color', 'end_label', 'end_block', 'score', 'sign', 'pvalue'])
+                    #score = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_color', 'start_label', 'start_block', 'end_index', 'end_name', 'end_color', 'end_label', 'end_block', 'score', 'sign', 'pvalue'])
+                    score = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_label', 'start_block', 'end_index', 'end_name', 'end_label', 'end_block', 'score', 'sign', 'pvalue'])
                 else:
-                    score = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_color', 'start_label', 'end_index', 'end_name', 'end_color', 'end_label', 'score', 'sign', 'pvalue'])
+                    #score = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_color', 'start_label', 'end_index', 'end_name', 'end_color', 'end_label', 'score', 'sign', 'pvalue'])
+                    score = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_label', 'end_index', 'end_name', 'end_label', 'score', 'sign', 'pvalue'])
 
             return score
 
@@ -403,8 +350,8 @@ class Edge:
             block1_names = list(block1_nodes['Name'])
             block2_names = list(block2_nodes['Name'])
 
-            block1_nodeColors = list(block1_nodes["color"].values)
-            block2_nodeColors = list(block2_nodes["color"].values)
+            #block1_nodeColors = list(block1_nodes["color"].values)
+            #block2_nodeColors = list(block2_nodes["color"].values)
 
             e = []
 
@@ -422,40 +369,48 @@ class Edge:
                     start_index = block1_indexes[i_idx]
                     end_index = block2_indexes[j_idx]
 
-                    start_color = block1_nodeColors[i_idx]
-                    end_color = block2_nodeColors[j_idx]
+                    #start_color = block1_nodeColors[i_idx]
+                    #end_color = block2_nodeColors[j_idx]
 
                     if start_index != end_index:
                         if PVAL is None:
 
                             if len(blocks) > 1:
-                                b = [start_index, start_name, start_color, i, block1, end_index, end_name, end_color, j, block2, SCORE.values[i_idx, j_idx], np.sign(SCORE.values[i_idx, j_idx])];
+                                #b = [start_index, start_name, start_color, i, block1, end_index, end_name, end_color, j, block2, SCORE.values[i_idx, j_idx], np.sign(SCORE.values[i_idx, j_idx])];
+                                b = [start_index, start_name, i, block1, end_index, end_name, j, block2, SCORE.values[i_idx, j_idx], np.sign(SCORE.values[i_idx, j_idx])];
                             else:
-                                b = [start_index, start_name, start_color, i, end_index, end_name, end_color, j, SCORE.values[i_idx, j_idx], np.sign(SCORE.values[i_idx, j_idx])];
+                                #b = [start_index, start_name, start_color, i, end_index, end_name, end_color, j, SCORE.values[i_idx, j_idx], np.sign(SCORE.values[i_idx, j_idx])];
+                                b = [start_index, start_name, i, end_index, end_name, j, SCORE.values[i_idx, j_idx], np.sign(SCORE.values[i_idx, j_idx])];
 
                             e.append(b)
                         else:
                             if (PVAL.values[i_idx, j_idx] < hard_threshold):
 
                                 if len(blocks) > 1:
-                                    b = [start_index, start_name, start_color, i, block1, end_index, end_name, end_color, j, block2, SCORE.values[i_idx, j_idx], np.sign(SCORE.values[i_idx, j_idx]), PVAL.values[i_idx, j_idx]];
+                                    #b = [start_index, start_name, start_color, i, block1, end_index, end_name, end_color, j, block2, SCORE.values[i_idx, j_idx], np.sign(SCORE.values[i_idx, j_idx]), PVAL.values[i_idx, j_idx]];
+                                    b = [start_index, start_name, i, block1, end_index, end_name, j, block2, SCORE.values[i_idx, j_idx], np.sign(SCORE.values[i_idx, j_idx]), PVAL.values[i_idx, j_idx]]
                                 else:
-                                    b = [start_index, start_name, start_color, i, end_index, end_name, end_color, j, SCORE.values[i_idx, j_idx], np.sign(SCORE.values[i_idx, j_idx]), PVAL.values[i_idx, j_idx]];
+                                    #b = [start_index, start_name, start_color, i, end_index, end_name, end_color, j, SCORE.values[i_idx, j_idx], np.sign(SCORE.values[i_idx, j_idx]), PVAL.values[i_idx, j_idx]];
+                                    b = [start_index, start_name, i, end_index, end_name, j, SCORE.values[i_idx, j_idx], np.sign(SCORE.values[i_idx, j_idx]), PVAL.values[i_idx, j_idx]];
 
                                 e.append(b)
 
             if PVAL is None:
 
                 if len(blocks) > 1:
-                    pval = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_color', 'start_label', 'start_block', 'end_index', 'end_name', 'end_color', 'end_label', 'end_block', 'score', 'sign'])
+                    #pval = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_color', 'start_label', 'start_block', 'end_index', 'end_name', 'end_color', 'end_label', 'end_block', 'score', 'sign'])
+                    pval = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_label', 'start_block', 'end_index', 'end_name', 'end_label', 'end_block', 'score', 'sign'])
                 else:
-                    pval = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_color', 'start_label', 'end_index', 'end_name', 'end_color', 'end_label', 'score', 'sign'])
+                    #pval = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_color', 'start_label', 'end_index', 'end_name', 'end_color', 'end_label', 'score', 'sign'])
+                    pval = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_label', 'end_index', 'end_name', 'end_label', 'score', 'sign'])
             else:
 
                 if len(blocks) > 1:
-                    pval = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_color', 'start_label', 'start_block', 'end_index', 'end_name', 'end_color', 'end_label', 'end_block', 'score', 'sign', 'pvalue'])
+                    #pval = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_color', 'start_label', 'start_block', 'end_index', 'end_name', 'end_color', 'end_label', 'end_block', 'score', 'sign', 'pvalue'])
+                    pval = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_label', 'start_block', 'end_index', 'end_name', 'end_label', 'end_block', 'score', 'sign', 'pvalue'])
                 else:
-                    pval = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_color', 'start_label', 'end_index', 'end_name', 'end_color', 'end_label', 'score', 'sign', 'pvalue'])
+                    #pval = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_color', 'start_label', 'end_index', 'end_name', 'end_color', 'end_label', 'score', 'sign', 'pvalue'])
+                    pval = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_label', 'end_index', 'end_name', 'end_label', 'score', 'sign', 'pvalue'])
 
             return pval
 
@@ -463,10 +418,10 @@ class Edge:
 
         edges = pd.DataFrame()
 
-        if filterScoreType.lower() in options:
-            edges = options[filterScoreType.lower()];
+        if filter_type.lower() in options:
+            edges = options[filter_type.lower()];
         else:
-            print ("Error: wrong score type specified. Valid entries are 'Score' and 'Pvalue'.")
+            print ("Error: wrong score type specified. Valid entries are 'Score' or 'Pvalue'.")
 
         if sign.lower() == "pos":
             edges = edges[edges['sign'] > 0].reset_index(drop=True)
@@ -474,11 +429,6 @@ class Edge:
             edges = edges[edges['sign'] < 0].reset_index(drop=True)
 
         return edges
-
-    def __get_colors(self, x, cmap):
-        norm = matplotlib.colors.Normalize(vmin=x.min(), vmax=x.max())
-
-        return cmap(norm(x))
 
     def __setNodes(self, nodes):
 

@@ -21,4 +21,5 @@ multivis/utils/cluster.py
 multivis/utils/corrAnalysis.py
 multivis/utils/loadData.py
 multivis/utils/mergeBlocks.py
-multivis/utils/range_scale.py
+multivis/utils/scaleData.py
+multivis/utils/scaler.py
