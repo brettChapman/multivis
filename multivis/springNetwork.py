@@ -1360,6 +1360,12 @@ class springNetwork:
                         var scaleType = params.node_color_scale[nodeColorOption].scale                    
                     
                         if (scaleType == "ordinal") {
+                        
+                            if (!scheme_list.includes(colorOption)) {
+                                $$scope.selectedColorOption = scheme_list[0];
+                                colorOption = $$scope.selectedColorOption
+                            }
+                        
                             $$scope.color_options = scheme_list;
                         } else {
                             $$scope.color_options = color_options;
@@ -1385,6 +1391,12 @@ class springNetwork:
                     var scaleType = params.node_color_scale[nodeColorOption].scale
                     
                     if (scaleType == "ordinal") {
+                    
+                        if (!scheme_list.includes(colorOption)) {
+                            $$scope.selectedColorOption = scheme_list[0];
+                            colorOption = $$scope.selectedColorOption
+                        }                    
+                    
                         $$scope.color_options = scheme_list;
                     } else {
                         $$scope.color_options = color_options;
@@ -2243,9 +2255,15 @@ class springNetwork:
                     if (typeof nodeColorOption != 'undefined') {                        
                         var colorOption = $$scope.selectedColorOption             
                         var scaleType = params.node_color_scale[nodeColorOption].scale                    
-                    
+                                        
                         if (scaleType == "ordinal") {
-                            $$scope.color_options = scheme_list;
+                        
+                            if (!scheme_list.includes(colorOption)) {
+                                $$scope.selectedColorOption = scheme_list[0];
+                                colorOption = $$scope.selectedColorOption
+                            }
+                        
+                            $$scope.color_options = scheme_list;                          
                         } else {
                             $$scope.color_options = color_options;
                         }
@@ -2270,6 +2288,12 @@ class springNetwork:
                     var scaleType = params.node_color_scale[nodeColorOption].scale
                     
                     if (scaleType == "ordinal") {
+                    
+                        if (!scheme_list.includes(colorOption)) {
+                            $$scope.selectedColorOption = scheme_list[0];
+                            colorOption = $$scope.selectedColorOption
+                        }
+                    
                         $$scope.color_options = scheme_list;
                     } else {
                         $$scope.color_options = color_options;
