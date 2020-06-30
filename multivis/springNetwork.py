@@ -683,7 +683,7 @@ class springNetwork:
 			redrawCount = redrawCount+1;
 			
 			var scheme_list = ['Category10','Accent','Dark2','Paired','Pastel1','Pastel2','Set1','Set2','Set3', 'Tableau10']
-            var interpolate_list = ['BrBG', 'PRGn', 'PiYG', 'PuOr', 'RdBu', 'RdGy', 'RdYlBu', 'RdYlGn', 'Spectral', 'Blues', 'Greens', 'Greys', 'Oranges', 'Purples', 'Reds', 'Turbo', 'Viridis', 'Inferno', 'Magma', 'Plasma', 'Cividis', 'Warm', 'Cool', 'CubehelixDefault', 'BuGn', 'BuPu', 'GnBu', 'OrRd', 'PuBuGn', 'PuBu', 'PuRd', 'RdPu', 'YlGnBu', 'YlGn', 'YlOrBr', 'YlOrRd', 'Rainbow', 'Sinebow'];
+            var interpolate_list = ['BrBG', 'PRGn', 'PiYG', 'PuOr', 'RdBu', 'RdGy', 'RdYlBu', 'RdYlGn', 'Spectral', 'Blues', 'Greens', 'Greys', 'Oranges', 'Purples', 'Reds', 'Turbo', 'Viridis', 'Inferno', 'Magma', 'Plasma', 'Cividis', 'Warm', 'Cool', 'Cubehelix', 'BuGn', 'BuPu', 'GnBu', 'OrRd', 'PuBuGn', 'PuBu', 'PuRd', 'RdPu', 'YlGnBu', 'YlGn', 'YlOrBr', 'YlOrRd', 'Rainbow', 'Sinebow'];
             var color_options = scheme_list.concat(interpolate_list)
                         
             var colorDomain = [];
@@ -1053,6 +1053,11 @@ class springNetwork:
                                             .domain(d3.extent(colorDomain))
                                             .range(d3["scheme" + colorOption]);
                 } else if (interpolate_list.includes(colorOption)) {
+                    
+                    if (colorOption == 'Cubehelix') {
+                        colorOption = colorOption.concat('Default')
+                    }
+                    
                     var color_palette = d3.scaleSequential()
                                             .interpolator(d3["interpolate" + colorOption])
                                             .domain(colorDomain);
@@ -1601,7 +1606,7 @@ class springNetwork:
 			redrawCount = redrawCount+1;
 			
 			var scheme_list = ['Category10','Accent','Dark2','Paired','Pastel1','Pastel2','Set1','Set2','Set3', 'Tableau10']
-            var interpolate_list = ['BrBG', 'PRGn', 'PiYG', 'PuOr', 'RdBu', 'RdGy', 'RdYlBu', 'RdYlGn', 'Spectral', 'Blues', 'Greens', 'Greys', 'Oranges', 'Purples', 'Reds', 'Turbo', 'Viridis', 'Inferno', 'Magma', 'Plasma', 'Cividis', 'Warm', 'Cool', 'CubehelixDefault', 'BuGn', 'BuPu', 'GnBu', 'OrRd', 'PuBuGn', 'PuBu', 'PuRd', 'RdPu', 'YlGnBu', 'YlGn', 'YlOrBr', 'YlOrRd', 'Rainbow', 'Sinebow'];
+            var interpolate_list = ['BrBG', 'PRGn', 'PiYG', 'PuOr', 'RdBu', 'RdGy', 'RdYlBu', 'RdYlGn', 'Spectral', 'Blues', 'Greens', 'Greys', 'Oranges', 'Purples', 'Reds', 'Turbo', 'Viridis', 'Inferno', 'Magma', 'Plasma', 'Cividis', 'Warm', 'Cool', 'Cubehelix', 'BuGn', 'BuPu', 'GnBu', 'OrRd', 'PuBuGn', 'PuBu', 'PuRd', 'RdPu', 'YlGnBu', 'YlGn', 'YlOrBr', 'YlOrRd', 'Rainbow', 'Sinebow'];
             var color_options = scheme_list.concat(interpolate_list)
                         
             var colorDomain = [];
@@ -1966,6 +1971,11 @@ class springNetwork:
                                             .domain(d3.extent(colorDomain))
                                             .range(d3["scheme" + colorOption]);
                 } else if (interpolate_list.includes(colorOption)) {
+                
+                    if (colorOption == 'Cubehelix') {
+                        colorOption = colorOption.concat('Default')
+                    }
+                                    
                     var color_palette = d3.scaleSequential()
                                             .interpolator(d3["interpolate" + colorOption])
                                             .domain(colorDomain);
