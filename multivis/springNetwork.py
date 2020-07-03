@@ -1294,12 +1294,14 @@ class springNetwork:
             var sliderMax = '';
             var sliderValue = '';
             
+            var sliderScoreDecimalPlaces = 5;
+            
             if (params.link_type == "score") {
-                sliderInitValue =  Number(d3.min(graph.links, function(d) {return d.weight; }).toFixed(4))
-                sliderMin = Number(d3.min(graph.links, function(d) {return d.weight; }).toFixed(4))
-                sliderMax = Number(d3.max(graph.links, function(d) {return d.weight; }).toFixed(4))
+                sliderInitValue =  Number(d3.min(graph.links, function(d) {return d.weight; }).toFixed(sliderScoreDecimalPlaces))
+                sliderMin = Number(d3.min(graph.links, function(d) {return d.weight; }).toFixed(sliderScoreDecimalPlaces))
+                sliderMax = Number(d3.max(graph.links, function(d) {return d.weight; }).toFixed(sliderScoreDecimalPlaces))
                 sliderStep = 0.01;
-                sliderPrecision = 4;
+                sliderPrecision = sliderScoreDecimalPlaces;
             } else if (params.link_type == "pvalue") {
                 sliderInitValue = Number(d3.max(graph.links, function(d) {return d.weight; }).toFixed(Number(d3.min(graph.links, function(d) {return d.weight; }).countDecimals())))
                 sliderMin = Number(d3.min(graph.links, function(d) {return d.weight; }).toFixed(Number(d3.min(graph.links, function(d) {return d.weight; }).countDecimals())))
@@ -1445,49 +1447,55 @@ class springNetwork:
                         		.style('opacity', '1');
                 		d3.selectAll('.link').transition().duration(5000).style('stroke-opacity', '0.6');
             	}
+            	         	
+            	var slider_options = {
+        		        showSelectionBar: true,                    
+            			floor: sliderMin,
+                        ceil: sliderMax,                          		
+                        step: sliderStep,
+            			precision: sliderPrecision,                          	
+            			getSelectionBarColor: function() { return '#2AE02A'; },
+            			getPointerColor: function() { return '#D3D3D3'; },
+            			pointerSize: 1,
+            			onChange: function () {
+              
+                            var threshold = $$scope.slider.value
+                                
+                            graph.links.splice(0, graph.links.length);
+                            graphRec.links.forEach( function (d) { if (d.weight $operator threshold) { graph.links.push(d); }});
+                                
+                            //Update link dictionary
+                            linkedByIndex = {} 
+                            graphRec.links.forEach( function (d) {
+                                if (d.weight $operator threshold) {
+                                                                  
+                                    var source = JSON.stringify(d.source.id);
+                                    var target = JSON.stringify(d.target.id);
+                                                   
+                                    if (typeof source == 'undefined') {
+                                        source = JSON.stringify(d.source);
+                                    }
+                                                
+                                    if (typeof target == 'undefined') {
+                                        target = JSON.stringify(d.target);
+                                    }
+                                                                                        
+                                    linkedByIndex[source + ',' + target] = 1;
+                                    linkedByIndex[target + ',' + source] = 1;	  						         
+                                }
+                            });
+                                  
+                            update(); 
+            			}
+        		}
+            	
+            	if (params.link_type == "pvalue") {
+            	    slider_options['logScale'] = true;
+            	}
             	
             	$$scope.slider = {       
         				value: sliderInitValue,                        
-                        options: {
-        					showSelectionBar: true,                    
-            				floor: sliderMin,
-                         	ceil: sliderMax,                          		
-                          	step: sliderStep,
-            				precision: sliderPrecision,                          	
-            				getSelectionBarColor: function() { return '#2AE02A'; },
-            				getPointerColor: function() { return '#D3D3D3'; },
-            				pointerSize: 1,
-            				onChange: function () {
-              
-                                var threshold = $$scope.slider.value
-                                
-                                graph.links.splice(0, graph.links.length);
-                                graphRec.links.forEach( function (d) { if (d.weight $operator threshold) { graph.links.push(d); }});
-                                
-                                //Update link dictionary
-                                linkedByIndex = {} 
-                                graphRec.links.forEach( function (d) {
-                                    if (d.weight $operator threshold) {
-                                                                  
-                                        var source = JSON.stringify(d.source.id);
-                                        var target = JSON.stringify(d.target.id);
-                                                   
-                                        if (typeof source == 'undefined') {
-                                            source = JSON.stringify(d.source);
-                                        }
-                                                
-                                        if (typeof target == 'undefined') {
-                                        	target = JSON.stringify(d.target);
-                                        }
-                                                                                        
-                                        linkedByIndex[source + ',' + target] = 1;
-                                        linkedByIndex[target + ',' + source] = 1;	  						         
-                                    }
-                                });
-                                  
-                                update(); 
-            				}
-        				}
+                        options: slider_options
     			};
 			});
         
@@ -2191,12 +2199,14 @@ class springNetwork:
             var sliderMax = '';
             var sliderValue = '';
             
+            var sliderScoreDecimalPlaces = 5;
+            
             if (params.link_type == "score") {
-                sliderInitValue =  Number(d3.min(graph.links, function(d) {return d.weight; }).toFixed(4))
-                sliderMin = Number(d3.min(graph.links, function(d) {return d.weight; }).toFixed(4))
-                sliderMax = Number(d3.max(graph.links, function(d) {return d.weight; }).toFixed(4))
+                sliderInitValue =  Number(d3.min(graph.links, function(d) {return d.weight; }).toFixed(sliderScoreDecimalPlaces))
+                sliderMin = Number(d3.min(graph.links, function(d) {return d.weight; }).toFixed(sliderScoreDecimalPlaces))
+                sliderMax = Number(d3.max(graph.links, function(d) {return d.weight; }).toFixed(sliderScoreDecimalPlaces))
                 sliderStep = 0.01;
-                sliderPrecision = 4;
+                sliderPrecision = sliderScoreDecimalPlaces;
             } else if (params.link_type == "pvalue") {
                 sliderInitValue = Number(d3.max(graph.links, function(d) {return d.weight; }).toFixed(Number(d3.min(graph.links, function(d) {return d.weight; }).countDecimals())))
                 sliderMin = Number(d3.min(graph.links, function(d) {return d.weight; }).toFixed(Number(d3.min(graph.links, function(d) {return d.weight; }).countDecimals())))
@@ -2343,48 +2353,55 @@ class springNetwork:
                 		d3.selectAll('.link').transition().duration(5000).style('stroke-opacity', '0.6');
             	}
             	
+            	var slider_options = {
+        		        showSelectionBar: true,                    
+            			floor: sliderMin,
+                        ceil: sliderMax,                          		
+                        step: sliderStep,
+            			precision: sliderPrecision,                          	
+            			getSelectionBarColor: function() { return '#2AE02A'; },
+            			getPointerColor: function() { return '#D3D3D3'; },
+            			pointerSize: 1,
+            			onChange: function () {
+              
+                            var threshold = $$scope.slider.value
+                                
+                            graph.links.splice(0, graph.links.length);
+                            graphRec.links.forEach( function (d) { if (d.weight $operator threshold) { graph.links.push(d); }});
+                                
+                            //Update link dictionary
+                            linkedByIndex = {} 
+                            graphRec.links.forEach( function (d) {
+                                   
+                                if (d.weight $operator threshold) {
+                                                                  
+                                    var source = JSON.stringify(d.source.id);
+                                    var target = JSON.stringify(d.target.id);
+                                                   
+                                    if (typeof source == 'undefined') {
+                                        source = JSON.stringify(d.source);
+                                    }
+                                                
+                                    if (typeof target == 'undefined') {
+                                        target = JSON.stringify(d.target);
+                                    }
+                                                                                        
+                                    linkedByIndex[source + ',' + target] = 1;
+                                    linkedByIndex[target + ',' + source] = 1;	  						         
+                                }
+                            });
+                                  
+                            update(); 
+            			}
+        		}
+            	
+            	if (params.link_type == "pvalue") {
+            	    slider_options['logScale'] = true;
+            	}
+            	
             	$$scope.slider = {       
         				value: sliderInitValue,                        
-                        options: {
-        					showSelectionBar: true,                    
-            				floor: sliderMin,
-                         	ceil: sliderMax,                          		
-                          	step: sliderStep,
-            				precision: sliderPrecision,                          	
-            				getSelectionBarColor: function() { return '#2AE02A'; },
-            				getPointerColor: function() { return '#D3D3D3'; },
-            				pointerSize: 1,
-            				onChange: function () {
-              
-                                var threshold = $$scope.slider.value
-                                
-                                graph.links.splice(0, graph.links.length);
-                                graphRec.links.forEach( function (d) { if (d.weight $operator threshold) { graph.links.push(d); }});
-                                
-                                //Update link dictionary
-                                linkedByIndex = {} 
-                                graphRec.links.forEach( function (d) {
-                                    if (d.weight $operator threshold) {
-                                                                  
-                                        var source = JSON.stringify(d.source.id);
-                                        var target = JSON.stringify(d.target.id);
-                                                   
-                                        if (typeof source == 'undefined') {
-                                            source = JSON.stringify(d.source);
-                                        }
-                                                
-                                        if (typeof target == 'undefined') {
-                                        	target = JSON.stringify(d.target);
-                                        }
-                                                                                        
-                                        linkedByIndex[source + ',' + target] = 1;
-                                        linkedByIndex[target + ',' + source] = 1;	  						         
-                                    }
-                                });
-                                  
-                                update(); 
-            				}
-        				}
+                        options: slider_options
     			};
 			});
 

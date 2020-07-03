@@ -1122,9 +1122,7 @@ class edgeBundle:
                         , 'n_score': 0                
                         , 'pvalue': 1                
                         , 'tension': 0.85};
-        
-            
-            
+                        
             String.prototype.trimLeft = function(charlist) {
                 if (charlist === undefined)
                     charlist = "\s";
@@ -1237,14 +1235,16 @@ class edgeBundle:
                     });
                 };
                 
+                var sliderScoreDecimalPlaces = 5;
+                
                 $$scope.abs_slider = {       
-                        value: Number(d3.min(abs_scores).toFixed(4)),                        
+                        value: Number(d3.min(abs_scores).toFixed(sliderScoreDecimalPlaces)),                        
                         options: {
                                 showSelectionBar: true,                    
-                                floor: Number(d3.min(abs_scores).toFixed(4)),
-                                ceil: Number(d3.max(abs_scores).toFixed(4)),                          		
+                                floor: Number(d3.min(abs_scores).toFixed(sliderScoreDecimalPlaces)),
+                                ceil: Number(d3.max(abs_scores).toFixed(sliderScoreDecimalPlaces)),                          		
                                 step: 0.01,
-                                precision: 4,                                
+                                precision: sliderScoreDecimalPlaces,                                
                                 getSelectionBarColor: function() { return '#2AE02A'; },
                                 getPointerColor: function() { return '#D3D3D3'; },
                                 pointerSize: 1,
@@ -1283,13 +1283,13 @@ class edgeBundle:
                 if (p_scores.length != 0) {
                 
                     $$scope.pos_slider = {       
-                            value: Number(d3.min(p_scores).toFixed(4)),                        
+                            value: Number(d3.min(p_scores).toFixed(sliderScoreDecimalPlaces)),                        
                             options: {
                                     showSelectionBar: true,                    
-                                    floor: Number(d3.min(p_scores).toFixed(4)),
-                                    ceil: Number(d3.max(p_scores).toFixed(4)),                          		
+                                    floor: Number(d3.min(p_scores).toFixed(sliderScoreDecimalPlaces)),
+                                    ceil: Number(d3.max(p_scores).toFixed(sliderScoreDecimalPlaces)),                          		
                                     step: 0.01,
-                                    precision: 4,                                    
+                                    precision: sliderScoreDecimalPlaces,                                    
                                     getSelectionBarColor: function() { return '#2AE02A'; },
                                     getPointerColor: function() { return '#D3D3D3'; },
                                     pointerSize: 1,
@@ -1329,13 +1329,13 @@ class edgeBundle:
                 if (n_scores.length != 0) {               
                         
                     $$scope.neg_slider = {       
-                            value: Number(d3.max(n_scores).toFixed(4)),                        
+                            value: Number(d3.max(n_scores).toFixed(sliderScoreDecimalPlaces)),                        
                             options: {
                                     showSelectionBar: true,                    
-                                    floor: Number(d3.min(n_scores).toFixed(4)),
-                                    ceil: Number(d3.max(n_scores).toFixed(4)),                          		
+                                    floor: Number(d3.min(n_scores).toFixed(sliderScoreDecimalPlaces)),
+                                    ceil: Number(d3.max(n_scores).toFixed(sliderScoreDecimalPlaces)),                          		
                                     step: 0.01,
-                                    precision: 4,                                    
+                                    precision: sliderScoreDecimalPlaces,                                    
                                     getSelectionBarColor: function() { return '#2AE02A'; },
                                     getPointerColor: function() { return '#D3D3D3'; },
                                     pointerSize: 1,
@@ -1381,6 +1381,7 @@ class edgeBundle:
                                             floor: Number(d3.min(pvalues).toFixed(Number(d3.min(pvalues).countDecimals()))),
                                             ceil: Number(d3.max(pvalues).toFixed(Number(d3.min(pvalues).countDecimals()))),
                                             step: Number(d3.min(pvalues).toFixed(Number(d3.min(pvalues)).countDecimals())),
+                                            logScale: true,
                                             precision: Number(d3.min(pvalues).countDecimals()),                                            
                                             getSelectionBarColor: function() { return '#2AE02A'; },
                                             getPointerColor: function() { return '#D3D3D3'; },
@@ -2032,14 +2033,16 @@ class edgeBundle:
                     });
                 };
                 
+                var sliderScoreDecimalPlaces = 5;
+                
                 $$scope.abs_slider = {       
-                        value: Number(d3.min(abs_scores).toFixed(4)),                        
+                        value: Number(d3.min(abs_scores).toFixed(sliderScoreDecimalPlaces)),                        
                         options: {
                                 showSelectionBar: true,                    
-                                floor: Number(d3.min(abs_scores).toFixed(4)),
-                                ceil: Number(d3.max(abs_scores).toFixed(4)),                          		
+                                floor: Number(d3.min(abs_scores).toFixed(sliderScoreDecimalPlaces)),
+                                ceil: Number(d3.max(abs_scores).toFixed(sliderScoreDecimalPlaces)),                          		
                                 step: 0.01,
-                                precision: 4,                                
+                                precision: sliderScoreDecimalPlaces,                                
                                 getSelectionBarColor: function() { return '#2AE02A'; },
                                 getPointerColor: function() { return '#D3D3D3'; },
                                 pointerSize: 1,
@@ -2078,13 +2081,13 @@ class edgeBundle:
                 if (p_scores.length != 0) {
                 
                     $$scope.pos_slider = {       
-                            value: Number(d3.min(p_scores).toFixed(4)),                        
+                            value: Number(d3.min(p_scores).toFixed(sliderScoreDecimalPlaces)),                        
                             options: {
                                     showSelectionBar: true,                    
-                                    floor: Number(d3.min(p_scores).toFixed(4)),
-                                    ceil: Number(d3.max(p_scores).toFixed(4)),                          		
+                                    floor: Number(d3.min(p_scores).toFixed(sliderScoreDecimalPlaces)),
+                                    ceil: Number(d3.max(p_scores).toFixed(sliderScoreDecimalPlaces)),                          		
                                     step: 0.01,
-                                    precision: 4,                                    
+                                    precision: sliderScoreDecimalPlaces,                                    
                                     getSelectionBarColor: function() { return '#2AE02A'; },
                                     getPointerColor: function() { return '#D3D3D3'; },
                                     pointerSize: 1,
@@ -2124,13 +2127,13 @@ class edgeBundle:
                 if (n_scores.length != 0) {               
                         
                     $$scope.neg_slider = {       
-                            value: Number(d3.max(n_scores).toFixed(4)),                        
+                            value: Number(d3.max(n_scores).toFixed(sliderScoreDecimalPlaces)),                        
                             options: {
                                     showSelectionBar: true,                    
-                                    floor: Number(d3.min(n_scores).toFixed(4)),
-                                    ceil: Number(d3.max(n_scores).toFixed(4)),                          		
+                                    floor: Number(d3.min(n_scores).toFixed(sliderScoreDecimalPlaces)),
+                                    ceil: Number(d3.max(n_scores).toFixed(sliderScoreDecimalPlaces)),                          		
                                     step: 0.01,
-                                    precision: 4,                                    
+                                    precision: sliderScoreDecimalPlaces,                                    
                                     getSelectionBarColor: function() { return '#2AE02A'; },
                                     getPointerColor: function() { return '#D3D3D3'; },
                                     pointerSize: 1,
@@ -2176,6 +2179,7 @@ class edgeBundle:
                                             floor: Number(d3.min(pvalues).toFixed(Number(d3.min(pvalues).countDecimals()))),
                                             ceil: Number(d3.max(pvalues).toFixed(Number(d3.min(pvalues).countDecimals()))),
                                             step: Number(d3.min(pvalues).toFixed(Number(d3.min(pvalues)).countDecimals())),
+                                            logScale: true,
                                             precision: Number(d3.min(pvalues).countDecimals()),                                            
                                             getSelectionBarColor: function() { return '#2AE02A'; },
                                             getPointerColor: function() { return '#D3D3D3'; },
