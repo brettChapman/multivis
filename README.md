@@ -37,14 +37,14 @@ For further detail on the usage refer to the docstring.
 - [Edge](https://github.com/brettChapman/multivis/blob/master/multivis/Edge.py): Generates dataframe of nodes and edges.
 	- [init_parameters](https://github.com/brettChapman/multivis/blob/master/multivis/Edge.py#L34-L43)
 		- [peaktable] : Pandas dataframe containing peak data. Must contain 'Name' and 'Label'.
-		- [similarities] : Pandas dataframe matrix containing similarity scores.
-		- [pvalues] : Pandas dataframe matrix containing similarity pvalues.
+		- [datatable] : Pandas dataframe matrix containing scores.
+		- [pvalues] : Pandas dataframe matrix containing score/similarity pvalues (if available, otherwise set to None)
 	- [methods](https://github.com/brettChapman/multivis/blob/master/multivis/Edge.py#L45-L122)
 		- [set_params] : Set parameters
 			- [filter_type] : The value type to filter similarities on (default: 'pvalue')
 			- [hard_threshold] : Value to filter similarities on (default: 0.005)
-			- [internalSimilarities] : Include similarities within blocks if building multi-block network (default: False)
-			- [sign] : The sign of the similarity score to filter on ('pos', 'neg' or 'both') (default: 'both')
+			- [internalScores] : Include scores within blocks if building multi-block network (default: False)
+			- [sign] : The sign of the score/similarity to filter on ('pos', 'neg' or 'both') (default: 'both')
 					
 		- [build] : Builds the nodes and edges.
 		- [getNodes] : Returns a Pandas dataframe of all nodes.
@@ -53,15 +53,15 @@ For further detail on the usage refer to the docstring.
 - [Network](https://github.com/brettChapman/multivis/blob/master/multivis/Network.py): Inherits from Edge and generates dataframe of nodes, edges, and a NetworkX graph.
 	- [init_parameters](https://github.com/brettChapman/multivis/blob/master/multivis/Network.py#L33-L37)
 		- [peaktable] : Pandas dataframe containing peak data. Must contain 'Name' and 'Label'.
-		- [similarities] : Pandas dataframe matrix containing similarity scores.
-		- [pvalues] : Pandas dataframe matrix containing similarity pvalues.
+		- [datatable] : Pandas dataframe matrix containing scores.
+		- [pvalues] : Pandas dataframe matrix containing score/similarity pvalues.
 	- [methods](https://github.com/brettChapman/multivis/blob/master/multivis/Network.py#L39-L59)
 		- [set_params] : Set parameters
-			- [filter_type] : The value type to filter similarities on (default: 'pvalue')
-			- [hard_threshold] : Value to filter similarities on (default: 0.005)
+			- [filter_type] : The value type to filter the data on (default: 'pvalue')
+			- [hard_threshold] : Value to filter the data on (default: 0.005)
 			- [link_type] : The value type to represent links in the network (default: 'score')
-			- [internalSimilarities] : Include similarities within blocks if building multi-block network (default: False)
-			- [sign] : The sign of the similarity score to filter on ('pos', 'neg' or 'both') (default: 'both')
+			- [internalScores] : Include scores within blocks if building multi-block network (default: False)
+			- [sign] : The sign of the score/similarity to filter on ('pos', 'neg' or 'both') (default: 'both')
 					
 		- [build] : Builds nodes, edges and NetworkX graph.
 		- [getNetworkx] : Returns a NetworkX graph.
@@ -85,7 +85,7 @@ For further detail on the usage refer to the docstring.
 			- [node_color_column] : The Peak Table column to use for node colours (default: None sets to black)
 			- [node_cmap] : Set the CMAP colour palette to use for colouring the nodes (default: 'brg')
 			- [edgeColorScale] : The scale to use for colouring the edges, if edge_color_value is 'pvalue' ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal") (default: 'linear')
-			- [edge_color_value] : Set the values to colour the edges by. Either 'score or 'pvalue' (default: 'score')
+			- [edge_color_value] : Set the values to colour the edges by. Either 'sign', 'score' or 'pvalue' (default: 'score')
 			- [edge_cmap] : Set the CMAP colour palette to use for colouring the edges (default: 'brg')
 
 		- [build] : Generates the JavaScript embedded HTML code, writes to a HTML file and opens it in a browser.
@@ -115,7 +115,7 @@ For further detail on the usage refer to the docstring.
 			- [column] : Column from Peak Table to filter on (default: no filtering)
 			- [threshold] : Value to filter on (default: no filtering)
 			- [operator] : The comparison operator to use when filtering (default: '>')
-			- [sign] : The sign of the similarity score to filter on ('pos', 'neg' or 'both') (default: 'pos')
+			- [sign] : The sign of the score to filter on ('pos', 'neg' or 'both') (default: 'pos')
 		
 		- [build] : Generates and displays the NetworkX graph.
 
@@ -137,17 +137,17 @@ For further detail on the usage refer to the docstring.
 			- [node_data] : Peak Table column names to include in the mouse over information (default: 'Name' and 'Label')
 			- [link_type] : The link type used in building the network (default: 'score')
 			- [link_width] : The width of the links (default: 0.5)
-			- [pos_score_color] : Colour value for positive similarity scores. Can be HTML/CSS name, hex code, and (R,G,B) tuples (default: 'red')
-			- [neg_score_color] : Colour value for negative similarity scores. Can be HTML/CSS name, hex code, and (R,G,B) tuples (default: 'black')
+			- [pos_score_color] : Colour value for positive scores. Can be HTML/CSS name, hex code, and (R,G,B) tuples (default: 'red')
+			- [neg_score_color] : Colour value for negative scores. Can be HTML/CSS name, hex code, and (R,G,B) tuples (default: 'black')
 		
 		- [build] : Generates the JavaScript embedded HTML code and writes to a HTML file and opens it in a browser.
 		- [buildDashboard] : Generates the JavaScript embedded HTML code in a dashboard format, writes to a HTML file and opens it in a browser.
 
 - [clustermap](https://github.com/brettChapman//multivis/blob/master/multivis/clustermap.py): Hierarchical Clustered Heatmap.
 	- [init_parameters](https://github.com/brettChapman//multivis/blob/master/multivis/clustermap.py#L42-L50)
-		- [similarities] : Pandas dataframe containing similarity scores.
-        	- [row_linkage] : Precomputed linkage matrix for the rows from a linkage clustered similarities matrix
-        	- [col_linkage] : Precomputed linkage matrix for the columns from a linkage clustered similarities matrix
+		- [scores] : Pandas dataframe scores.
+        	- [row_linkage] : Precomputed linkage matrix for the rows from a linkage clustered distance/similarities matrix
+        	- [col_linkage] : Precomputed linkage matrix for the columns from a linkage clustered distance/similarities matrix
 	- [methods](https://github.com/brettChapman//multivis/blob/master/multivis/clustermap.py#L52-L350)
 		- [set_params] : Set parameters
 			- [xLabels] : A Pandas Series for labelling the X axis of the HCH
@@ -216,7 +216,7 @@ For further detail on the usage refer to the docstring.
 
 - [pcoa](https://github.com/brettChapman/multivis/blob/master/multivis/pcoa.py): Principle Coordinates Analysis (PCoA) plot
 	- [parameters](https://github.com/brettChapman/multivis/blob/master/multivis/pcoa.py#L8)
-		- [similarities] : array-like matrix, shape (n_samples, n_features)
+		- [scores] : array-like matrix, shape (n_samples, n_features)
 		- [imageFileName] : The image file name to save to (default: 'PCOA.png')
 		- [saveImage] : Setting to 'True' will save the image to file (default: True)
 		- [dpi] : The number of Dots Per Inch (DPI) for the image (default: 200)
@@ -278,15 +278,15 @@ For further detail on the usage refer to the docstring.
 
 - [cluster](https://github.com/brettChapman/multivis/blob/master/multivis/utils/cluster.py): Clusters data using a linkage cluster method. If the data is correlated the correlations are first preprocessed, then clustered, otherwise a distance metric is applied to non-correlated data before clustering.
 	- [parameters](https://github.com/brettChapman/multivis/blob/master/multivis/utils/cluster.py#L7)
-		- [matrix] : A Pandas dataframe matrix of values (may or may not be a matrix of correlation coefficients)
+		- [matrix] : A Pandas dataframe matrix of scores
 		- [transpose_non_correlated] : Setting to 'True' will transpose the matrix if it is not correlated data
 		- [is_correlated] : Setting to 'True' will treat the matrix as if it contains correlation coefficients
 		- [distance_metric] : Set the distance metric. Used if the matrix does not contain correlation coefficients.
 		- [linkage_method] : Set the linkage method for the clustering.
 	- [Returns](https://github.com/brettChapman/multivis/blob/master/multivis/utils/cluster.py#L47)
 		- [matrix] : The original matrix, transposed if transpose_non_correlated is 'True' and is_correlated is 'False'.
-		- [row_linkage] : linkage matrix for the rows from a linkage clustered similarities matrix
-		- [col_linkage] : linkage matrix for the columns from a linkage clustered similarities matrix
+		- [row_linkage] : linkage matrix for the rows from a linkage clustered distance/similarities matrix
+		- [col_linkage] : linkage matrix for the columns from a linkage clustered distance/similarities matrix
 
 ### License
 Multivis is licensed under the MIT license.
@@ -296,7 +296,7 @@ Multivis is licensed under the MIT license.
 - https://scholar.google.com.au/citations?user=A_wYNAQAAAAJ&hl=en
 
 ### Correspondence
-Dr. Brett Chapman, Post-doctoral Research Fellow at the Western Barley Genetics Alliance, Murdoch University.
+Dr. Brett Chapman, Post-doctoral Research Fellow at the Western Crop Genetics Alliance, Murdoch University.
 E-mail: brett.chapman@murdoch.edu.au, brett.chapman78@gmail.com
 
 ### Citation

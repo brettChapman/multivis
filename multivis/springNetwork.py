@@ -32,8 +32,8 @@ class springNetwork:
             node_data: Peak Table column names to include in the mouse over information (default: 'Name' and 'Label')
             link_type: The link type used in building the network (default: 'score')
             link_width: The width of the links (default: 0.5)
-            pos_score_color: Colour value for positive similarity scores. Can be HTML/CSS name, hex code, and (R,G,B) tuples (default: 'red')
-            neg_score_color: Colour value for negative similarity scores. Can be HTML/CSS name, hex code, and (R,G,B) tuples (default: 'black')
+            pos_score_color: Colour value for positive scores. Can be HTML/CSS name, hex code, and (R,G,B) tuples (default: 'red')
+            neg_score_color: Colour value for negative scores. Can be HTML/CSS name, hex code, and (R,G,B) tuples (default: 'black')
 
         build: : Generates the JavaScript embedded HTML code and writes to a HTML file and opens it in a browser.
         buildDashboard : Generates the JavaScript embedded HTML code in a dashboard format, writes to a HTML file and opens it in a browser.
@@ -771,8 +771,8 @@ class springNetwork:
                                     .range([1,10]);
                     
                     centrality_values.forEach( function (d) { scaledValues.push(initScale(parseFloat(d))); });
-                } else {                
-                    centrality_values.forEach( function (d) { scaledValues.push(d); });
+                } else {
+                    scaledValues = centrality_values.reduce(function(a,b){if(a.indexOf(b)<0)a.push(b);return a;},[]);
                 }
                                   
                 if (scaleType == "linear") {
@@ -887,9 +887,18 @@ class springNetwork:
                        
                 } else if (scaleType == "ordinal") {
                 
+                    var ordinal_range = [...Array(scaledValues.length).keys()];
+                    
+                    initScale = d3.scaleLinear()
+                                    .domain(d3.extent(ordinal_range))
+                                    .range(range);
+                    
+                    scaled_range = []
+                    ordinal_range.forEach( function (d) { scaled_range.push(initScale(d)); });
+                
                     ordinalScale = d3.scaleOrdinal()
                          .domain(scaledValues)
-                         .range(range);                  
+                         .range(scaled_range);
                                         
                     graph.nodes.forEach( function (d) { d.size = ordinalScale(d[centrality]); });
                 }
@@ -898,7 +907,7 @@ class springNetwork:
             function updateNodeColor(centrality, colorOption) {
                 var scaleType = params.node_color_scale[centrality].scale
                 var range = [0,1]
-                  
+                
                 var centrality_values = []
                 graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { centrality_values.push(parseFloat(0)); } else { centrality_values.push(d[centrality]); }});
                 
@@ -913,8 +922,8 @@ class springNetwork:
                                     .range([1,10]);
                     
                     centrality_values.forEach( function (d) { scaledValues.push(initScale(parseFloat(d))); });
-                } else {                
-                    centrality_values.forEach( function (d) { scaledValues.push(d); });
+                } else {
+                    scaledValues = centrality_values.reduce(function(a,b){if(a.indexOf(b)<0)a.push(b);return a;},[]);
                 }        
                 
                 colorDomain = []                
@@ -1040,14 +1049,23 @@ class springNetwork:
                        
                 } else if (scaleType == "ordinal") {
                 
+                    var ordinal_range = [...Array(scaledValues.length).keys()];
+                    
+                    initScale = d3.scaleLinear()
+                                    .domain(d3.extent(ordinal_range))
+                                    .range(range);
+                                                    
+                    scaled_range = []
+                    ordinal_range.forEach( function (d) { scaled_range.push(initScale(d)); });
+                    
                     ordinalScale = d3.scaleOrdinal()
                         .domain(scaledValues)
-                        .range(range);
+                        .range(scaled_range);
                                         
                     graph.nodes.forEach( function (d) { d.color = ordinalScale(d[centrality]); });
                     graph.nodes.forEach( function (d) { colorDomain.push(ordinalScale(d[centrality])); });
                 }
-                
+                        
                 if (scheme_list.includes(colorOption)) {
                     var color_palette = d3.scaleQuantize()
                                             .domain(d3.extent(colorDomain))
@@ -1710,7 +1728,7 @@ class springNetwork:
                     
                     centrality_values.forEach( function (d) { scaledValues.push(initScale(parseFloat(d))); });
                 } else {                
-                    centrality_values.forEach( function (d) { scaledValues.push(d); });
+                    scaledValues = centrality_values.reduce(function(a,b){if(a.indexOf(b)<0)a.push(b);return a;},[]);
                 }
                                   
                 if (scaleType == "linear") {
@@ -1825,9 +1843,18 @@ class springNetwork:
                        
                 } else if (scaleType == "ordinal") {
                 
+                    var ordinal_range = [...Array(scaledValues.length).keys()];
+                    
+                    initScale = d3.scaleLinear()
+                                    .domain(d3.extent(ordinal_range))
+                                    .range(range);
+                    
+                    scaled_range = []
+                    ordinal_range.forEach( function (d) { scaled_range.push(initScale(d)); });
+                
                     ordinalScale = d3.scaleOrdinal()
                          .domain(scaledValues)
-                         .range(range);                  
+                         .range(scaled_range);                
                                         
                     graph.nodes.forEach( function (d) { d.size = ordinalScale(d[centrality]); });
                 }
@@ -1852,7 +1879,7 @@ class springNetwork:
                     
                     centrality_values.forEach( function (d) { scaledValues.push(initScale(parseFloat(d))); });
                 } else {                
-                    centrality_values.forEach( function (d) { scaledValues.push(d); });
+                    scaledValues = centrality_values.reduce(function(a,b){if(a.indexOf(b)<0)a.push(b);return a;},[]);
                 }        
                 
                 colorDomain = []                
@@ -1978,9 +2005,18 @@ class springNetwork:
                        
                 } else if (scaleType == "ordinal") {
                 
+                    var ordinal_range = [...Array(scaledValues.length).keys()];
+                    
+                    initScale = d3.scaleLinear()
+                                    .domain(d3.extent(ordinal_range))
+                                    .range(range);
+                                                    
+                    scaled_range = []
+                    ordinal_range.forEach( function (d) { scaled_range.push(initScale(d)); });
+                    
                     ordinalScale = d3.scaleOrdinal()
                         .domain(scaledValues)
-                        .range(range);
+                        .range(scaled_range);
                                         
                     graph.nodes.forEach( function (d) { d.color = ordinalScale(d[centrality]); });
                     graph.nodes.forEach( function (d) { colorDomain.push(ordinalScale(d[centrality])); });

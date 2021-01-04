@@ -11,32 +11,32 @@ class Network(Edge):
         Initial_Parameters
         ----------
         peaktable : Pandas dataframe containing peak data. Must contain 'Name' and 'Label'.
-        similarities : Pandas dataframe matrix containing similarity scores
-        pvalues : Pandas dataframe matrix containing similarity pvalues
+        datatable : Pandas dataframe matrix containing scores
+        pvalues : Pandas dataframe matrix containing score/similarity pvalues (if available)
 
         Methods
         -------
         set_params : Set parameters -
-            filter_type: The value type to filter similarities on (default: 'pvalue')
-            hard_threshold: Value to filter similarities on (default: 0.005)
+            filter_type: The value type to filter the data on (default: 'pvalue')
+            hard_threshold: Value to filter the data on (default: 0.005)
             link_type: The value type to represent links in the network (default: 'score')
-            internalSimilarities: Include similarities within blocks if building multi-block network (default: False)
-            sign: The sign of the similarity score to filter on ('pos', 'neg' or 'both') (default: 'both')
+            internalScores: Include scores within blocks if building multi-block network (default: False)
+            sign: The sign of the score/similarity to filter on ('pos', 'neg' or 'both') (default: 'both')
 
         build : Builds nodes, edges and NetworkX graph.
         getNetworkx : Returns a NetworkX graph.
         getLinkType : Returns the link type parameter used in building the network.
     """
 
-    def __init__(self, peaktable, similarities, pvalues):
+    def __init__(self, peaktable, datatable, pvalues):
 
-        Edge.__init__(self, peaktable, similarities, pvalues)
+        Edge.__init__(self, peaktable, datatable, pvalues)
 
         self.set_params()
 
-    def set_params(self, filter_type='pvalue', hard_threshold=0.005, link_type='score', internalSimilarities=False, sign='both'):
+    def set_params(self, filter_type='pvalue', hard_threshold=0.005, link_type='score', internalScores=False, sign='both'):
 
-        Edge.set_params(self, filter_type, hard_threshold, internalSimilarities, sign)
+        Edge.set_params(self, filter_type, hard_threshold, internalScores, sign)
 
         link_type = self.__paramCheck(link_type)
 

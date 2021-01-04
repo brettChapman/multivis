@@ -37,7 +37,7 @@ class plotNetwork:
             column: Column from Peak Table to filter on (default: no filtering)
             threshold: Value to filter on (default: no filtering)
             operator: The comparison operator to use when filtering (default: '>')
-            sign: The sign of the similarity score to filter on ('pos', 'neg' or 'both') (default: 'pos')
+            sign: The sign of the score to filter on ('pos', 'neg' or 'both') (default: 'pos')
 
         build : Generates and displays the NetworkX graph.
     """
