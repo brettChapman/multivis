@@ -72,21 +72,20 @@ class Network(Edge):
         if 'Block' in nodes.columns:
             blocks = list(nodes['Block'].unique())
         else:
-            blocks = [1]
+            blocks = ['#no_multiple_blocks']
 
         g = nx.Graph()
 
         if "pvalue" in edges.columns:
 
-            if len(blocks) > 1:
-                #for source_index, _, _, source, source_block, target_index, _, _, target, target_block, score, _, pvalue in edges.values:
+            if blocks[0] != '#no_multiple_blocks':
+
                 for source_index, _, source, source_block, target_index, _, target, target_block, score, _, pvalue in edges.values:
                     if self.getLinkType().lower() == "pvalue":
                         g.add_edge(source_index, target_index, weight=pvalue)
                     elif self.getLinkType().lower() == "score":
                         g.add_edge(source_index, target_index, weight=score)
             else:
-                #for source_index, _, _, source, target_index, _, _, target, score, _, pvalue in edges.values:
                 for source_index, _, source, target_index, _, target, score, _, pvalue in edges.values:
                     if self.getLinkType().lower() == "pvalue":
                         g.add_edge(source_index, target_index, weight=pvalue)
@@ -94,12 +93,10 @@ class Network(Edge):
                         g.add_edge(source_index, target_index, weight=score)
         else:
 
-            if len(blocks) > 1:
-                #for source_index, _, _, source, source_block, target_index, _, _, target, target_block, score, _ in edges.values:
+            if blocks[0] != '#no_multiple_blocks':
                 for source_index, _, source, source_block, target_index, _, target, target_block, score, _ in edges.values:
                     g.add_edge(source_index, target_index, weight=score)
             else:
-                #for source_index, _, _, source, target_index, _, _, target, score, _ in edges.values:
                 for source_index, _, source, target_index, _, target, score, _ in edges.values:
                     g.add_edge(source_index, target_index, weight=score)
 

@@ -14,9 +14,9 @@ class clustermap:
 
         Initial_Parameters
         ----------
-        similarities : Pandas dataframe containing similarity scores.
-        row_linkage : Precomputed linkage matrix for the rows from a linkage clustered similarities matrix
-        col_linkage : Precomputed linkage matrix for the columns from a linkage clustered similarities matrix
+        scores : Pandas dataframe containing scores.
+        row_linkage : Precomputed linkage matrix for the rows from a linkage clustered distance/similarities matrix
+        col_linkage : Precomputed linkage matrix for the columns from a linkage clustered distance/similarities matrix
 
         Methods
         -------

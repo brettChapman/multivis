@@ -3,6 +3,7 @@ import sys
 from string import Template
 import numpy as np
 import pandas as pd
+import copy
 #import socket
 import webbrowser as wb
 import matplotlib
@@ -36,6 +37,10 @@ class edgeBundle:
             edgeColorScale: The scale to use for colouring the edges, if edge_color_value is 'pvalue' ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal") (default: 'linear')
             edge_color_value: Set the values to colour the edges by. Either 'sign', 'score or 'pvalue' (default: 'score')
             edge_cmap: Set the CMAP colour palette to use for colouring the edges (default: 'brg')
+            addArcs: Setting to 'True' adds arcs around the edge bundle for each block (default: False)
+            arcRadiusOffset: Sets the arc radius offset from the inner radius (default: 20)
+            extendArcAngle: Sets the angle value to add to each end of the arcs (default: 2)
+            arc_cmap: Set the CMAP colour palette to use for colouring the arcs (default: 'Set1')
 
         build : Generates the JavaScript embedded HTML code and writes to a HTML file and opens it in a browser.
         buildDashboard : Generates the JavaScript embedded HTML code in a dashboard format, writes to a HTML file and opens it in a browser.
@@ -43,14 +48,14 @@ class edgeBundle:
 
     def __init__(self, nodes, edges):
 
-        self.__nodes = self.__checkNodes(nodes);
-        self.__edges = self.__checkEdges(edges);
+        self.__nodes = self.__checkNodes(copy.deepcopy(nodes));
+        self.__edges = self.__checkEdges(copy.deepcopy(edges));
 
         self.set_params()
 
-    def set_params(self, html_file='hEdgeBundle.html', innerRadiusOffset=120, blockSeparation=1, linkFadeOpacity=0.05, mouseOver=True, fontSize=10, backgroundColor='white', foregroundColor='black', node_data=['Name', 'Label'], nodeColorScale='linear', node_color_column='none', node_cmap='brg', edgeColorScale='linear', edge_color_value='score', edge_cmap="brg"):
+    def set_params(self, html_file='hEdgeBundle.html', innerRadiusOffset=120, blockSeparation=1, linkFadeOpacity=0.05, mouseOver=True, fontSize=10, backgroundColor='white', foregroundColor='black', node_data=['Name', 'Label'], nodeColorScale='linear', node_color_column='none', node_cmap='brg', edgeColorScale='linear', edge_color_value='score', edge_cmap="brg", addArcs=False, arcRadiusOffset=20, extendArcAngle=2, arc_cmap="Set1"):
 
-        html_file, innerRadiusOffset, blockSeparation, linkFadeOpacity, mouseOver, fontSize, backgroundColor, foregroundColor, node_data, nodeColorScale, node_color_column, node_cmap, edgeColorScale, edge_color_value, edge_cmap = self.__paramCheck(html_file, innerRadiusOffset, blockSeparation, linkFadeOpacity, mouseOver, fontSize, backgroundColor, foregroundColor, node_data, nodeColorScale, node_color_column, node_cmap, edgeColorScale, edge_color_value, edge_cmap)
+        html_file, innerRadiusOffset, blockSeparation, linkFadeOpacity, mouseOver, fontSize, backgroundColor, foregroundColor, node_data, nodeColorScale, node_color_column, node_cmap, edgeColorScale, edge_color_value, edge_cmap, addArcs, arcRadiusOffset, extendArcWidth, arc_cmap = self.__paramCheck(html_file, innerRadiusOffset, blockSeparation, linkFadeOpacity, mouseOver, fontSize, backgroundColor, foregroundColor, node_data, nodeColorScale, node_color_column, node_cmap, edgeColorScale, edge_color_value, edge_cmap, addArcs, arcRadiusOffset, extendArcAngle, arc_cmap)
 
         self.__html_file = html_file;
         self.__innerRadiusOffset = innerRadiusOffset;
@@ -67,21 +72,34 @@ class edgeBundle:
         self.__edgeColorScale = edgeColorScale;
         self.__edge_color_value = edge_color_value;
         self.__edge_cmap = edge_cmap;
+        self.__addArcs = addArcs;
+        self.__arcRadiusOffset = arcRadiusOffset;
+        self.__extendArcAngle = extendArcAngle;
+        self.__arc_cmap = arc_cmap;
 
     def __process_params(self):
 
         nodes = self.__nodes
         edges = self.__edges
         mouseOver = self.__mouseOver
+        addArcs = self.__addArcs
         pvalue_matrix_flag = self.__pvalue_matrix_flag
 
         nodes, edges = self.__node_color(nodes, edges)
+
+        nodes, edges = self.__block_color(nodes, edges)
+
         edges = self.__edge_color(edges)
 
         if mouseOver:
             mouse = "true";
         else:
             mouse = "false";
+
+        if addArcs:
+            arcs = "true";
+        else:
+            arcs = "false";
 
         if pvalue_matrix_flag:
             pmFlag = "true"
@@ -96,22 +114,24 @@ class edgeBundle:
 
         bundleJson = self.__df_to_Json(nodes, edges);
 
-        return bundleJson, mouse, pmFlag, dispFilterType, adj_score_top, dash_adj_score_top
+        return bundleJson, mouse, arcs, pmFlag, dispFilterType, adj_score_top, dash_adj_score_top
 
     def build(self):
 
         backgroundColor = self.__backgroundColor
         foregroundColor = self.__foregroundColor
         innerRadiusOffset = self.__innerRadiusOffset
+        arcRadiusOffset = self.__arcRadiusOffset
+        extendArcAngle = self.__extendArcAngle
         blockSeparation = self.__blockSeparation
         linkFadeOpacity = self.__linkFadeOpacity
         fontSize = self.__fontSize
         html_file = self.__html_file
 
-        bundleJson, mouse, pmFlag, dispFilterType, adj_score_top, dash_adj_score_top = self.__process_params()
+        bundleJson, mouse, arcs, pmFlag, dispFilterType, adj_score_top, dash_adj_score_top = self.__process_params()
 
         css_text_template_bundle = Template(self.__getCSS());
-        js_text_template_bundle = Template(self.__getJS())
+        js_text_template_bundle = Template(self.__getJS());
         html_template_bundle = Template(self.__getHTML());
 
         js_text = js_text_template_bundle.substitute({'flareData': bundleJson
@@ -120,6 +140,9 @@ class edgeBundle:
                                                          , 'linkFadeOpacity': linkFadeOpacity
                                                          , 'fontSize': fontSize
                                                          , 'mouseOver': mouse
+                                                         , 'addArcs': arcs
+                                                         , 'arcRadiusOffset': arcRadiusOffset
+                                                         , 'extendArcAngle': extendArcAngle
                                                          , 'pmFlag': pmFlag
                                                          , 'backgroundColor': backgroundColor})
 
@@ -143,13 +166,15 @@ class edgeBundle:
         backgroundColor = self.__backgroundColor
         foregroundColor = self.__foregroundColor
         innerRadiusOffset = self.__innerRadiusOffset
+        arcRadiusOffset = self.__arcRadiusOffset
+        extendArcAngle = self.__extendArcAngle
         blockSeparation = self.__blockSeparation
         linkFadeOpacity = self.__linkFadeOpacity
         fontSize = self.__fontSize
         html_file = self.__html_file
         node_data = self.__node_data
 
-        bundleJson, mouse, pmFlag, dispFilterType, adj_score_top, dash_adj_score_top = self.__process_params()
+        bundleJson, mouse, arcs, pmFlag, dispFilterType, adj_score_top, dash_adj_score_top = self.__process_params()
 
         css_text_template_bundle = Template(self.__getCSSdashboard());
         js_text_template_bundle = Template(self.__getJSdashboard());
@@ -161,6 +186,9 @@ class edgeBundle:
                                                          , 'linkFadeOpacity': linkFadeOpacity
                                                          , 'fontSize': fontSize
                                                          , 'mouseOver': mouse
+                                                         , 'addArcs': arcs
+                                                         , 'arcRadiusOffset': arcRadiusOffset
+                                                         , 'extendArcAngle': extendArcAngle
                                                          , 'pmFlag': pmFlag
                                                          , 'node_data': {'data': node_data}
                                                          , 'backgroundColor': backgroundColor})
@@ -221,10 +249,11 @@ class edgeBundle:
 
         return edges
 
-    def __paramCheck(self, html_file, innerRadiusOffset, blockSeparation, linkFadeOpacity, mouseOver, fontSize, backgroundColor, foregroundColor, node_data, nodeColorScale, node_color_column, node_cmap, edgeColorScale, edge_color_value, edge_cmap):
+    def __paramCheck(self, html_file, innerRadiusOffset, blockSeparation, linkFadeOpacity, mouseOver, fontSize, backgroundColor, foregroundColor, node_data, nodeColorScale, node_color_column, node_cmap, edgeColorScale, edge_color_value, edge_cmap, addArcs, arcRadiusOffset, extendArcAngle, arc_cmap):
 
         nodes = self.__nodes
         col_list = list(nodes.columns) + ['none']
+        cmap_list = matplotlib.cm.cmap_d.keys()
 
         if not isinstance(html_file, str):
             print("Error: Html file is not valid. Choose a string value.")
@@ -301,15 +330,13 @@ class edgeBundle:
                         float(node_color_values[0])
                     except ValueError:
                         if not matplotlib.colors.is_color_like(node_color_values[0]):
-                            print("Error: Node colour column is not valid. While colorScale is not ordinal, choose a column containing colour values, floats or integer values.")
+                            print("Error: Node colour column is not valid. While colorScale is not ordinal, choose a column containing HTML/CSS name, hex code, (R,G,B) tuples, floats or integer values")
                             sys.exit()
 
         if not isinstance(node_cmap, str):
             print("Error: Node CMAP is not valid. Choose a string value.")
             sys.exit()
         else:
-            cmap_list = matplotlib.cm.cmap_d.keys()
-
             if node_cmap not in cmap_list:
                 print("Error: Node CMAP is not valid. Choose one of the following: {}.".format(', '.join(cmap_list)))
                 sys.exit()
@@ -326,13 +353,33 @@ class edgeBundle:
             print("Error: Edge CMAP is not valid. Choose a string value.")
             sys.exit()
         else:
-            cmap_list = matplotlib.cm.cmap_d.keys()
-
             if edge_cmap not in cmap_list:
                 print("Error: Edge CMAP is not valid. Choose one of the following: {}.".format(', '.join(cmap_list)))
                 sys.exit()
 
-        return html_file, innerRadiusOffset, blockSeparation, linkFadeOpacity, mouseOver, fontSize, backgroundColor, foregroundColor, node_data, nodeColorScale, node_color_column, node_cmap, edgeColorScale, edge_color_value, edge_cmap
+        if not type(addArcs) == bool:
+            print("Error: Add arcs is not valid. Choose either \"True\" or \"False\".")
+            sys.exit()
+
+        if not isinstance(arcRadiusOffset, float):
+            if not isinstance(arcRadiusOffset, int):
+                print("Error: Arc radius offset is not valid. Choose a float or integer value.")
+                sys.exit()
+
+        if not isinstance(extendArcAngle, float):
+            if not isinstance(extendArcAngle, int):
+                print("Error: Extend arc angle is not valid. Choose a float or integer value.")
+                sys.exit()
+
+        if not isinstance(arc_cmap, str):
+            print("Error: Arc CMAP is not valid. Choose a string value.")
+            sys.exit()
+        else:
+            if arc_cmap not in cmap_list:
+                print("Error: Arc CMAP is not valid. Choose one of the following: {}.".format(', '.join(cmap_list)))
+                sys.exit()
+
+        return html_file, innerRadiusOffset, blockSeparation, linkFadeOpacity, mouseOver, fontSize, backgroundColor, foregroundColor, node_data, nodeColorScale, node_color_column, node_cmap, edgeColorScale, edge_color_value, edge_cmap, addArcs, arcRadiusOffset, extendArcAngle, arc_cmap
 
     def __df_to_flareJson(self, nodes, edges):
         """Convert dataframes into nested JSON as in flare files used for D3.js"""
@@ -350,6 +397,9 @@ class edgeBundle:
 
         if "block" in nodeList:
             nodeList.remove('block')
+
+        if "block_color" in nodeList:
+            nodeList.remove('block_color')
 
         nodeData = nodes[nodeList]
         nodeDataList = list(nodeData.drop(columns=['Name']).columns)
@@ -384,7 +434,8 @@ class edgeBundle:
 
                 if 'start_block' in row_list:
                     parent_block = row['start_block']
-                    parent_dic = {"id": parent_index, "Name": parent_name, "Label": parent_label, "node_color": parent_color, "block": parent_block}
+                    parent_block_color = row['start_block_color']
+                    parent_dic = {"id": parent_index, "Name": parent_name, "Label": parent_label, "node_color": parent_color, "block": parent_block, "block_color": parent_block_color}
                 else:
                     parent_dic = {"id": parent_index, "Name": parent_name, "Label": parent_label, "node_color": parent_color}
 
@@ -393,11 +444,12 @@ class edgeBundle:
 
                 if 'end_block' in row_list:
                     child_block = row['end_block']
+                    child_block_color = row['end_block_color']
                     if 'pvalue' in row_list:
                         link_pvalue = row['pvalue']
-                        child_dic = {"id": child_index, "Name": child_name, "Label": child_label, "node_color": child_color, "link_score": link_score, "link_sign": link_sign, "link_pvalue": link_pvalue, "block": child_block, "link_color": link_color}
+                        child_dic = {"id": child_index, "Name": child_name, "Label": child_label, "node_color": child_color, "link_score": link_score, "link_sign": link_sign, "link_pvalue": link_pvalue, "block": child_block, "block_color": child_block_color, "link_color": link_color}
                     else:
-                        child_dic = {"id": child_index, "Name": child_name, "Label": child_label, "node_color": child_color, "link_score": link_score, "link_sign": link_sign, "block": child_block, "link_color": link_color}
+                        child_dic = {"id": child_index, "Name": child_name, "Label": child_label, "node_color": child_color, "link_score": link_score, "link_sign": link_sign, "block": child_block, "block_color": child_block_color, "link_color": link_color}
                 else:
                     if 'pvalue' in row_list:
                         link_pvalue = row['pvalue']
@@ -417,11 +469,12 @@ class edgeBundle:
 
                 if 'end_block' in row_list:
                     child_block = row['end_block']
+                    child_block_color = row['end_block_color']
                     if 'pvalue' in row_list:
                         link_pvalue = row['pvalue']
-                        child_dic = {"id": child_index, "Name": child_name, "Label": child_label, "node_color": child_color, "link_score": link_score, "link_sign": link_sign, "link_pvalue": link_pvalue, "block": child_block, "link_color": link_color}
+                        child_dic = {"id": child_index, "Name": child_name, "Label": child_label, "node_color": child_color, "link_score": link_score, "link_sign": link_sign, "link_pvalue": link_pvalue, "block": child_block, "block_color": child_block_color, "link_color": link_color}
                     else:
-                        child_dic = {"id": child_index, "Name": child_name, "Label": child_label, "node_color": child_color, "link_score": link_score, "link_sign": link_sign, "block": child_block, "link_color": link_color}
+                        child_dic = {"id": child_index, "Name": child_name, "Label": child_label, "node_color": child_color, "link_score": link_score, "link_sign": link_sign, "block": child_block, "block_color": child_block_color, "link_color": link_color}
                 else:
                     if 'pvalue' in row_list:
                         link_pvalue = row['pvalue']
@@ -456,6 +509,9 @@ class edgeBundle:
         if "block" in nodeList:
             nodeList.remove('block')
 
+        if "block_color" in nodeList:
+            nodeList.remove('block_color')
+
         nodeData = nodes[nodeList]
         nodeDataList = list(nodeData.drop(columns=['Name']).columns)
 
@@ -473,7 +529,7 @@ class edgeBundle:
                 for idx, val in enumerate(value):
 
                     if "start_block" in edges.columns:
-                        dParent = {"id": "", "Name": "", "Label": "", "node_color": "", "block": ""}
+                        dParent = {"id": "", "Name": "", "Label": "", "node_color": "", "block": "", "block_color": ""}
 
                         for col in nodeDataList:
                             dParent[col] = ""
@@ -482,10 +538,12 @@ class edgeBundle:
 
                         parent_index = str(value[idx]['id'])
                         parentBlock = str(value[idx]['block'])
+                        parentBlockColor = str(value[idx]['block_color'])
 
                         flareParentIndex = flareString + "#" + parentBlock + "#" + parent_index
 
                         dParent["block"] = parentBlock
+                        dParent["block_color"] = parentBlockColor
 
                     else:
                         parent_index = str(value[idx]['id'])
@@ -524,7 +582,7 @@ class edgeBundle:
                         link_color = str(child['link_color'])
 
                         if "start_block" in edges.columns:
-                            dChild = {"id": "", "Name": "", "Label": "", "node_color": "", "block": ""}
+                            dChild = {"id": "", "Name": "", "Label": "", "node_color": "", "block": "", "block_color": ""}
 
                             for col in nodeDataList:
                                 dChild[col] = ""
@@ -533,10 +591,12 @@ class edgeBundle:
 
                             child_index = str(child['id'])
                             childBlock = str(child['block'])
+                            childBlockColor = str(child['block_color'])
 
                             flareChildIndex = flareString + "#" + childBlock + "#" + child_index
 
                             dChild["block"] = childBlock
+                            dChild["block_color"] = childBlockColor
 
                         else:
                             child_index = str(child['id'])
@@ -610,7 +670,7 @@ class edgeBundle:
                     nodes["color"] = node_color_values
                 else:
                     if self.__nodeColorScale != "ordinal":
-                        print("Error: Node colour column is not valid. While colorScale is not ordinal, choose a column containing colour values, floats or integer values.")
+                        print("Error: Node colour column is not valid. While colorScale is not ordinal, choose a column containing HTML/CSS name, hex code, (R,G,B) tuples, floats or integer values.")
                         sys.exit()
                     else:
                         colorsRGB = self.__get_colors(self.__nodeColorScale, node_color_values, nodeCmap)[:, :3]
@@ -630,6 +690,37 @@ class edgeBundle:
 
         return nodes, edges
 
+    def __block_color(self, nodes, edges):
+
+        colorsHEX = []
+        arcCmap = plt.cm.get_cmap(self.__arc_cmap)
+
+        if self.__addArcs and ('Block' in nodes.columns):
+
+            if 'block_color' in nodes.columns:
+                block_color_values = nodes['block_color'].values
+
+                if not matplotlib.colors.is_color_like(block_color_values[0]):
+                    print("Error: Block colour column is not valid. Choose a column containing HTML/CSS name, hex code, or (R,G,B) tuples.")
+                    sys.exit()
+            else:
+                colorsRGB = self.__get_colors('ordinal', nodes['Block'].values, arcCmap)[:, :3]
+
+                for rgb in colorsRGB:
+                    colorsHEX.append(matplotlib.colors.rgb2hex(rgb))
+
+                nodes["block_color"] = colorsHEX
+
+            block_color = nodes['block_color'].reset_index().rename(columns={"index": "start_index"})
+
+            edges = pd.merge(edges, block_color, how='left', on='start_index').rename(columns={"block_color": "start_block_color"})
+
+            block_color = block_color.rename(columns={"start_index": "end_index"})
+
+            edges = pd.merge(edges, block_color, how='left', on='end_index').rename(columns={"block_color": "end_block_color"})
+
+        return nodes, edges
+
     def __edge_color(self, edges):
 
         colorsHEX = []
@@ -639,13 +730,13 @@ class edgeBundle:
 
         if "pvalue" in edges.columns:
             if "start_block" in edges.columns:
-                edges_color = edges[['start_index', 'start_name', 'start_color', 'start_label', 'start_block', 'end_index', 'end_name', 'end_color', 'end_label', 'end_block', 'score', 'sign', 'pvalue']]
+                edges_color = edges[['start_index', 'start_name', 'start_color', 'start_label', 'start_block', 'start_block_color', 'end_index', 'end_name', 'end_color', 'end_label', 'end_block', 'end_block_color', 'score', 'sign', 'pvalue']]
             else:
                 edges_color = edges[['start_index', 'start_name', 'start_color', 'start_label', 'end_index', 'end_name', 'end_color', 'end_label', 'score', 'sign', 'pvalue']]
         else:
 
             if "start_block" in edges.columns:
-                edges_color = edges[['start_index', 'start_name', 'start_color', 'start_label', 'start_block', 'end_index', 'end_name', 'end_color', 'end_label', 'end_block', 'score', 'sign']]
+                edges_color = edges[['start_index', 'start_name', 'start_color', 'start_label', 'start_block', 'start_block_color', 'end_index', 'end_name', 'end_color', 'end_label', 'end_block', 'end_block_color', 'score', 'sign']]
             else:
                 edges_color = edges[['start_index', 'start_name', 'start_color', 'start_label', 'end_index', 'end_name', 'end_color', 'end_label', 'score', 'sign']]
 
@@ -1111,13 +1202,13 @@ class edgeBundle:
             prevRedrawCount = redrawCount;
             
             redrawCount = redrawCount+1;
-	        
-	        var diameter = canvas.clientWidth;
+            
+            var diameter = canvas.clientWidth;
             canvas.style.height = diameter;
-                                            
+                                           
             var radius = diameter / 2;
-            var innerRadius = radius - $innerRadiusOffset;        
-        
+            var innerRadius = radius - $innerRadiusOffset;                      
+            
             var cluster = d3.cluster()
                         .separation(function(a, b) { return (a.parent == b.parent ? 1 : $blockSeparation ) })
                         .size([360, innerRadius]);
@@ -1137,15 +1228,22 @@ class edgeBundle:
             var linkLine = updateBundle(flareData);    //Initial generation of bundle to populate arrays
             
             if ("$pmFlag" == "true") {
-                var currValues = {'abs_score': 0               
-                        , 'p_score': 0                
-                        , 'n_score': 0                
-                        , 'pvalue': 1                
+                var currValues = {'max_abs_score': Number(d3.max(abs_scores))               
+                        , 'min_abs_score': 0
+                        , 'min_p_score': 0
+                        , 'max_p_score': Number(d3.max(p_scores)) 
+                        , 'min_n_score': Number(d3.min(n_scores)) 
+                        , 'max_n_score': 0 
+                        , 'min_pvalue': 0
+                        , 'max_pvalue': 1
                         , 'tension': 0.85};
             } else {
-                var currValues = {'abs_score': 0               
-                        , 'p_score': 0                
-                        , 'n_score': 0
+                var currValues = {'max_abs_score': Number(d3.max(abs_scores))               
+                        , 'min_abs_score': 0
+                        , 'min_p_score': 0
+                        , 'max_p_score': Number(d3.max(p_scores)) 
+                        , 'min_n_score': Number(d3.min(n_scores)) 
+                        , 'max_n_score': 0
                         , 'tension': 0.85};
             }
                     
@@ -1276,8 +1374,9 @@ class edgeBundle:
                 
                 var sliderScoreDecimalPlaces = 5;
                 
-                $$scope.abs_slider = {       
-                        value: Number(d3.min(abs_scores).toFixed(sliderScoreDecimalPlaces)),                        
+                $$scope.abs_slider = {
+                        minValue: Number(d3.min(abs_scores).toFixed(sliderScoreDecimalPlaces)),
+                        maxValue: Number(d3.max(abs_scores).toFixed(sliderScoreDecimalPlaces)),                     
                         options: {
                                 showSelectionBar: true,                    
                                 floor: Number(d3.min(abs_scores).toFixed(sliderScoreDecimalPlaces)),
@@ -1289,13 +1388,15 @@ class edgeBundle:
                                 pointerSize: 1,
                                 onChange: function () {
                 
-                                            var absScoreValue = $$scope.abs_slider.value
+                                            var absScoreMinValue = $$scope.abs_slider.minValue
+                                            var absScoreMaxValue = $$scope.abs_slider.maxValue
                                             
                                             var tension = currValues.tension;
-                                            currValues['abs_score'] = absScoreValue;
+                                            currValues['min_abs_score'] = absScoreMinValue;
+                                            currValues['max_abs_score'] = absScoreMaxValue;
                                             
                                             //Filter all links out and update links
-                                            var FlareData = filterData(99999999999, 'score_abs');
+                                            var FlareData = filterData(99999999999, 99999999999, 'score_abs');
                                                         
                                             var linkLine = updateBundle(FlareData);
           
@@ -1305,8 +1406,8 @@ class edgeBundle:
                                             line.curve(d3.curveBundle.beta(tension));
                                             link.attr('d', d => line(d.source.path(d.target)));
                                             
-                                            //Apply new filter and update links
-                                            var FlareData = filterData(absScoreValue, 'score_abs');
+                                            //Apply new filter and update links                                            
+                                            var FlareData = filterData(absScoreMinValue, absScoreMaxValue, 'score_abs');
                                                         
                                             var linkLine = updateBundle(FlareData);
           
@@ -1321,8 +1422,9 @@ class edgeBundle:
                 
                 if (p_scores.length != 0) {
                 
-                    $$scope.pos_slider = {       
-                            value: Number(d3.min(p_scores).toFixed(sliderScoreDecimalPlaces)),                        
+                    $$scope.pos_slider = {
+                            minValue: Number(d3.min(p_scores).toFixed(sliderScoreDecimalPlaces)),
+                            maxValue: Number(d3.max(p_scores).toFixed(sliderScoreDecimalPlaces)),                          
                             options: {
                                     showSelectionBar: true,                    
                                     floor: Number(d3.min(p_scores).toFixed(sliderScoreDecimalPlaces)),
@@ -1334,13 +1436,15 @@ class edgeBundle:
                                     pointerSize: 1,
                                     onChange: function () {
                 
-                                            var pScoreValue = $$scope.pos_slider.value
+                                            var pScoreMinValue = $$scope.pos_slider.minValue
+                                            var pScoreMaxValue = $$scope.pos_slider.maxValue
                                             
                                             var tension = currValues.tension;
-                                            currValues['p_score'] = pScoreValue;
+                                            currValues['min_p_score'] = pScoreMinValue;
+                                            currValues['max_p_score'] = pScoreMaxValue;
                                             
                                             //Filter all links out and update links
-                                            var FlareData = filterData(99999999999, 'score_pos');
+                                            var FlareData = filterData(99999999999, 99999999999, 'score_pos');
                                                                 
                                             var linkLine = updateBundle(FlareData);
           
@@ -1350,8 +1454,8 @@ class edgeBundle:
                                             line.curve(d3.curveBundle.beta(tension));
                                             link.attr('d', d => line(d.source.path(d.target)));
                                             
-                                            //Apply new filter and update links
-                                            var FlareData = filterData(pScoreValue, 'score_pos');
+                                            //Apply new filter and update links                                            
+                                            var FlareData = filterData(pScoreMinValue, pScoreMaxValue, 'score_pos');
                                                                 
                                             var linkLine = updateBundle(FlareData);
           
@@ -1367,8 +1471,9 @@ class edgeBundle:
                 
                 if (n_scores.length != 0) {               
                         
-                    $$scope.neg_slider = {       
-                            value: Number(d3.max(n_scores).toFixed(sliderScoreDecimalPlaces)),                        
+                    $$scope.neg_slider = {
+                            minValue: Number(d3.min(n_scores).toFixed(sliderScoreDecimalPlaces)),
+                            maxValue: Number(d3.max(n_scores).toFixed(sliderScoreDecimalPlaces)),               
                             options: {
                                     showSelectionBar: true,                    
                                     floor: Number(d3.min(n_scores).toFixed(sliderScoreDecimalPlaces)),
@@ -1380,13 +1485,15 @@ class edgeBundle:
                                     pointerSize: 1,
                                     onChange: function () {
                 
-                                            var nScoreValue = $$scope.neg_slider.value
+                                            var nScoreMinValue = $$scope.neg_slider.minValue
+                                            var nScoreMaxValue = $$scope.neg_slider.maxValue
                                             
                                             var tension = currValues.tension;
-                                            currValues['n_score'] = nScoreValue;
+                                            currValues['min_n_score'] = nScoreMinValue;
+                                            currValues['max_n_score'] = nScoreMaxValue;
                                             
                                             //Filter all links out and update links
-                                            var FlareData = filterData(-99999999999, 'score_neg');
+                                            var FlareData = filterData(-99999999999, -99999999999, 'score_neg');
                                                                 
                                             var linkLine = updateBundle(FlareData);
           
@@ -1397,8 +1504,8 @@ class edgeBundle:
                                             link.attr('d', d => line(d.source.path(d.target)));
                                             
                                             //Apply new filter and update links
-                                            var FlareData = filterData(nScoreValue, 'score_neg');
-                                                                
+                                            var FlareData = filterData(nScoreMinValue, nScoreMaxValue, 'score_neg');
+                                            
                                             var linkLine = updateBundle(FlareData);
           
                                             var line = linkLine.line;
@@ -1414,8 +1521,9 @@ class edgeBundle:
                 if ("$pmFlag" == "true") {
                     if (pvalues.length != 0) {
                                                     
-                        $$scope.pvalue_slider = {       
-                                        value: Number(d3.max(pvalues).toFixed(Number(d3.min(pvalues).countDecimals()))),                       
+                        $$scope.pvalue_slider = {
+                                        minValue: Number(d3.min(pvalues).toFixed(Number(d3.min(pvalues).countDecimals()))),
+                                        maxValue: Number(d3.max(pvalues).toFixed(Number(d3.min(pvalues).countDecimals()))),
                                         options: {
                                                 showSelectionBar: true,     
                                                 floor: Number(d3.min(pvalues).toFixed(Number(d3.min(pvalues).countDecimals()))),
@@ -1428,12 +1536,15 @@ class edgeBundle:
                                                 pointerSize: 1,
                                                 onChange: function () {
                                           
-                                                            var pvalueValue = $$scope.pvalue_slider.value;
+                                                            var pvalueMinValue = $$scope.pvalue_slider.minValue;
+                                                            var pvalueMaxValue = $$scope.pvalue_slider.maxValue;
+                                                            
                                                             var tension = currValues.tension;
-                                                            currValues['pvalue'] = pvalueValue;
+                                                            currValues['min_pvalue'] = pvalueMinValue;
+                                                            currValues['max_pvalue'] = pvalueMaxValue;                                                            
                                            
                                                             //Filter all links out and update links
-                                                            var FlareData = filterData(Number(d3.min(pvalues))/10, 'pvalue');
+                                                            var FlareData = filterData(Number(d3.min(pvalues))/10, Number(d3.min(pvalues))/10, 'pvalue');
                                                         
                                                             var linkLine = updateBundle(FlareData);
                                                         
@@ -1444,7 +1555,7 @@ class edgeBundle:
                                                             link.attr("d", d => line(d.source.path(d.target)));
                                                             
                                                             //Apply new filter and update links
-                                                            var FlareData = filterData(pvalueValue, 'pvalue');
+                                                            var FlareData = filterData(pvalueMinValue, pvalueMaxValue, 'pvalue');
                                                         
                                                             var linkLine = updateBundle(FlareData);
                                                         
@@ -1498,20 +1609,24 @@ class edgeBundle:
                                                         }
                                                                     
                                                         if (score_form_val == "PosScoreRadio") {
-                                                            var p_scoreValue = currValues.p_score;
-                                                            var FlareData = filterData(p_scoreValue, 'score_pos');
+                                                            var min_p_scoreValue = currValues.min_p_score;
+                                                            var max_p_scoreValue = currValues.max_p_score;
+                                                            var FlareData = filterData(min_p_scoreValue, max_p_scoreValue, 'score_pos');
                                                         } else if (score_form_val == "NegScoreRadio") {
-                                                            var n_scoreValue = currValues.n_score;
-                                                            var FlareData = filterData(n_scoreValue, 'score_neg');
+                                                            var min_n_scoreValue = currValues.min_n_score;
+                                                            var max_n_scoreValue = currValues.max_n_score;
+                                                            var FlareData = filterData(min_n_scoreValue, max_n_scoreValue, 'score_neg');
                                                         } else if (score_form_val == "AbsScoreRadio") {
-                                                            var abs_scoreValue = currValues.abs_score;
-                                                            var FlareData = filterData(abs_scoreValue, 'score_abs');
+                                                            var min_abs_scoreValue = currValues.min_abs_score;
+                                                            var max_abs_scoreValue = currValues.max_abs_score;
+                                                            var FlareData = filterData(min_abs_scoreValue, max_abs_scoreValue, 'score_abs');
                                                         }
                                                     } else {
                                                         if ("$pmFlag" == "true") {
                                                             if (form_val == "pvalueRadio") {
-                                                                var pvalueValue = currValues.pvalue;
-                                                                var FlareData = filterData(pvalueValue, 'pvalue');
+                                                                var pvalueMinValue = currValues.min_pvalue;
+                                                                var pvalueMaxValue = currValues.max_pvalue;
+                                                                var FlareData = filterData(pvalueMinValue, pvalueMaxValue, 'pvalue');
                                                             }
                                                         }
                                                     }
@@ -1572,27 +1687,27 @@ class edgeBundle:
                     
                     if (form_val_score == "PosScoreRadio") {
                         //Filter out all links prior to updating with the score threshold
-                        var FlareData = filterData(99999999999, 'score_pos');    
+                        var FlareData = filterData(99999999999, 99999999999, 'score_pos');    
                         var linkLine = updateBundle(FlareData);
                         
                         //Filter with the new score threshold
-                        var FlareData = filterData(currValues.p_score, 'score_pos');        
+                        var FlareData = filterData(currValues.min_p_score, currValues.max_p_score, 'score_pos');        
                         var linkLine = updateBundle(FlareData);
                     } else if (form_val_score == "NegScoreRadio") {   
                         //Filter out all links prior to updating with the score threshold
-                        var FlareData = filterData(-99999999999, 'score_neg');    
+                        var FlareData = filterData(-99999999999, -99999999999, 'score_neg');    
                         var linkLine = updateBundle(FlareData);
                                         
                         //Filter with the new score threshold
-                        var FlareData = filterData(currValues.n_score, 'score_neg');  
+                        var FlareData = filterData(currValues.min_n_score, currValues.max_n_score, 'score_neg');  
                         var linkLine = updateBundle(FlareData);       
                     } else if (form_val_score == "AbsScoreRadio") {
                         //Filter out all links prior to updating with the score threshold
-                        var FlareData = filterData(99999999999, 'score_abs');    
+                        var FlareData = filterData(99999999999, 99999999999, 'score_abs');    
                         var linkLine = updateBundle(FlareData);
                                         
                         //Filter with the new score threshold
-                        var FlareData = filterData(currValues.abs_score, 'score_abs');
+                        var FlareData = filterData(currValues.min_abs_score, currValues.max_abs_score, 'score_abs');
                         var linkLine = updateBundle(FlareData);
                     }
                 } else {
@@ -1601,11 +1716,11 @@ class edgeBundle:
                             d3.select('#scoreSelect').style("display", 'none');
                             
                             //Filter out all links prior to updating with the pvalue threshold
-                            var FlareData = filterData(-99999999999, 'pvalue');    
+                            var FlareData = filterData(-99999999999, -99999999999, 'pvalue');    
                             var linkLine = updateBundle(FlareData);
                             
                             //Filter with the new pvalue threshold                    
-                            var FlareData = filterData(currValues.pvalue, 'pvalue');
+                            var FlareData = filterData(currValues.min_pvalue, currValues.max_pvalue, 'pvalue');
                             var linkLine = updateBundle(FlareData);
                         }
                     } else {
@@ -1635,24 +1750,24 @@ class edgeBundle:
                 
                 if (form_val == "PosScoreRadio") {
                     //Filter out all links prior to updating with the score threshold
-                    var FlareData = filterData(99999999999, 'score_pos');
+                    var FlareData = filterData(99999999999, 99999999999, 'score_pos');
                     var linkLine = updateBundle(FlareData);
                     
-                    var FlareData = filterData(currValues.p_score, 'score_pos');        
+                    var FlareData = filterData(currValues.min_p_score, currValues.max_p_score, 'score_pos');        
                     var linkLine = updateBundle(FlareData);
                 } else if (form_val == "NegScoreRadio") {                    
                     //Filter out all links prior to updating with the score threshold
-                    var FlareData = filterData(-99999999999, 'score_neg');    
+                    var FlareData = filterData(-99999999999, -99999999999, 'score_neg');
                     var linkLine = updateBundle(FlareData);              
                     
-                    var FlareData = filterData(currValues.n_score, 'score_neg');  
+                    var FlareData = filterData(currValues.min_n_score, currValues.max_n_score, 'score_neg');  
                     var linkLine = updateBundle(FlareData);        
                 } else if (form_val == "AbsScoreRadio") {
                     //Filter out all links prior to updating with the score threshold
-                    var FlareData = filterData(99999999999, 'score_abs');
+                    var FlareData = filterData(99999999999, 99999999999, 'score_abs');
                     var linkLine = updateBundle(FlareData);
                     
-                    var FlareData = filterData(currValues.abs_score, 'score_abs');
+                    var FlareData = filterData(currValues.min_abs_score, currValues.max_abs_score, 'score_abs');
                     var linkLine = updateBundle(FlareData);
                 }
                 
@@ -1674,7 +1789,7 @@ class edgeBundle:
             selectDim.on("change", changeScore);
             
             function updateBundle(data) {
-                
+                                
                 pvalues = []
                 p_scores = []
                 n_scores = []
@@ -1690,15 +1805,16 @@ class edgeBundle:
                 cluster(root)
                 
                 var nodes = root.descendants();
-                  
+            
                 node = node.data(nodes.filter(function(n) { return !n.children; }));
-                
+          
                 node.exit().remove();
-                
-                var fontBase = 1000;
-                var fontSize = $fontSize;
-                
+                                
                 function getFont() {
+                
+                    var fontBase = 1000;
+                    var fontSize = $fontSize;
+                
                     var ratio = fontSize / fontBase;
                     var width = canvas.clientWidth;                    
                     var size = width * ratio;
@@ -1706,12 +1822,104 @@ class edgeBundle:
                     return (size|0) + 'px';  
                 }
                 
+                function getArcRadiusOffset() {
+                    
+                    var arcBase = 1157;                    
+                    
+                    var arcRatio = $arcRadiusOffset / arcBase;
+                    var arcWidth = canvas.clientWidth;                    
+                    var arcRadOffset = arcWidth * arcRatio;                        
+                                                            
+                    return (arcRadOffset|0);
+                }
+                
+                //Test to see if there are multiple blocks in the data. If none then set addArcs to false
+                var blocks = []
+                nodes.forEach(function(n) { if (n.data.Block !== undefined) { blocks.push(n.data.Block) }});                
+                
+                if ("$addArcs" == "true") {
+                    var addArcs = true;
+                    
+                    if (blocks.length == 0) {
+                        addArcs = false;
+                    }
+                } else {
+                    var addArcs = false;
+                }
+                
+                if (addArcs == true) {
+                
+                    var groupDict = {}
+                    
+                    var adjArcRadiusOffset = getArcRadiusOffset();
+                    
+                    var arcTextPositionOffset = 0.75 * adjArcRadiusOffset;
+                    
+                    var arcRadius = innerRadius + adjArcRadiusOffset;   
+                    
+                    var arcGap = adjArcRadiusOffset + 5;                 
+                    
+                    nodes.forEach(function(n) {
+                        if (n.data.Block !== undefined) {
+                            if (groupDict[n.data.Block] === undefined) {
+                                groupDict[n.data.Block] = []
+                                groupDict[n.data.Block].push(n)
+                            } else {
+                                groupDict[n.data.Block].push(n)
+                            }
+                        }
+                    })
+                    
+                    var groups = []
+                    for (var [key, value] of Object.entries(groupDict)) {
+                        groups.push(value[0])
+                    }
+                    
+                    edgeBundle.selectAll("g.group").remove();
+                    var groupData = edgeBundle.selectAll("g.group")
+                        .data(groups)
+                        .enter().append("group")
+    	                .attr("class", "group");
+                                       
+                    var groupArc = d3.arc()
+                        .innerRadius(innerRadius)
+                        .outerRadius(arcRadius)
+                        .startAngle(function(d) { return (findStartAngle(d.__data__.parent.children)-$extendArcAngle) * Math.PI / 180;})
+                        .endAngle(function(d) { return (findEndAngle(d.__data__.parent.children)+$extendArcAngle) * Math.PI / 180});
+                    
+                    edgeBundle.selectAll("g.arc").remove();
+                    edgeBundle.selectAll("g.arc")
+                        .data(groupData._groups[0])
+                        .enter()
+                        .append("svg:path")
+                        .attr("d", groupArc)
+                        .attr("class", "groupArc")
+                        .attr("fill", function(d) { return d.__data__.data.block_color; })
+                        .style("fill-opacity", 1.0)
+                        .attr("id", function(d,i) { return "arc_"+i; });
+                    
+                    edgeBundle.selectAll(".arcText").remove();
+                    edgeBundle.selectAll(".arcText")
+                        .data(groupData._groups[0])
+                        .enter()
+                        .append("text")
+                        .attr("class", "arcText")
+                        .attr("x", 5) //Move text from the start angle of the arc
+                        .attr("dy", arcTextPositionOffset) //Move the text down
+                        .append("textPath")
+                        .attr("xlink:href",function(d,i){return "#arc_"+i;})
+                        .style("font-size", getFont())
+                        .text(function(d){return d.__data__.data.Block;});
+                } else {
+                    var arcGap = 5;
+                }
+                
                 if ("$mouseOver" == "true") {
                 
                     var newNode = node.enter().append("text")
                                         .attr("class", "node")
                                         .attr("dy", ".31em")
-                                        .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + (d.y + 8) + ",0)" + (d.x < 180 ? "" : "rotate(180)"); })
+                                        .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + (d.y + arcGap) + ",0)" + (d.x < 180 ? "" : "rotate(180)"); })
                                         .style("text-anchor", function(d) { return d.x < 180 ? "start" : "end"; })
                                         .text(function(d) { return d.data.Label; })
                                         .style("font-size", getFont())
@@ -1723,7 +1931,7 @@ class edgeBundle:
                     var newNode = node.enter().append("text")
                                         .attr("class", "node")
                                         .attr("dy", ".31em")
-                                        .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + (d.y + 8) + ",0)" + (d.x < 180 ? "" : "rotate(180)"); })
+                                        .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + (d.y + arcGap) + ",0)" + (d.x < 180 ? "" : "rotate(180)"); })
                                         .style("text-anchor", function(d) { return d.x < 180 ? "start" : "end"; })
                                         .text(function(d) { return d.data.Label; })
                                         .style("font-size", getFont())
@@ -1778,6 +1986,26 @@ class edgeBundle:
                 link = link.merge(newLink);
                 
                 var linkLine = {"line": line, "link": link}            
+                
+                function findStartAngle(children) {
+                    var min = children[0].x;
+                    children.forEach(function(d) {
+                        if (d.x < min) {
+                            min = d.x;
+                        }
+                    });
+                    return min;
+                }
+                
+                function findEndAngle(children) {
+                    var max = children[0].x;
+                    children.forEach(function(d) {
+                        if (d.x > max) {
+                            max = d.x;
+                        }
+                    });
+                    return max;
+                }
                 
                 function mouseovered(d) {
                             
@@ -1855,7 +2083,7 @@ class edgeBundle:
                 return linkLine;
             }
             
-            function filterData(threshold, filtType) {
+            function filterData(minThreshold, maxThreshold, filtType) {
                 
                 const data = flareData.map(a => ({...a}));
                             
@@ -1879,7 +2107,7 @@ class edgeBundle:
                         
                         if (filtType == 'score_abs') {
                         
-                            if (Math.abs(link_score) >= threshold) {
+                            if ((Math.abs(link_score) >= minThreshold) && (Math.abs(link_score) <= maxThreshold)) {
                                 if ("$pmFlag" == "true") {                                
                                     newLinks[key] = {"link_score": link_score
                                                     , "link_pvalue": link_pvalue
@@ -1892,7 +2120,7 @@ class edgeBundle:
                                                            
                         } else if (filtType == 'score_neg') {
                             
-                            if (link_score <= threshold) {
+                            if ((link_score <= maxThreshold) && (link_score >= minThreshold)) {
                                 if ("$pmFlag" == "true") {
                                     newLinks[key] = {"link_score": link_score
                                                 , "link_pvalue": link_pvalue
@@ -1904,7 +2132,7 @@ class edgeBundle:
                             }
                             
                         } else if (filtType == 'score_pos') {
-                            if (link_score >= threshold) {
+                            if ((link_score >= minThreshold) && (link_score <= maxThreshold)) {
                                 if ("$pmFlag" == "true") {
                                     newLinks[key] = {"link_score": link_score
                                                    , "link_pvalue": link_pvalue
@@ -1918,7 +2146,7 @@ class edgeBundle:
                         } else {
                             if ("$pmFlag" == "true") {                            
                                 if (filtType == 'pvalue') {
-                                    if (link_pvalue <= threshold) {
+                                    if ((link_pvalue >= minThreshold) && (link_pvalue <= maxThreshold)) {                                    
                                         newLinks[key] = {"link_score": link_score
                                                         , "link_pvalue": link_pvalue
                                                         , "link_color": link_color};
@@ -2002,15 +2230,22 @@ class edgeBundle:
 	        var linkLine = updateBundle(flareData); //Initial generation of bundle to populate arrays
 	        
 	        if ("$pmFlag" == "true") {
-                var currValues = {'abs_score': 0               
-                        , 'p_score': 0                
-                        , 'n_score': 0                
-                        , 'pvalue': 1                
+                var currValues = {'max_abs_score': Number(d3.max(abs_scores))               
+                        , 'min_abs_score': 0
+                        , 'min_p_score': 0
+                        , 'max_p_score': Number(d3.max(p_scores)) 
+                        , 'min_n_score': Number(d3.min(n_scores)) 
+                        , 'max_n_score': 0               
+                        , 'min_pvalue': 0
+                        , 'max_pvalue': 1               
                         , 'tension': 0.85};
             } else {
-                var currValues = {'abs_score': 0               
-                        , 'p_score': 0                
-                        , 'n_score': 0
+                var currValues = {'max_abs_score': Number(d3.max(abs_scores))               
+                        , 'min_abs_score': 0
+                        , 'min_p_score': 0
+                        , 'max_p_score': Number(d3.max(p_scores)) 
+                        , 'min_n_score': Number(d3.min(n_scores)) 
+                        , 'max_n_score': 0
                         , 'tension': 0.85};
             }
             
@@ -2136,8 +2371,9 @@ class edgeBundle:
                 
                 var sliderScoreDecimalPlaces = 5;
                 
-                $$scope.abs_slider = {       
-                        value: Number(d3.min(abs_scores).toFixed(sliderScoreDecimalPlaces)),                        
+                $$scope.abs_slider = {
+                        minValue: Number(d3.min(abs_scores).toFixed(sliderScoreDecimalPlaces)),
+                        maxValue: Number(d3.max(abs_scores).toFixed(sliderScoreDecimalPlaces)),                        
                         options: {
                                 showSelectionBar: true,                    
                                 floor: Number(d3.min(abs_scores).toFixed(sliderScoreDecimalPlaces)),
@@ -2149,13 +2385,15 @@ class edgeBundle:
                                 pointerSize: 1,
                                 onChange: function () {
                 
-                                            var absScoreValue = $$scope.abs_slider.value
+                                            var absScoreMinValue = $$scope.abs_slider.minValue
+                                            var absScoreMaxValue = $$scope.abs_slider.maxValue
                                             
                                             var tension = currValues.tension;
-                                            currValues['abs_score'] = absScoreValue;
+                                            currValues['min_abs_score'] = absScoreMinValue;
+                                            currValues['max_abs_score'] = absScoreMaxValue;
                                             
                                             //Filter all links out and update links
-                                            var FlareData = filterData(99999999999, 'score_abs');
+                                            var FlareData = filterData(99999999999, 99999999999, 'score_abs');
                                                         
                                             var linkLine = updateBundle(FlareData);
           
@@ -2166,7 +2404,7 @@ class edgeBundle:
                                             link.attr('d', d => line(d.source.path(d.target)));
                                             
                                             //Apply new filter and update links
-                                            var FlareData = filterData(absScoreValue, 'score_abs');
+                                            var FlareData = filterData(absScoreMinValue, absScoreMaxValue, 'score_abs');
                                                         
                                             var linkLine = updateBundle(FlareData);
           
@@ -2181,8 +2419,9 @@ class edgeBundle:
                 
                 if (p_scores.length != 0) {
                 
-                    $$scope.pos_slider = {       
-                            value: Number(d3.min(p_scores).toFixed(sliderScoreDecimalPlaces)),                        
+                    $$scope.pos_slider = {
+                            minValue: Number(d3.min(p_scores).toFixed(sliderScoreDecimalPlaces)),
+                            maxValue: Number(d3.max(p_scores).toFixed(sliderScoreDecimalPlaces)),                        
                             options: {
                                     showSelectionBar: true,                    
                                     floor: Number(d3.min(p_scores).toFixed(sliderScoreDecimalPlaces)),
@@ -2194,13 +2433,15 @@ class edgeBundle:
                                     pointerSize: 1,
                                     onChange: function () {
                 
-                                            var pScoreValue = $$scope.pos_slider.value
+                                            var pScoreMinValue = $$scope.pos_slider.minValue
+                                            var pScoreMaxValue = $$scope.pos_slider.maxValue
                                             
                                             var tension = currValues.tension;
-                                            currValues['p_score'] = pScoreValue;
+                                            currValues['min_p_score'] = pScoreMinValue;
+                                            currValues['max_p_score'] = pScoreMaxValue;
                                             
                                             //Filter all links out and update links
-                                            var FlareData = filterData(99999999999, 'score_pos');
+                                            var FlareData = filterData(99999999999, 99999999999, 'score_pos');
                                                                 
                                             var linkLine = updateBundle(FlareData);
           
@@ -2211,7 +2452,7 @@ class edgeBundle:
                                             link.attr('d', d => line(d.source.path(d.target)));
                                             
                                             //Apply new filter and update links
-                                            var FlareData = filterData(pScoreValue, 'score_pos');
+                                            var FlareData = filterData(pScoreMinValue, pScoreMaxValue, 'score_pos');
                                                                 
                                             var linkLine = updateBundle(FlareData);
           
@@ -2227,8 +2468,9 @@ class edgeBundle:
                 
                 if (n_scores.length != 0) {               
                         
-                    $$scope.neg_slider = {       
-                            value: Number(d3.max(n_scores).toFixed(sliderScoreDecimalPlaces)),                        
+                    $$scope.neg_slider = {
+                            minValue: Number(d3.min(n_scores).toFixed(sliderScoreDecimalPlaces)),
+                            maxValue: Number(d3.max(n_scores).toFixed(sliderScoreDecimalPlaces)),
                             options: {
                                     showSelectionBar: true,                    
                                     floor: Number(d3.min(n_scores).toFixed(sliderScoreDecimalPlaces)),
@@ -2240,13 +2482,15 @@ class edgeBundle:
                                     pointerSize: 1,
                                     onChange: function () {
                 
-                                            var nScoreValue = $$scope.neg_slider.value
+                                            var nScoreMinValue = $$scope.neg_slider.minValue
+                                            var nScoreMaxValue = $$scope.neg_slider.maxValue
                                             
                                             var tension = currValues.tension;
-                                            currValues['n_score'] = nScoreValue;
+                                            currValues['min_n_score'] = nScoreMinValue;
+                                            currValues['max_n_score'] = nScoreMaxValue;
                                             
                                             //Filter all links out and update links
-                                            var FlareData = filterData(-99999999999, 'score_neg');
+                                            var FlareData = filterData(-99999999999, -99999999999, 'score_neg');
                                                                 
                                             var linkLine = updateBundle(FlareData);
           
@@ -2257,7 +2501,7 @@ class edgeBundle:
                                             link.attr('d', d => line(d.source.path(d.target)));
                                             
                                             //Apply new filter and update links
-                                            var FlareData = filterData(nScoreValue, 'score_neg');
+                                            var FlareData = filterData(nScoreMinValue, nScoreMaxValue, 'score_neg');
                                                                 
                                             var linkLine = updateBundle(FlareData);
           
@@ -2275,7 +2519,8 @@ class edgeBundle:
                     if (pvalues.length != 0) {
                                                     
                         $$scope.pvalue_slider = {       
-                                        value: Number(d3.max(pvalues).toFixed(Number(d3.min(pvalues).countDecimals()))),                       
+                                        minValue: Number(d3.min(pvalues).toFixed(Number(d3.min(pvalues).countDecimals()))),
+                                        maxValue: Number(d3.max(pvalues).toFixed(Number(d3.min(pvalues).countDecimals()))),
                                         options: {
                                                 showSelectionBar: true,     
                                                 floor: Number(d3.min(pvalues).toFixed(Number(d3.min(pvalues).countDecimals()))),
@@ -2288,12 +2533,15 @@ class edgeBundle:
                                                 pointerSize: 1,
                                                 onChange: function () {
                                           
-                                                            var pvalueValue = $$scope.pvalue_slider.value;
+                                                            var pvalueMinValue = $$scope.pvalue_slider.minValue;
+                                                            var pvalueMaxValue = $$scope.pvalue_slider.maxValue;                                                            
+                                                            
                                                             var tension = currValues.tension;
-                                                            currValues['pvalue'] = pvalueValue;
+                                                            currValues['min_pvalue'] = pvalueMinValue;
+                                                            currValues['max_pvalue'] = pvalueMaxValue;
                                            
                                                             //Filter all links out and update links
-                                                            var FlareData = filterData(Number(d3.min(pvalues))/10, 'pvalue');
+                                                            var FlareData = filterData(Number(d3.min(pvalues))/10, Number(d3.min(pvalues))/10, 'pvalue');
                                                         
                                                             var linkLine = updateBundle(FlareData);
                                                         
@@ -2304,7 +2552,7 @@ class edgeBundle:
                                                             link.attr("d", d => line(d.source.path(d.target)));
                                                             
                                                             //Apply new filter and update links
-                                                            var FlareData = filterData(pvalueValue, 'pvalue');
+                                                            var FlareData = filterData(pvalueMinValue, pvalueMaxValue, 'pvalue');
                                                         
                                                             var linkLine = updateBundle(FlareData);
                                                         
@@ -2357,20 +2605,24 @@ class edgeBundle:
                                                         }
                                                                     
                                                         if (score_form_val == "PosScoreRadio") {
-                                                            var p_scoreValue = currValues.p_score;
-                                                            var FlareData = filterData(p_scoreValue, 'score_pos');
+                                                            var min_p_scoreValue = currValues.min_p_score;
+                                                            var max_p_scoreValue = currValues.max_p_score;
+                                                            var FlareData = filterData(min_p_scoreValue, max_p_scoreValue, 'score_pos');
                                                         } else if (score_form_val == "NegScoreRadio") {
-                                                            var n_scoreValue = currValues.n_score;
-                                                            var FlareData = filterData(n_scoreValue, 'score_neg');
+                                                            var min_n_scoreValue = currValues.min_n_score;
+                                                            var max_n_scoreValue = currValues.max_n_score;
+                                                            var FlareData = filterData(min_n_scoreValue, max_n_scoreValue, 'score_neg');
                                                         } else if (score_form_val == "AbsScoreRadio") {
-                                                            var abs_scoreValue = currValues.abs_score;
-                                                            var FlareData = filterData(abs_scoreValue, 'score_abs');
+                                                            var min_abs_scoreValue = currValues.min_abs_score;
+                                                            var max_abs_scoreValue = currValues.max_abs_score;
+                                                            var FlareData = filterData(min_abs_scoreValue, max_abs_scoreValue, 'score_abs');
                                                         }
                                                     } else {
                                                         if ("$pmFlag" == "true") {
                                                             if (form_val == "pvalueRadio") {
-                                                                var pvalueValue = currValues.pvalue;
-                                                                var FlareData = filterData(pvalueValue, 'pvalue');
+                                                                var pvalueMinValue = currValues.min_pvalue;
+                                                                var pvalueMaxValue = currValues.max_pvalue;
+                                                                var FlareData = filterData(pvalueMinValue, pvalueMaxValue, 'pvalue');
                                                             }
                                                         }
                                                     }
@@ -2429,28 +2681,27 @@ class edgeBundle:
                         }
                     }
           
-                    if (form_val_score == "PosScoreRadio") {
-                        
+                    if (form_val_score == "PosScoreRadio") {                        
                         //Filter out all links prior to updating with the score threshold
-                        var FlareData = filterData(99999999999, 'score_pos');
+                        var FlareData = filterData(99999999999, 99999999999, 'score_pos');
                         var linkLine = updateBundle(FlareData);
                 
-                        var FlareData = filterData(currValues.p_score, 'score_pos');        
+                        var FlareData = filterData(currValues.min_p_score, currValues.max_p_score, 'score_pos');        
                         var linkLine = updateBundle(FlareData);
                     } else if (form_val_score == "NegScoreRadio") {
-                        
-                        var FlareData = filterData(-99999999999, 'score_neg');    
-                        var linkLine = updateBundle(FlareData);
-                
-                        var FlareData = filterData(currValues.n_score, 'score_neg');  
-                        var linkLine = updateBundle(FlareData);       
-                    } else if (form_val_score == "AbsScoreRadio") {
-                        
                         //Filter out all links prior to updating with the score threshold
-                        var FlareData = filterData(99999999999, 'score_abs');
+                        var FlareData = filterData(-99999999999, -99999999999, 'score_neg');   
                         var linkLine = updateBundle(FlareData);
                         
-                        var FlareData = filterData(currValues.abs_score, 'score_abs');
+                        //Filter with the new score threshold
+                        var FlareData = filterData(currValues.min_n_score, currValues.max_n_score, 'score_neg'); 
+                        var linkLine = updateBundle(FlareData);       
+                    } else if (form_val_score == "AbsScoreRadio") {                        
+                        //Filter out all links prior to updating with the score threshold
+                        var FlareData = filterData(99999999999, 99999999999, 'score_abs');
+                        var linkLine = updateBundle(FlareData);
+                        
+                        var FlareData = filterData(currValues.min_abs_score, currValues.max_abs_score, 'score_abs');
                         var linkLine = updateBundle(FlareData);
                     }
                 } else {
@@ -2459,10 +2710,10 @@ class edgeBundle:
                             d3.select('#scoreSelect').style("display", 'none');
                             
                             //Filter out all links prior to updating with the pvalue threshold
-                            var FlareData = filterData(-99999999999, 'pvalue');
+                            var FlareData = filterData(-99999999999, -99999999999, 'pvalue');
                             var linkLine = updateBundle(FlareData);
                             
-                            var FlareData = filterData(currValues.pvalue, 'pvalue');
+                            var FlareData = filterData(currValues.min_pvalue, currValues.max_pvalue, 'pvalue');
                             var linkLine = updateBundle(FlareData);
                         }
                     } else {
@@ -2490,30 +2741,26 @@ class edgeBundle:
                     }
                 }
                 
-                if (form_val == "PosScoreRadio") { 
-                    
+                if (form_val == "PosScoreRadio") {
                     //Filter out all links prior to updating with the score threshold
-                    var FlareData = filterData(99999999999, 'score_pos');
+                    var FlareData = filterData(99999999999, 99999999999, 'score_pos');
                     var linkLine = updateBundle(FlareData);
                     
-                    var FlareData = filterData(currValues.p_score, 'score_pos');        
-                    var linkLine = updateBundle(FlareData);      
-                    
+                    var FlareData = filterData(currValues.min_p_score, currValues.max_p_score, 'score_pos');    
+                    var linkLine = updateBundle(FlareData);
                 } else if (form_val == "NegScoreRadio") {
-                    
                     //Filter out all links prior to updating with the score threshold
-                    var FlareData = filterData(-99999999999, 'score_neg');    
+                    var FlareData = filterData(-99999999999, -99999999999, 'score_neg'); 
                     var linkLine = updateBundle(FlareData);
                     
-                    var FlareData = filterData(currValues.n_score, 'score_neg');  
+                    var FlareData = filterData(currValues.min_n_score, currValues.max_n_score, 'score_neg');
                     var linkLine = updateBundle(FlareData);        
                 } else if (form_val == "AbsScoreRadio") {
-                    
                     //Filter out all links prior to updating with the score threshold
-                    var FlareData = filterData(99999999999, 'score_abs');
+                    var FlareData = filterData(99999999999, 99999999999, 'score_abs');
                     var linkLine = updateBundle(FlareData);
                     
-                    var FlareData = filterData(currValues.abs_score, 'score_abs');
+                    var FlareData = filterData(currValues.min_abs_score, currValues.max_abs_score, 'score_abs');
                     var linkLine = updateBundle(FlareData);
                 }
                            
@@ -2556,10 +2803,11 @@ class edgeBundle:
                 
                 node.exit().remove();
                 
-                var fontBase = 1000;
-                var fontSize = $fontSize;
-                
                 function getFont() {
+                
+                    var fontBase = 1000;
+                    var fontSize = $fontSize;
+                
                     var ratio = fontSize / fontBase;
                     var width = canvas.clientWidth;                    
                     var size = width * ratio;
@@ -2567,12 +2815,104 @@ class edgeBundle:
                     return (size|0) + 'px';  
                 }
                 
+                function getArcRadiusOffset() {
+                    
+                    var arcBase = 1157;                    
+                    
+                    var arcRatio = $arcRadiusOffset / arcBase;
+                    var arcWidth = canvas.clientWidth;                    
+                    var arcRadOffset = arcWidth * arcRatio;                        
+                                                            
+                    return (arcRadOffset|0);
+                }
+                
+                //Test to see if there are multiple blocks in the data. If none then set addArcs to false
+                var blocks = []
+                nodes.forEach(function(n) { if (n.data.Block !== undefined) { blocks.push(n.data.Block) }});                
+                
+                if ("$addArcs" == "true") {
+                    var addArcs = true;
+                    
+                    if (blocks.length == 0) {
+                        addArcs = false;
+                    }
+                } else {
+                    var addArcs = false;
+                }
+                
+                if (addArcs == true) {
+                
+                    var groupDict = {}
+                    
+                    var adjArcRadiusOffset = getArcRadiusOffset();
+                    
+                    var arcTextPositionOffset = 0.75 * adjArcRadiusOffset;
+                    
+                    var arcRadius = innerRadius + adjArcRadiusOffset;   
+                    
+                    var arcGap = adjArcRadiusOffset + 5;                 
+                    
+                    nodes.forEach(function(n) {
+                        if (n.data.Block !== undefined) {
+                            if (groupDict[n.data.Block] === undefined) {
+                                groupDict[n.data.Block] = []
+                                groupDict[n.data.Block].push(n)
+                            } else {
+                                groupDict[n.data.Block].push(n)
+                            }
+                        }
+                    })
+                    
+                    var groups = []
+                    for (var [key, value] of Object.entries(groupDict)) {
+                        groups.push(value[0])
+                    }
+                    
+                    edgeBundle.selectAll("g.group").remove();
+                    var groupData = edgeBundle.selectAll("g.group")
+                        .data(groups)
+                        .enter().append("group")
+    	                .attr("class", "group");
+                                       
+                    var groupArc = d3.arc()
+                        .innerRadius(innerRadius)
+                        .outerRadius(arcRadius)
+                        .startAngle(function(d) { return (findStartAngle(d.__data__.parent.children)-$extendArcAngle) * Math.PI / 180;})
+                        .endAngle(function(d) { return (findEndAngle(d.__data__.parent.children)+$extendArcAngle) * Math.PI / 180});
+                    
+                    edgeBundle.selectAll("g.arc").remove();
+                    edgeBundle.selectAll("g.arc")
+                        .data(groupData._groups[0])
+                        .enter()
+                        .append("svg:path")
+                        .attr("d", groupArc)
+                        .attr("class", "groupArc")
+                        .attr("fill", function(d) { return d.__data__.data.block_color; })
+                        .style("fill-opacity", 1.0)
+                        .attr("id", function(d,i) { return "arc_"+i; });
+                    
+                    edgeBundle.selectAll(".arcText").remove();
+                    edgeBundle.selectAll(".arcText")
+                        .data(groupData._groups[0])
+                        .enter()
+                        .append("text")
+                        .attr("class", "arcText")
+                        .attr("x", 5) //Move text from the start angle of the arc
+                        .attr("dy", arcTextPositionOffset) //Move the text down
+                        .append("textPath")
+                        .attr("xlink:href",function(d,i){return "#arc_"+i;})
+                        .style("font-size", getFont())
+                        .text(function(d){return d.__data__.data.Block;});
+                } else {
+                    var arcGap = 5;
+                }            
+                
                 if ("$mouseOver" == "true") {
                 
                     var newNode = node.enter().append("text")
                                         .attr("class", "node")
                                         .attr("dy", ".31em")
-                                        .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + (d.y + 8) + ",0)" + (d.x < 180 ? "" : "rotate(180)"); })
+                                        .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + (d.y + arcGap) + ",0)" + (d.x < 180 ? "" : "rotate(180)"); })
                                         .style("text-anchor", function(d) { return d.x < 180 ? "start" : "end"; })
                                         .text(function(d) { return d.data.Label; })
                                         .style("font-size", getFont())
@@ -2584,7 +2924,7 @@ class edgeBundle:
                     var newNode = node.enter().append("text")
                                         .attr("class", "node")
                                         .attr("dy", ".31em")
-                                        .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + (d.y + 8) + ",0)" + (d.x < 180 ? "" : "rotate(180)"); })
+                                        .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + (d.y + arcGap) + ",0)" + (d.x < 180 ? "" : "rotate(180)"); })
                                         .style("text-anchor", function(d) { return d.x < 180 ? "start" : "end"; })
                                         .text(function(d) { return d.data.Label; })
                                         .style("font-size", getFont())
@@ -2641,6 +2981,26 @@ class edgeBundle:
                 link = link.merge(newLink);
                 
                 var linkLine = {"line": line, "link": link}
+                
+                function findStartAngle(children) {
+                    var min = children[0].x;
+                    children.forEach(function(d) {
+                        if (d.x < min) {
+                            min = d.x;
+                        }
+                    });
+                    return min;
+                }
+                
+                function findEndAngle(children) {
+                    var max = children[0].x;
+                    children.forEach(function(d) {
+                        if (d.x > max) {
+                            max = d.x;
+                        }
+                    });
+                    return max;
+                }               
                 
                 function mouseovered_node(d) {
       
@@ -2768,7 +3128,7 @@ class edgeBundle:
                 return linkLine;
             }
             
-            function filterData(threshold, filtType) {
+            function filterData(minThreshold, maxThreshold, filtType) {
             
                 const data = flareData.map(a => ({...a}));
                  
@@ -2792,7 +3152,7 @@ class edgeBundle:
                         
                         if (filtType == 'score_abs') {
                             
-                            if (Math.abs(link_score) >= threshold) {
+                            if ((Math.abs(link_score) >= minThreshold) && (Math.abs(link_score) <= maxThreshold)) {
                                 if ("$pmFlag" == "true") {                                
                                     newLinks[key] = {"link_score": link_score
                                                     , "link_pvalue": link_pvalue
@@ -2805,7 +3165,7 @@ class edgeBundle:
                                   
                         } else if (filtType == 'score_neg') {
                         
-                            if (link_score <= threshold) {
+                            if ((link_score <= maxThreshold) && (link_score >= minThreshold)) {
                                 if ("$pmFlag" == "true") {
                                     newLinks[key] = {"link_score": link_score
                                                 , "link_pvalue": link_pvalue
@@ -2818,7 +3178,7 @@ class edgeBundle:
                                                         
                         } else if (filtType == 'score_pos') {
                             
-                            if (link_score >= threshold) {
+                            if ((link_score >= minThreshold) && (link_score <= maxThreshold)) {
                                 if ("$pmFlag" == "true") {
                                     newLinks[key] = {"link_score": link_score
                                                    , "link_pvalue": link_pvalue
@@ -2832,7 +3192,7 @@ class edgeBundle:
                         } else {
                             if ("$pmFlag" == "true") {
                                 if (filtType == 'pvalue') {
-                                    if (link_pvalue <= threshold) {
+                                    if ((link_pvalue >= minThreshold) && (link_pvalue <= maxThreshold)) {
                                         newLinks[key] = {"link_score": link_score
                                                         , "link_pvalue": link_pvalue
                                                         , "link_color": link_color};
@@ -2921,16 +3281,16 @@ class edgeBundle:
                         </div>
               
                         <div ng-show="abs_visible" class="row">
-                            <rzslider id="abs_slider" class="abs_slider" rz-slider-model="abs_slider.value" rz-slider-options="abs_slider.options"></rzslider>
+                            <rzslider id="abs_slider" class="abs_slider" rz-slider-model="abs_slider.minValue" rz-slider-high="abs_slider.maxValue" rz-slider-options="abs_slider.options"></rzslider>
                         </div>
                         <div ng-show="pos_visible" class="row">
-                            <rzslider id="pos_slider" class="pos_slider" rz-slider-model="pos_slider.value" rz-slider-options="pos_slider.options"></rzslider>
+                            <rzslider id="pos_slider" class="pos_slider" rz-slider-model="pos_slider.minValue" rz-slider-high="pos_slider.maxValue" rz-slider-options="pos_slider.options"></rzslider>
                         </div>
                         <div ng-show="neg_visible" class="row">
-                            <rzslider id="neg_slider" class="neg_slider" rz-slider-model="neg_slider.value" rz-slider-options="neg_slider.options"></rzslider>
+                            <rzslider id="neg_slider" class="neg_slider" rz-slider-model="neg_slider.minValue" rz-slider-high="neg_slider.maxValue" rz-slider-options="neg_slider.options"></rzslider>
                         </div>
                         <div ng-show="pvalue_visible" class="row">
-                            <rzslider id="pvalue_slider" class="pvalue_slider" rz-slider-model="pvalue_slider.value" rz-slider-options="pvalue_slider.options"></rzslider>
+                            <rzslider id="pvalue_slider" class="pvalue_slider" rz-slider-model="pvalue_slider.minValue" rz-slider-high="pvalue_slider.maxValue" rz-slider-options="pvalue_slider.options"></rzslider>
                         </div>
                                         
                         <div class="row">
@@ -3022,16 +3382,16 @@ class edgeBundle:
                                         </div>
               
                                         <div ng-show="abs_visible" class="row">
-                                            <rzslider id="abs_slider" class="abs_slider" rz-slider-model="abs_slider.value" rz-slider-options="abs_slider.options"></rzslider>
+                                            <rzslider id="abs_slider" class="abs_slider" rz-slider-model="abs_slider.minValue" rz-slider-high="abs_slider.maxValue" rz-slider-options="abs_slider.options"></rzslider>
                                         </div>
                                         <div ng-show="pos_visible" class="row">
-                                            <rzslider id="pos_slider" class="pos_slider" rz-slider-model="pos_slider.value" rz-slider-options="pos_slider.options"></rzslider>
+                                            <rzslider id="pos_slider" class="pos_slider" rz-slider-model="pos_slider.minValue" rz-slider-high="pos_slider.maxValue" rz-slider-options="pos_slider.options"></rzslider>
                                         </div>
                                         <div ng-show="neg_visible" class="row">
-                                            <rzslider id="neg_slider" class="neg_slider" rz-slider-model="neg_slider.value" rz-slider-options="neg_slider.options"></rzslider>
+                                            <rzslider id="neg_slider" class="neg_slider" rz-slider-model="neg_slider.minValue" rz-slider-high="neg_slider.maxValue" rz-slider-options="neg_slider.options"></rzslider>
                                         </div>
                                         <div ng-show="pvalue_visible" class="row">
-                                            <rzslider id="pvalue_slider" class="pvalue_slider" rz-slider-model="pvalue_slider.value" rz-slider-options="pvalue_slider.options"></rzslider>
+                                            <rzslider id="pvalue_slider" class="pvalue_slider" rz-slider-model="pvalue_slider.minValue" rz-slider-high="pvalue_slider.maxValue" rz-slider-options="pvalue_slider.options"></rzslider>
                                         </div>
                                         
                                         <div class="row">

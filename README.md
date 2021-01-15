@@ -87,6 +87,10 @@ For further detail on the usage refer to the docstring.
 			- [edgeColorScale] : The scale to use for colouring the edges, if edge_color_value is 'pvalue' ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal") (default: 'linear')
 			- [edge_color_value] : Set the values to colour the edges by. Either 'sign', 'score' or 'pvalue' (default: 'score')
 			- [edge_cmap] : Set the CMAP colour palette to use for colouring the edges (default: 'brg')
+			- [addArcs] : Setting to 'True' adds arcs around the edge bundle for each block (default: False)
+			- [arcRadiusOffset] : Sets the arc radius offset from the inner radius (default: 20)
+			- [extendArcAngle] : Sets the angle value to add to each end of the arcs (default: 2)
+			- [arc_cmap] : Set the CMAP colour palette to use for colouring the arcs (default: 'Set1')
 
 		- [build] : Generates the JavaScript embedded HTML code, writes to a HTML file and opens it in a browser.
 		- [buildDashboard] : Generates the JavaScript embedded HTML code in a dashboard format, writes to a HTML file and opens it in a browser.
@@ -130,7 +134,11 @@ For further detail on the usage refer to the docstring.
 			- [html_file] : Name to save the HTML file as (default: 'springNetwork.html')
 			- [backgroundColor] : Set the background colour of the plot (default: 'white')
 			- [foregroundColor] : Set the foreground colour of the plot (default: 'black')
-			- [chargeStrength] : The charge strength of the spring-embedded network (force between springs) (default: -120)
+			- [chargeStrength] : The charge strength of the spring-embedded network (force between nodes) (default: -120)
+			- [groupByBlock] : Setting to 'True' will group nodes by 'Block' if present in the data (default: False)
+			- [groupFociStrength] : Set the strength of foci for each group (default: 0.2)
+			- [intraGroupStrength] : Set the strength between each group (default: 0.01)
+			- [groupLayoutTemplate] : Set the layout template to use for grouping (default: 'treemap')
 			- [node_text_size] : The text size for each node (default: 15)
 			- [fix_nodes] : Setting to 'True' will fix nodes in place when manually moved (default: False)
 			- [displayLabel] : Setting to 'True' will set the node labels to the 'Label' column, otherwise it will set the labels to the 'Name' column from the Peak Table (default: False)

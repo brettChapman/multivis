@@ -25,7 +25,11 @@ class springNetwork:
             html_file: Name to save the HTML file as (default: 'springNetwork.html')
             backgroundColor: Set the background colour of the plot (default: 'white')
             foregroundColor: Set the foreground colour of the plot (default: 'black')
-            chargeStrength: The charge strength of the spring-embedded network (force between springs) (default: -120)
+            chargeStrength: The charge strength of the spring-embedded network (force between nodes) (default: -120)
+            groupByBlock: Setting to 'True' will group nodes by 'Block' if present in the data (default: False)
+            groupFociStrength: Set the strength of foci for each group (default: 0.2)
+            intraGroupStrength: Set the strength between each group (default: 0.01)
+            groupLayoutTemplate: Set the layout template to use for grouping (default: 'treemap')
             node_text_size: The text size for each node (default: 15)
             fix_nodes: Setting to 'True' will fix nodes in place when manually moved (default: False)
             displayLabel: Setting to 'True' will set the node labels to the 'Label' column, otherwise it will set the labels to the 'Name' column from the Peak Table (default: False)
@@ -45,9 +49,9 @@ class springNetwork:
 
         self.set_params()
 
-    def set_params(self, node_size_scale={}, node_color_scale={}, html_file='springNetwork.html', backgroundColor='white', foregroundColor='black', chargeStrength=-120, node_text_size=15, fix_nodes=False, displayLabel=False, node_data=['Name', 'Label'], link_type='score', link_width=0.5, pos_score_color='red', neg_score_color='black'):
+    def set_params(self, node_size_scale={}, node_color_scale={}, html_file='springNetwork.html', backgroundColor='white', foregroundColor='black', chargeStrength=-120, groupByBlock=False, groupFociStrength=0.2, intraGroupStrength=0.01, groupLayoutTemplate='treemap', node_text_size=15, fix_nodes=False, displayLabel=False, node_data=['Name', 'Label'], link_type='score', link_width=0.5, pos_score_color='red', neg_score_color='black'):
 
-        node_size_scale, node_color_scale, html_file, backgroundColor, foregroundColor, chargeStrength, node_text_size, fix_nodes, displayLabel, node_data, link_type, link_width, pos_score_color, neg_score_color = self.__paramCheck(node_size_scale, node_color_scale, html_file, backgroundColor, foregroundColor, chargeStrength, node_text_size, fix_nodes, displayLabel, node_data, link_type, link_width, pos_score_color, neg_score_color)
+        node_size_scale, node_color_scale, html_file, backgroundColor, foregroundColor, chargeStrength, groupByBlock, groupFociStrength, intraGroupStrength, groupLayoutTemplate, node_text_size, fix_nodes, displayLabel, node_data, link_type, link_width, pos_score_color, neg_score_color = self.__paramCheck(node_size_scale, node_color_scale, html_file, backgroundColor, foregroundColor, chargeStrength, groupByBlock, groupFociStrength, intraGroupStrength, groupLayoutTemplate, node_text_size, fix_nodes, displayLabel, node_data, link_type, link_width, pos_score_color, neg_score_color)
 
         self.__node_size_scale = node_size_scale;
         self.__node_color_scale = node_color_scale;
@@ -55,6 +59,10 @@ class springNetwork:
         self.__backgroundColor = backgroundColor;
         self.__foregroundColor = foregroundColor;
         self.__chargeStrength = chargeStrength;
+        self.__groupByBlock = groupByBlock;
+        self.__groupFociStrength = groupFociStrength;
+        self.__intraGroupStrength = intraGroupStrength;
+        self.__groupLayoutTemplate = groupLayoutTemplate;
         self.__node_text_size = node_text_size;
         self.__fix_nodes = fix_nodes;
         self.__displayLabel = displayLabel;
@@ -70,6 +78,10 @@ class springNetwork:
         link_type = self.__link_type.lower()
         link_width = self.__link_width
         chargeStrength = self.__chargeStrength
+        groupByBlock = self.__groupByBlock
+        groupFociStrength = self.__groupFociStrength
+        intraGroupStrength = self.__intraGroupStrength
+        groupLayoutTemplate = self.__groupLayoutTemplate
         node_text_size = self.__node_text_size
         node_size_scale = self.__node_size_scale
         node_color_scale = self.__node_color_scale
@@ -77,27 +89,29 @@ class springNetwork:
         displayLabel = self.__displayLabel
         node_data = self.__node_data
 
+        if groupByBlock:
+            useGroupInABox = "true"
+        else:
+            useGroupInABox = "false"
+
         if fix_nodes:
             fixed = "true";
         else:
             fixed = "false";
-
-        if link_type.lower() == 'pvalue':
-            operator = '<=';
-        else:
-            operator = '>=';
 
         if displayLabel:
             dispLabel = "true";
         else:
             dispLabel = "false";
 
-        paramDict = dict({"link_type": link_type, "link_width": link_width, "node_text_size": node_text_size, "node_size_scale": node_size_scale, "node_color_scale": node_color_scale,
-                          "displayLabel": dispLabel, "node_data": node_data, "chargeStrength": chargeStrength, "fix_nodes": fixed})
+        paramDict = dict({"link_type": link_type, "link_width": link_width, "node_text_size": node_text_size, "node_size_scale": node_size_scale,
+                          "node_color_scale": node_color_scale, "displayLabel": dispLabel, "node_data": node_data, "chargeStrength": chargeStrength,
+                          "useGroupInABox": useGroupInABox, "groupFociStrength": groupFociStrength, "intraGroupStrength": intraGroupStrength,
+                          "groupLayoutTemplate": groupLayoutTemplate, "fix_nodes": fixed})
 
         data = json.dumps(self.__generateJson(g), cls=self.__graphEncoder)
 
-        return data, paramDict, operator
+        return data, paramDict
 
     def build(self):
 
@@ -105,7 +119,7 @@ class springNetwork:
         foregroundColor = self.__foregroundColor
         html_file = self.__html_file
 
-        data, paramDict, operator = self.__process_params()
+        data, paramDict = self.__process_params()
 
         css_text_template_network = Template(self.__getCSS());
         js_text_template_network = Template(self.__getJS());
@@ -120,7 +134,6 @@ class springNetwork:
         js_text_network = js_text_template_network.substitute({'networkData': json.dumps(data)
                                                                   , 'backgroundColor': backgroundColor
                                                                   , 'foregroundColor': foregroundColor
-                                                                  , 'operator': operator
                                                                   , 'paramDict': paramDict})
 
         html = html_template_network.substitute({'css_text': css_text_network, 'js_text': js_text_network})
@@ -139,7 +152,7 @@ class springNetwork:
         foregroundColor = self.__foregroundColor
         html_file = self.__html_file
 
-        data, paramDict, operator = self.__process_params()
+        data, paramDict = self.__process_params()
 
         css_text_template_network = Template(self.__getCSSdashboard());
         js_text_template_network = Template(self.__getJSdashboard());
@@ -154,7 +167,6 @@ class springNetwork:
         js_text_network = js_text_template_network.substitute({'networkData': json.dumps(data)
                                                                   , 'backgroundColor': backgroundColor
                                                                   , 'foregroundColor': foregroundColor
-                                                                  , 'operator': operator
                                                                   , 'paramDict': paramDict})
 
         html = html_template_network.substitute({'css_text': css_text_network, 'js_text': js_text_network})
@@ -177,7 +189,7 @@ class springNetwork:
 
         return g
 
-    def __paramCheck(self, node_size_scale, node_color_scale, html_file, backgroundColor, foregroundColor, chargeStrength, node_text_size, fix_nodes, displayLabel, node_data, link_type, link_width, pos_score_color, neg_score_color):
+    def __paramCheck(self, node_size_scale, node_color_scale, html_file, backgroundColor, foregroundColor, chargeStrength, groupByBlock, groupFociStrength, intraGroupStrength, groupLayoutTemplate, node_text_size, fix_nodes, displayLabel, node_data, link_type, link_width, pos_score_color, neg_score_color):
 
         g = self.__g
         col_list = list(g.nodes[list(g.nodes.keys())[0]].keys()) + ['none']
@@ -271,6 +283,24 @@ class springNetwork:
                 print("Error: Charge strength is not valid. Choose a float or integer value.")
                 sys.exit()
 
+        if not type(groupByBlock) == bool:
+            print("Error: Group by block is not valid. Choose either \"True\" or \"False\".")
+            sys.exit()
+
+        if not isinstance(groupFociStrength, float):
+            if not isinstance(groupFociStrength, int):
+                print("Error: Group foci strength is not valid. Choose a float or integer value.")
+                sys.exit()
+
+        if not isinstance(intraGroupStrength, float):
+            if not isinstance(intraGroupStrength, int):
+                print("Error: Intra group strength is not valid. Choose a float or integer value.")
+                sys.exit()
+
+        if groupLayoutTemplate.lower() not in ["treemap", "force"]:
+            print("Error: Group layout template is not valid. Choose either \"treemap\" or \"force\".")
+            sys.exit()
+
         if not isinstance(node_text_size, float):
             if not isinstance(node_text_size, int):
                 print("Error: Node text size is not valid. Choose a float or integer value.")
@@ -321,7 +351,7 @@ class springNetwork:
 
         neg_score_color = self.__colorCheck(neg_score_color, "negative score")
 
-        return node_size_scale, node_color_scale, html_file, backgroundColor, foregroundColor, chargeStrength, node_text_size, fix_nodes, displayLabel, node_data, link_type, link_width, pos_score_color, neg_score_color
+        return node_size_scale, node_color_scale, html_file, backgroundColor, foregroundColor, chargeStrength, groupByBlock, groupFociStrength, intraGroupStrength, groupLayoutTemplate, node_text_size, fix_nodes, displayLabel, node_data, link_type, link_width, pos_score_color, neg_score_color
 
     def __colorCheck(self, colorValue, type):
 
@@ -1260,10 +1290,38 @@ class springNetwork:
             
                 link = link.merge(newLink);
                 
-                simulation
-                    .nodes(graph.nodes)
-                    .on("tick", ticked);
-                           
+                //Test to see if there are multiple blocks in the data. If none then set useGroupInABox to false
+                var blocks = []
+                graph.nodes.forEach(function(n) { if (n.Block !== undefined) { blocks.push(n.Block) }}); 
+                
+                if (params.useGroupInABox == "true") {
+                    var useGroupInABox = true;
+                    
+                    if (blocks.length == 0) {
+                        useGroupInABox = false;
+                    }
+                } else {
+                    var useGroupInABox = false;
+                }
+                
+                if (useGroupInABox == true) {
+                    var groupingForce = forceInABox()
+                            .strength(params.groupFociStrength)
+                            .template(params.groupLayoutTemplate)
+                            .groupBy("Block")
+                            .linkStrengthIntraCluster(params.intraGroupStrength)
+                            .size([width, height]);
+                    
+                    simulation
+                        .nodes(graph.nodes)
+                        .on("tick", ticked)
+                        .force("group", groupingForce);
+                } else {
+                    simulation
+                        .nodes(graph.nodes)
+                        .on("tick", ticked);
+                }
+                          
                 simulation.force("link")
                     .links(graph.links);
                 
@@ -1307,21 +1365,17 @@ class springNetwork:
                 return value
             }
             
-            var sliderInitValue = '';
             var sliderMin = '';
             var sliderMax = '';
-            var sliderValue = '';
             
             var sliderScoreDecimalPlaces = 5;
             
             if (params.link_type == "score") {
-                sliderInitValue =  Number(d3.min(graph.links, function(d) {return d.weight; }).toFixed(sliderScoreDecimalPlaces))
                 sliderMin = Number(d3.min(graph.links, function(d) {return d.weight; }).toFixed(sliderScoreDecimalPlaces))
                 sliderMax = Number(d3.max(graph.links, function(d) {return d.weight; }).toFixed(sliderScoreDecimalPlaces))
                 sliderStep = 0.01;
                 sliderPrecision = sliderScoreDecimalPlaces;
             } else if (params.link_type == "pvalue") {
-                sliderInitValue = Number(d3.max(graph.links, function(d) {return d.weight; }).toFixed(Number(d3.min(graph.links, function(d) {return d.weight; }).countDecimals())))
                 sliderMin = Number(d3.min(graph.links, function(d) {return d.weight; }).toFixed(Number(d3.min(graph.links, function(d) {return d.weight; }).countDecimals())))
                 sliderMax = Number(d3.max(graph.links, function(d) {return d.weight; }).toFixed(Number(d3.min(graph.links, function(d) {return d.weight; }).countDecimals())))
                 sliderStep = Number(d3.min(graph.links, function(d) {return d.weight; }).toFixed(Number(d3.min(graph.links, function(d) {return d.weight; }).countDecimals())))
@@ -1477,15 +1531,16 @@ class springNetwork:
             			pointerSize: 1,
             			onChange: function () {
               
-                            var threshold = $$scope.slider.value
+                            var minThreshold = $$scope.slider.minValue
+                            var maxThreshold = $$scope.slider.maxValue
                                 
                             graph.links.splice(0, graph.links.length);
-                            graphRec.links.forEach( function (d) { if (d.weight $operator threshold) { graph.links.push(d); }});
+                            graphRec.links.forEach( function (d) { if ((d.weight >= minThreshold) && (d.weight <= maxThreshold)) { graph.links.push(d); }});
                                 
                             //Update link dictionary
                             linkedByIndex = {} 
                             graphRec.links.forEach( function (d) {
-                                if (d.weight $operator threshold) {
+                                if ((d.weight >= minThreshold) && (d.weight <= maxThreshold)) {
                                                                   
                                     var source = JSON.stringify(d.source.id);
                                     var target = JSON.stringify(d.target.id);
@@ -1511,8 +1566,9 @@ class springNetwork:
             	    slider_options['logScale'] = true;
             	}
             	
-            	$$scope.slider = {       
-        				value: sliderInitValue,                        
+            	$$scope.slider = {
+        				minValue: sliderMin,
+        				maxValue: sliderMax,                     
                         options: slider_options
     			};
 			});
@@ -2182,11 +2238,39 @@ class springNetwork:
                             });                            
 
                 link = link.merge(newLink);
-
-                simulation
-                    .nodes(graph.nodes)
-                    .on("tick", ticked);
-
+                
+                //Test to see if there are multiple blocks in the data. If none then set useGroupInABox to false
+                var blocks = []
+                graph.nodes.forEach(function(n) { if (n.Block !== undefined) { blocks.push(n.Block) }}); 
+                
+                if (params.useGroupInABox == "true") {
+                    var useGroupInABox = true;
+                    
+                    if (blocks.length == 0) {
+                        useGroupInABox = false;
+                    }
+                } else {
+                    var useGroupInABox = false;
+                }
+                                
+                if (useGroupInABox == true) {
+                    var groupingForce = forceInABox()
+                            .strength(params.groupFociStrength)
+                            .template(params.groupLayoutTemplate)
+                            .groupBy("Block")
+                            .linkStrengthIntraCluster(params.intraGroupStrength)
+                            .size([width, height]);
+                    
+                    simulation
+                        .nodes(graph.nodes)
+                        .on("tick", ticked)
+                        .force("group", groupingForce);
+                } else {
+                    simulation
+                        .nodes(graph.nodes)
+                        .on("tick", ticked);
+                }
+                
                 simulation.force("link")
                     .links(graph.links);
 
@@ -2229,22 +2313,18 @@ class springNetwork:
                 
                 return value
             }
-            
-            var sliderInitValue = '';
+                        
             var sliderMin = '';
             var sliderMax = '';
-            var sliderValue = '';
             
             var sliderScoreDecimalPlaces = 5;
             
             if (params.link_type == "score") {
-                sliderInitValue =  Number(d3.min(graph.links, function(d) {return d.weight; }).toFixed(sliderScoreDecimalPlaces))
                 sliderMin = Number(d3.min(graph.links, function(d) {return d.weight; }).toFixed(sliderScoreDecimalPlaces))
                 sliderMax = Number(d3.max(graph.links, function(d) {return d.weight; }).toFixed(sliderScoreDecimalPlaces))
                 sliderStep = 0.01;
                 sliderPrecision = sliderScoreDecimalPlaces;
-            } else if (params.link_type == "pvalue") {
-                sliderInitValue = Number(d3.max(graph.links, function(d) {return d.weight; }).toFixed(Number(d3.min(graph.links, function(d) {return d.weight; }).countDecimals())))
+            } else if (params.link_type == "pvalue") {                
                 sliderMin = Number(d3.min(graph.links, function(d) {return d.weight; }).toFixed(Number(d3.min(graph.links, function(d) {return d.weight; }).countDecimals())))
                 sliderMax = Number(d3.max(graph.links, function(d) {return d.weight; }).toFixed(Number(d3.min(graph.links, function(d) {return d.weight; }).countDecimals())))
                 sliderStep = Number(d3.min(graph.links, function(d) {return d.weight; }).toFixed(Number(d3.min(graph.links, function(d) {return d.weight; }).countDecimals())))
@@ -2399,17 +2479,18 @@ class springNetwork:
             			getPointerColor: function() { return '#D3D3D3'; },
             			pointerSize: 1,
             			onChange: function () {
-              
-                            var threshold = $$scope.slider.value
+            			    
+            			    var minThreshold = $$scope.slider.minValue
+                            var maxThreshold = $$scope.slider.maxValue
                                 
                             graph.links.splice(0, graph.links.length);
-                            graphRec.links.forEach( function (d) { if (d.weight $operator threshold) { graph.links.push(d); }});
+                            graphRec.links.forEach( function (d) { if ((d.weight >= minThreshold) && (d.weight <= maxThreshold)) { graph.links.push(d); }});
                                 
                             //Update link dictionary
                             linkedByIndex = {} 
                             graphRec.links.forEach( function (d) {
                                    
-                                if (d.weight $operator threshold) {
+                                if ((d.weight >= minThreshold) && (d.weight <= maxThreshold)) {
                                                                   
                                     var source = JSON.stringify(d.source.id);
                                     var target = JSON.stringify(d.target.id);
@@ -2435,8 +2516,9 @@ class springNetwork:
             	    slider_options['logScale'] = true;
             	}
             	
-            	$$scope.slider = {       
-        				value: sliderInitValue,                        
+            	$$scope.slider = {
+        				minValue: sliderMin,
+        				maxValue: sliderMax,
                         options: slider_options
     			};
 			});
@@ -2593,7 +2675,7 @@ class springNetwork:
                             </form>
                         </div>
                         
-                        <rzslider id="slider" class="slider" rz-slider-model="slider.value" rz-slider-options="slider.options"></rzslider>
+                        <rzslider id="slider" class="slider" rz-slider-model="slider.minValue" rz-slider-high="slider.maxValue" rz-slider-options="slider.options"></rzslider>
                         
                         <div id="nodeSizeDropdown" class="row">Size nodes by 
                             <select ng-options="o for o in node_size_options" data-ng-model="selectedNodeSizeOption" ng-change="updateNodeSize()"></select>
@@ -2623,6 +2705,7 @@ class springNetwork:
 	    <script src="https://rawgit.com/rzajac/angularjs-slider/master/dist/rzslider.js"></script>
 	    
         <script src="https://d3js.org/d3.v5.min.js"></script>
+        <script src="https://unpkg.com/force-in-a-box/dist/forceInABox.js"></script>
         
         <script>
             (function(){var g=typeof exports!="undefined"&&exports||this;var b='<?xml version="1.0" standalone="no"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">';function e(h){return h&&h.lastIndexOf("http",0)==0&&h.lastIndexOf(window.location.host)==-1}function a(k,m){var h=k.querySelectorAll("image");var l=h.length;if(l==0){m()}for(var j=0;j<h.length;j++){(function(q){var o=q.getAttributeNS("http://www.w3.org/1999/xlink","href");if(o){if(e(o.value)){console.warn("Cannot render embedded images linking to external hosts: "+o.value);return}}var p=document.createElement("canvas");var i=p.getContext("2d");var n=new Image();o=o||q.getAttribute("href");n.src=o;n.onload=function(){p.width=n.width;p.height=n.height;i.drawImage(n,0,0);q.setAttributeNS("http://www.w3.org/1999/xlink","href",p.toDataURL("image/png"));l--;if(l==0){m()}};n.onerror=function(){console.log("Could not load "+o);l--;if(l==0){m()}}})(h[j])}}function f(h,k){var r="";var q=document.styleSheets;for(var o=0;o<q.length;o++){try{var u=q[o].cssRules}catch(s){console.warn("Stylesheet could not be loaded: "+q[o].href);continue}if(u!=null){for(var n=0;n<u.length;n++){var t=u[n];if(typeof(t.style)!="undefined"){var p=null;try{p=h.querySelector(t.selectorText)}catch(m){console.warn('Invalid CSS selector "'+t.selectorText+'"',m)}if(p){var l=k?k(t.selectorText):t.selectorText;r+=l+" { "+t.style.cssText+" }\\n"}else{if(t.cssText.match(/^@font-face/)){r+=t.cssText+"\\n"}}}}}}return r}function d(i,k,j){var h=(i.viewBox.baseVal&&i.viewBox.baseVal[j])||(k.getAttribute(j)!==null&&!k.getAttribute(j).match(/%$$/)&&parseInt(k.getAttribute(j)))||i.getBoundingClientRect()[j]||parseInt(k.style[j])||parseInt(window.getComputedStyle(i).getPropertyValue(j));return(typeof h==="undefined"||h===null||isNaN(parseFloat(h)))?0:h}function c(h){h=encodeURIComponent(h);h=h.replace(/%([0-9A-F]{2})/g,function(i,j){var k=String.fromCharCode("0x"+j);return k==="%"?"%25":k});return decodeURIComponent(h)}g.svgAsDataUri=function(j,i,h){i=i||{};i.scale=i.scale||1;var k="http://www.w3.org/2000/xmlns/";a(j,function(){var u=document.createElement("div");var r=j.cloneNode(true);var l,t;if(j.tagName=="svg"){l=i.width||d(j,r,"width");t=i.height||d(j,r,"height")}else{if(j.getBBox){var o=j.getBBox();l=o.x+o.width;t=o.y+o.height;r.setAttribute("transform",r.getAttribute("transform").replace(/translate\(.*?\)/,""));var p=document.createElementNS("http://www.w3.org/2000/svg","svg");p.appendChild(r);r=p}else{console.error("Attempted to render non-SVG element",j);return}}r.setAttribute("version","1.1");r.setAttributeNS(k,"xmlns","http://www.w3.org/2000/svg");r.setAttributeNS(k,"xmlns:xlink","http://www.w3.org/1999/xlink");r.setAttribute("width",l*i.scale);r.setAttribute("height",t*i.scale);r.setAttribute("viewBox",[i.left||0,i.top||0,l,t].join(" "));u.appendChild(r);var q=f(j,i.selectorRemap);var v=document.createElement("style");v.setAttribute("type","text/css");v.innerHTML="<![CDATA[\\n"+q+"\\n]]>";var n=document.createElement("defs");n.appendChild(v);r.insertBefore(n,r.firstChild);var p=b+u.innerHTML;var m="data:image/svg+xml;base64,"+window.btoa(c(p));if(h){h(m)}})};g.svgAsPngUri=function(j,i,h){g.svgAsDataUri(j,i,function(k){var l=new Image();l.onload=function(){var n=document.createElement("canvas");n.width=l.width;n.height=l.height;var o=n.getContext("2d");if(i&&i.backgroundColor){o.fillStyle=i.backgroundColor;o.fillRect(0,0,n.width,n.height)}o.drawImage(l,0,0);var m=document.createElement("a");h(n.toDataURL("image/png"))};l.src=k})};g.saveSvgAsPng=function(j,i,h){h=h||{};g.svgAsPngUri(j,h,function(l){var k=document.createElement("a");k.download=i;k.href=l;document.body.appendChild(k);k.addEventListener("click",function(m){k.parentNode.removeChild(k)});k.click()})}})();
@@ -2680,7 +2763,7 @@ class springNetwork:
                                         </div>
                                         
                                         <div class="row">
-                                            <rzslider id="slider" class="slider" rz-slider-model="slider.value" rz-slider-options="slider.options"></rzslider>
+                                            <rzslider id="slider" class="slider" rz-slider-model="slider.minValue" rz-slider-high="slider.maxValue" rz-slider-options="slider.options"></rzslider>
                                         </div>
                                         
                                         <div id="nodeSizeDropdown" class="row">Size nodes by 
@@ -2721,6 +2804,7 @@ class springNetwork:
 	    <script src="https://rawgit.com/rzajac/angularjs-slider/master/dist/rzslider.js"></script>
 	    
 	    <script src="https://d3js.org/d3.v5.min.js"></script>
+	    <script src="https://unpkg.com/force-in-a-box/dist/forceInABox.js"></script>
 	    
         <script>
             (function(){var g=typeof exports!="undefined"&&exports||this;var b='<?xml version="1.0" standalone="no"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">';function e(h){return h&&h.lastIndexOf("http",0)==0&&h.lastIndexOf(window.location.host)==-1}function a(k,m){var h=k.querySelectorAll("image");var l=h.length;if(l==0){m()}for(var j=0;j<h.length;j++){(function(q){var o=q.getAttributeNS("http://www.w3.org/1999/xlink","href");if(o){if(e(o.value)){console.warn("Cannot render embedded images linking to external hosts: "+o.value);return}}var p=document.createElement("canvas");var i=p.getContext("2d");var n=new Image();o=o||q.getAttribute("href");n.src=o;n.onload=function(){p.width=n.width;p.height=n.height;i.drawImage(n,0,0);q.setAttributeNS("http://www.w3.org/1999/xlink","href",p.toDataURL("image/png"));l--;if(l==0){m()}};n.onerror=function(){console.log("Could not load "+o);l--;if(l==0){m()}}})(h[j])}}function f(h,k){var r="";var q=document.styleSheets;for(var o=0;o<q.length;o++){try{var u=q[o].cssRules}catch(s){console.warn("Stylesheet could not be loaded: "+q[o].href);continue}if(u!=null){for(var n=0;n<u.length;n++){var t=u[n];if(typeof(t.style)!="undefined"){var p=null;try{p=h.querySelector(t.selectorText)}catch(m){console.warn('Invalid CSS selector "'+t.selectorText+'"',m)}if(p){var l=k?k(t.selectorText):t.selectorText;r+=l+" { "+t.style.cssText+" }\\n"}else{if(t.cssText.match(/^@font-face/)){r+=t.cssText+"\\n"}}}}}}return r}function d(i,k,j){var h=(i.viewBox.baseVal&&i.viewBox.baseVal[j])||(k.getAttribute(j)!==null&&!k.getAttribute(j).match(/%$$/)&&parseInt(k.getAttribute(j)))||i.getBoundingClientRect()[j]||parseInt(k.style[j])||parseInt(window.getComputedStyle(i).getPropertyValue(j));return(typeof h==="undefined"||h===null||isNaN(parseFloat(h)))?0:h}function c(h){h=encodeURIComponent(h);h=h.replace(/%([0-9A-F]{2})/g,function(i,j){var k=String.fromCharCode("0x"+j);return k==="%"?"%25":k});return decodeURIComponent(h)}g.svgAsDataUri=function(j,i,h){i=i||{};i.scale=i.scale||1;var k="http://www.w3.org/2000/xmlns/";a(j,function(){var u=document.createElement("div");var r=j.cloneNode(true);var l,t;if(j.tagName=="svg"){l=i.width||d(j,r,"width");t=i.height||d(j,r,"height")}else{if(j.getBBox){var o=j.getBBox();l=o.x+o.width;t=o.y+o.height;r.setAttribute("transform",r.getAttribute("transform").replace(/translate\(.*?\)/,""));var p=document.createElementNS("http://www.w3.org/2000/svg","svg");p.appendChild(r);r=p}else{console.error("Attempted to render non-SVG element",j);return}}r.setAttribute("version","1.1");r.setAttributeNS(k,"xmlns","http://www.w3.org/2000/svg");r.setAttributeNS(k,"xmlns:xlink","http://www.w3.org/1999/xlink");r.setAttribute("width",l*i.scale);r.setAttribute("height",t*i.scale);r.setAttribute("viewBox",[i.left||0,i.top||0,l,t].join(" "));u.appendChild(r);var q=f(j,i.selectorRemap);var v=document.createElement("style");v.setAttribute("type","text/css");v.innerHTML="<![CDATA[\\n"+q+"\\n]]>";var n=document.createElement("defs");n.appendChild(v);r.insertBefore(n,r.firstChild);var p=b+u.innerHTML;var m="data:image/svg+xml;base64,"+window.btoa(c(p));if(h){h(m)}})};g.svgAsPngUri=function(j,i,h){g.svgAsDataUri(j,i,function(k){var l=new Image();l.onload=function(){var n=document.createElement("canvas");n.width=l.width;n.height=l.height;var o=n.getContext("2d");if(i&&i.backgroundColor){o.fillStyle=i.backgroundColor;o.fillRect(0,0,n.width,n.height)}o.drawImage(l,0,0);var m=document.createElement("a");h(n.toDataURL("image/png"))};l.src=k})};g.saveSvgAsPng=function(j,i,h){h=h||{};g.svgAsPngUri(j,h,function(l){var k=document.createElement("a");k.download=i;k.href=l;document.body.appendChild(k);k.addEventListener("click",function(m){k.parentNode.removeChild(k)});k.click()})}})();

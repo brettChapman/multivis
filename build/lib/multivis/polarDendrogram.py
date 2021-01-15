@@ -108,7 +108,7 @@ class polarDendrogram:
                         text_colors = dict(zip(peaktable.index, text_color_values))
                     else:
                         if self.__textColorScale != "ordinal":
-                            print("Error: Text colour column is not valid. While textColorScale is not ordinal, choose a column containing colour values, floats or integer values.")
+                            print("Error: Text colour column is not valid. While textColorScale is not ordinal, choose a column containing colour values (names, hex code or RGB values), floats or integer values.")
                             sys.exit()
                         else:
                             colorsRGB = self.__get_colors(text_color_values, textCmap)[:, :3]
@@ -396,7 +396,7 @@ class polarDendrogram:
                         float(text_color_values[0])
                     except ValueError:
                         if not matplotlib.colors.is_color_like(text_color_values[0]):
-                            print("Error: Text colour column is not valid. While textColorScale is not ordinal, choose a column containing colour values, floats or integer values.")
+                            print("Error: Text colour column is not valid. While textColorScale is not ordinal, choose a column containing colour values (names, hex code or RGB values), floats or integer values.")
                             sys.exit()
 
         if label_column not in col_list:

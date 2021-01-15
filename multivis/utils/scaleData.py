@@ -65,7 +65,9 @@ def scaleData(data, scale, min, max):
         scaled_data = [round(x) for x in list(map(int, scaler(data, 'minmax', min, max)))]
     elif scale == 'ordinal':
         encoder = OrdinalEncoder()
+
         scaled_data = encoder.fit_transform(data.reshape(-1, 1)).flatten()
+
         scaled_data = np.array([x for x in list(scaler(scaled_data, "minmax", min, max))])
 
     return scaled_data
