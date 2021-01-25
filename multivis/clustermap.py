@@ -28,6 +28,7 @@ class clustermap:
             dpi: The number of Dots Per Inch (DPI) for the image (default: 200)
             figSize: The figure size as a tuple (width,height) (default: (80,70))
             dendrogram_ratio_shift: The ratio to shift the position of the dendrogram in relation to the heatmap (default: 0.0)
+            dendrogram_line_width: The line width of the dendrograms (default: 1.5)
             fontSize: The font size set for each node (default: 30)
             heatmap_cmap: The CMAP colour palette to use for the heatmap (default: 'RdYlGn')
             cluster_cmap: The CMAP colour palette to use for the branch seperation of clusters in the dendrogram (default: 'Set1')
@@ -49,9 +50,9 @@ class clustermap:
 
         self.set_params(xLabels=pd.Series(scores.columns), yLabels=pd.Series(scores.index))
 
-    def set_params(self, xLabels, yLabels, imageFileName='clusterMap.png', saveImage=True, dpi=200, figSize=(80, 70), dendrogram_ratio_shift=0.0, fontSize=30, heatmap_cmap='RdYlGn', cluster_cmap='Set1', rowColorCluster=False, colColorCluster=False, row_color_threshold=10, col_color_threshold=10):
+    def set_params(self, xLabels, yLabels, imageFileName='clusterMap.png', saveImage=True, dpi=200, figSize=(80, 70), dendrogram_ratio_shift=0.0, dendrogram_line_width=1.5, fontSize=30, heatmap_cmap='RdYlGn', cluster_cmap='Set1', rowColorCluster=False, colColorCluster=False, row_color_threshold=10, col_color_threshold=10):
 
-        imageFileName, saveImage, dpi, figSize, dendrogram_ratio_shift, fontSize, xLabels, yLabels, heatmap_cmap, cluster_cmap, rowColorCluster, colColorCluster, row_color_threshold, col_color_threshold = self.__paramCheck(imageFileName, saveImage, dpi, figSize, dendrogram_ratio_shift, fontSize, xLabels, yLabels, heatmap_cmap, cluster_cmap, rowColorCluster, colColorCluster, row_color_threshold, col_color_threshold)
+        imageFileName, saveImage, dpi, figSize, dendrogram_ratio_shift, dendrogram_line_width, fontSize, xLabels, yLabels, heatmap_cmap, cluster_cmap, rowColorCluster, colColorCluster, row_color_threshold, col_color_threshold = self.__paramCheck(imageFileName, saveImage, dpi, figSize, dendrogram_ratio_shift, dendrogram_line_width, fontSize, xLabels, yLabels, heatmap_cmap, cluster_cmap, rowColorCluster, colColorCluster, row_color_threshold, col_color_threshold)
 
         scores = self.__scores
 
@@ -67,6 +68,7 @@ class clustermap:
         self.__figSize = figSize;
         self.__dendrogram_ratio_shift = dendrogram_ratio_shift;
         self.__fontSize = fontSize;
+        self.__dendrogram_line_width = dendrogram_line_width;
         self.__heatmap_cmap = heatmap_cmap;
         self.__cluster_cmap = cluster_cmap;
         self.__rowColorCluster = rowColorCluster;
@@ -90,6 +92,7 @@ class clustermap:
         row_color_threshold = self.__row_color_threshold
         col_color_threshold = self.__col_color_threshold
         dendrogram_ratio_shift = self.__dendrogram_ratio_shift
+        dendrogram_line_width = self.__dendrogram_line_width
         fontSize = self.__fontSize
 
         wspace = 0.0025
@@ -180,6 +183,12 @@ class clustermap:
                         plt.setp(grid.cax.yaxis.get_majorticklabels(), fontsize=fontSize)
                         plt.setp(grid.cax.xaxis.get_majorticklabels(), fontsize=fontSize)
 
+                        for line in grid.ax_row_dendrogram.collections:
+                            line.set_linewidth(dendrogram_line_width)
+
+                        for line in grid.ax_col_dendrogram.collections:
+                            line.set_linewidth(dendrogram_line_width)
+
                         if saveImage:
                             grid.savefig(imageFileName, dpi=dpi)
 
@@ -240,6 +249,12 @@ class clustermap:
 
                     plt.setp(grid.cax.yaxis.get_majorticklabels(), fontsize=fontSize)
                     plt.setp(grid.cax.xaxis.get_majorticklabels(), fontsize=fontSize)
+
+                    for line in grid.ax_row_dendrogram.collections:
+                        line.set_linewidth(dendrogram_line_width)
+
+                    for line in grid.ax_col_dendrogram.collections:
+                        line.set_linewidth(dendrogram_line_width)
 
                     if saveImage:
                         grid.savefig(imageFileName, dpi=dpi)
@@ -304,6 +319,12 @@ class clustermap:
                     plt.setp(grid.cax.yaxis.get_majorticklabels(), fontsize=fontSize)
                     plt.setp(grid.cax.xaxis.get_majorticklabels(), fontsize=fontSize)
 
+                    for line in grid.ax_row_dendrogram.collections:
+                        line.set_linewidth(dendrogram_line_width)
+
+                    for line in grid.ax_col_dendrogram.collections:
+                        line.set_linewidth(dendrogram_line_width)
+
                     if saveImage:
                         grid.savefig(imageFileName, dpi=dpi)
 
@@ -346,6 +367,12 @@ class clustermap:
             plt.setp(grid.cax.yaxis.get_majorticklabels(), fontsize=fontSize)
             plt.setp(grid.cax.xaxis.get_majorticklabels(), fontsize=fontSize)
 
+            for line in grid.ax_row_dendrogram.collections:
+                line.set_linewidth(dendrogram_line_width)
+
+            for line in grid.ax_col_dendrogram.collections:
+                line.set_linewidth(dendrogram_line_width)
+
             if saveImage:
                 grid.savefig(imageFileName, dpi=dpi)
 
@@ -371,7 +398,7 @@ class clustermap:
 
         return scores, row_linkage, col_linkage
 
-    def __paramCheck(self, imageFileName, saveImage, dpi, figSize, dendrogram_ratio_shift, fontSize, xLabels, yLabels, heatmap_cmap, cluster_cmap, rowColorCluster, colColorCluster, row_color_threshold, col_color_threshold):
+    def __paramCheck(self, imageFileName, saveImage, dpi, figSize, dendrogram_ratio_shift, dendrogram_line_width, fontSize, xLabels, yLabels, heatmap_cmap, cluster_cmap, rowColorCluster, colColorCluster, row_color_threshold, col_color_threshold):
 
         if not isinstance(imageFileName, str):
             print("Error: Image file name is not valid. Choose a string value.")
@@ -398,6 +425,11 @@ class clustermap:
         if not isinstance(dendrogram_ratio_shift, float):
             if not isinstance(dendrogram_ratio_shift, int):
                 print("Error: Dendrogram ratio shift is not valid. Choose a float or integer value.")
+                sys.exit()
+
+        if not isinstance(dendrogram_line_width, float):
+            if not isinstance(dendrogram_line_width, int):
+                print("Error: Dendrogram line width is not valid. Choose a float or integer value.")
                 sys.exit()
 
         if not isinstance(fontSize, float):
@@ -462,7 +494,7 @@ class clustermap:
                 print("Error: Column colour threshold is not valid. Choose a float or integer value.")
                 sys.exit()
 
-        return imageFileName, saveImage, dpi, figSize, dendrogram_ratio_shift, fontSize, xLabels, yLabels, heatmap_cmap, cluster_cmap, rowColorCluster, colColorCluster, row_color_threshold, col_color_threshold
+        return imageFileName, saveImage, dpi, figSize, dendrogram_ratio_shift, dendrogram_line_width, fontSize, xLabels, yLabels, heatmap_cmap, cluster_cmap, rowColorCluster, colColorCluster, row_color_threshold, col_color_threshold
 
     def __get_cluster_classes(self, dn, labels, label='ivl'):
         cluster_idxs = defaultdict(list)

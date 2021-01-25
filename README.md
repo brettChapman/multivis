@@ -165,6 +165,7 @@ For further detail on the usage refer to the docstring.
 			- [dpi] : The number of Dots Per Inch (DPI) for the image (default: 200)
 			- [figSize] : The figure size as a tuple (width,height) (default: (80,70))
 			- [dendrogram_ratio_shift] : The ratio to shift the position of the dendrogram in relation to the heatmap (default: 0.0)
+			- [dendrogram_line_width] : The line width of the dendrograms (default: 1.5)
 			- [fontSize] : The font size set for each node (default: 30)
 			- [heatmap_cmap] : The CMAP colour palette to use for the heatmap (default: 'RdYlGn')
 			- [cluster_cmap] : The CMAP colour palette to use for the branch seperation of clusters in the dendrogram (default: 'Set1')

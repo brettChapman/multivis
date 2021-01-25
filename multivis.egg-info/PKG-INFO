@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: multivis
-Version: 0.4.0
+Version: 0.4.2
 Summary: MultiVis is a data visualisation package that produces both static and interactive visualisations targeted towards the Omics community.
 Home-page: https://github.com/brettChapman/multivis
 Author: Brett Chapman
@@ -173,6 +173,7 @@ Description: # MultiVis
         			- [dpi] : The number of Dots Per Inch (DPI) for the image (default: 200)
         			- [figSize] : The figure size as a tuple (width,height) (default: (80,70))
         			- [dendrogram_ratio_shift] : The ratio to shift the position of the dendrogram in relation to the heatmap (default: 0.0)
+        			- [dendrogram_line_width] : The line width of the dendrograms (default: 1.5)
         			- [fontSize] : The font size set for each node (default: 30)
         			- [heatmap_cmap] : The CMAP colour palette to use for the heatmap (default: 'RdYlGn')
         			- [cluster_cmap] : The CMAP colour palette to use for the branch seperation of clusters in the dendrogram (default: 'Set1')
