@@ -7,14 +7,14 @@ The MultiVis package contains the necessary tools for visualisation of multivari
 multivis requires:
 - Python (>=3.5)
 - NumPy (>=1.12)
-- Pandas
-- Matplotlib
-- Seaborn
-- Networkx
-- SciPy
-- Scikit-learn
-- tqdm
-- xlrd
+- Pandas (==0.25.1)
+- Matplotlib (==3.1.1)
+- Seaborn (==0.9.0)
+- Networkx (==2.3.0)
+- SciPy (==1.3.1)
+- Scikit-learn (==0.21.3)
+- tqdm (==4.36.1)
+- xlrd (==1.2.0)
 
 ### User installation
 The recommend way to install multivis and dependencies is to using ``conda``:
