@@ -156,11 +156,16 @@ class Edge:
             sys.exit()
 
         # Do not assume the peaks/nodes have been indexed correctly. Remove any index columns and reindex.
-        if 'Idx' in PeakTable.columns:
-            PeakTable = PeakTable.drop(columns=['Idx'])
+        column_list = [column.lower() for column in PeakTable.columns]
+        if 'idx' in column_list:
+            index = column_list.index('idx')
+            column_name = PeakTable.columns[index]
+            PeakTable = PeakTable.drop(columns=[column_name])
 
-        if 'Index' in PeakTable.columns:
-            PeakTable = PeakTable.drop(columns=['Index'])
+        if 'index' in column_list:
+            index = column_list.index('index')
+            column_name = PeakTable.columns[index]
+            PeakTable = PeakTable.drop(columns=[column_name])
 
         PeakTable.index.name = 'Idx'
 
