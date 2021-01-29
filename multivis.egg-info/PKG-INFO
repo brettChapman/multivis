@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: multivis
-Version: 0.4.2
+Version: 0.4.3
 Summary: MultiVis is a data visualisation package that produces both static and interactive visualisations targeted towards the Omics community.
 Home-page: https://github.com/brettChapman/multivis
 Author: Brett Chapman
@@ -15,14 +15,14 @@ Description: # MultiVis
         multivis requires:
         - Python (>=3.5)
         - NumPy (>=1.12)
-        - Pandas
-        - Matplotlib
-        - Seaborn
-        - Networkx
-        - SciPy
-        - Scikit-learn
-        - tqdm
-        - xlrd
+        - Pandas (==0.25.1)
+        - Matplotlib (==3.1.1)
+        - Seaborn (==0.9.0)
+        - Networkx (==2.3.0)
+        - SciPy (==1.3.1)
+        - Scikit-learn (==0.21.3)
+        - tqdm (==4.36.1)
+        - xlrd (==1.2.0)
         
         ### User installation
         The recommend way to install multivis and dependencies is to using ``conda``:
@@ -51,7 +51,7 @@ Description: # MultiVis
         		- [set_params] : Set parameters
         			- [filter_type] : The value type to filter similarities on (default: 'pvalue')
         			- [hard_threshold] : Value to filter similarities on (default: 0.005)
-        			- [internalScores] : Include scores within blocks if building multi-block network (default: False)
+        			- [withinBlocks] : Include scores within blocks if building multi-block network (default: False)
         			- [sign] : The sign of the score/similarity to filter on ('pos', 'neg' or 'both') (default: 'both')
         					
         		- [build] : Builds the nodes and edges.
@@ -68,7 +68,7 @@ Description: # MultiVis
         			- [filter_type] : The value type to filter the data on (default: 'pvalue')
         			- [hard_threshold] : Value to filter the data on (default: 0.005)
         			- [link_type] : The value type to represent links in the network (default: 'score')
-        			- [internalScores] : Include scores within blocks if building multi-block network (default: False)
+        			- [withinBlocks] : Include scores within blocks if building multi-block network (default: False)
         			- [sign] : The sign of the score/similarity to filter on ('pos', 'neg' or 'both') (default: 'both')
         					
         		- [build] : Builds nodes, edges and NetworkX graph.

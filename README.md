@@ -43,7 +43,7 @@ For further detail on the usage refer to the docstring.
 		- [set_params] : Set parameters
 			- [filter_type] : The value type to filter similarities on (default: 'pvalue')
 			- [hard_threshold] : Value to filter similarities on (default: 0.005)
-			- [internalScores] : Include scores within blocks if building multi-block network (default: False)
+			- [withinBlocks] : Include scores within blocks if building multi-block network (default: False)
 			- [sign] : The sign of the score/similarity to filter on ('pos', 'neg' or 'both') (default: 'both')
 					
 		- [build] : Builds the nodes and edges.
@@ -60,7 +60,7 @@ For further detail on the usage refer to the docstring.
 			- [filter_type] : The value type to filter the data on (default: 'pvalue')
 			- [hard_threshold] : Value to filter the data on (default: 0.005)
 			- [link_type] : The value type to represent links in the network (default: 'score')
-			- [internalScores] : Include scores within blocks if building multi-block network (default: False)
+			- [withinBlocks] : Include scores within blocks if building multi-block network (default: False)
 			- [sign] : The sign of the score/similarity to filter on ('pos', 'neg' or 'both') (default: 'both')
 					
 		- [build] : Builds nodes, edges and NetworkX graph.

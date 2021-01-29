@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 from .utils import *
 
+
 class Edge:
     """ Class for edgeBundle and base class for network.
 
@@ -20,7 +21,7 @@ class Edge:
         set_params : Set parameters
             filter_type: The value type to filter the data on (default: 'pvalue')
             hard_threshold: Value to filter the data on (default: 0.005)
-            internalScores: Include scores within blocks if building multi-block network (default: False)
+            withinBlocks: Include scores within blocks if building multi-block network (default: False)
             sign: The sign of the score/similarity to filter on ('pos', 'neg' or 'both') (default: 'both')
 
         build : Builds the nodes and edges.
@@ -43,13 +44,14 @@ class Edge:
 
         self.set_params()
 
-    def set_params(self, filter_type='pvalue', hard_threshold=0.005, internalScores=False, sign='both'):
+    def set_params(self, filter_type='pvalue', hard_threshold=0.005, withinBlocks=False, sign='both'):
 
-        filter_type, hard_threshold, internalScores, sign = self.__paramCheck(filter_type, hard_threshold, internalScores, sign)
+        filter_type, hard_threshold, withinBlocks, sign = self.__paramCheck(filter_type, hard_threshold, withinBlocks,
+                                                                            sign)
 
         self.__filter_type = filter_type;
         self.__hard_threshold = hard_threshold;
-        self.__internalScores = internalScores;
+        self.__withinBlocks = withinBlocks;
         self.__sign = sign;
 
     def build(self):
@@ -74,7 +76,8 @@ class Edge:
 
         for idx, index_block in enumerate(index_blocks):
 
-            nodes, scoreBlocks_index, pvalBlocks_index = self.__scoreBlockIndex(nodes, peaktable, datatable, pvalues, index_blocks, index_block)
+            nodes, scoreBlocks_index, pvalBlocks_index = self.__scoreBlockIndex(nodes, peaktable, datatable, pvalues,
+                                                                                index_blocks, index_block)
 
             if set(list(datatable.index)) == set(list(datatable.columns)):
                 iter_idx = idx;
@@ -86,30 +89,43 @@ class Edge:
                 if pvalues is None:
                     filter_type = 'score';
 
-                if self.__internalScores:
+                if self.__withinBlocks:
 
-                    nodes, scoreBlocks_column, pvalBlocks_column = self.__scoreBlockColumn(nodes, peaktable, scoreBlocks_index, pvalBlocks_index, column_blocks, column_block);
+                    nodes, scoreBlocks_column, pvalBlocks_column = self.__scoreBlockColumn(nodes, peaktable,
+                                                                                           scoreBlocks_index,
+                                                                                           pvalBlocks_index,
+                                                                                           column_blocks, column_block);
 
                     if edges.empty:
-                        edges = self.__buildEdges(nodes, scoreBlocks_column, pvalBlocks_column, index_block, column_block, filter_type, hard_threshold, sign)
+                        edges = self.__buildEdges(nodes, scoreBlocks_column, pvalBlocks_column, index_block,
+                                                  column_block, filter_type, hard_threshold, sign)
                     else:
-                        dat_edges = self.__buildEdges(nodes, scoreBlocks_column, pvalBlocks_column, index_block, column_block, filter_type, hard_threshold, sign)
+                        dat_edges = self.__buildEdges(nodes, scoreBlocks_column, pvalBlocks_column, index_block,
+                                                      column_block, filter_type, hard_threshold, sign)
                         edges = pd.concat([edges, dat_edges], sort=False).reset_index(drop=True)
                 else:
 
                     if index_block != column_block:
 
-                        nodes, scoreBlocks_column, pvalBlocks_column = self.__scoreBlockColumn(nodes, peaktable, scoreBlocks_index, pvalBlocks_index, column_blocks, column_block);
+                        nodes, scoreBlocks_column, pvalBlocks_column = self.__scoreBlockColumn(nodes, peaktable,
+                                                                                               scoreBlocks_index,
+                                                                                               pvalBlocks_index,
+                                                                                               column_blocks,
+                                                                                               column_block);
 
                         if edges.empty:
-                            edges = self.__buildEdges(nodes, scoreBlocks_column, pvalBlocks_column, index_block, column_block, filter_type, hard_threshold, sign)
+                            edges = self.__buildEdges(nodes, scoreBlocks_column, pvalBlocks_column, index_block,
+                                                      column_block, filter_type, hard_threshold, sign)
                         else:
-                            dat_edges = self.__buildEdges(nodes, scoreBlocks_column, pvalBlocks_column, index_block, column_block, filter_type, hard_threshold, sign)
+                            dat_edges = self.__buildEdges(nodes, scoreBlocks_column, pvalBlocks_column, index_block,
+                                                          column_block, filter_type, hard_threshold, sign)
                             edges = pd.concat([edges, dat_edges], sort=False).reset_index(drop=True)
                     else:
                         if ((len(index_blocks) == 1) and (len(column_blocks) == 1)):
-                            if ((index_blocks[0] == '#no_multiple_blocks') and (column_blocks[0] == '#no_multiple_blocks')):
-                                edges = self.__buildEdges(nodes, scoreBlocks_index, pvalBlocks_index, index_block, column_block, filter_type, hard_threshold, sign)
+                            if ((index_blocks[0] == '#no_multiple_blocks') and (
+                                    column_blocks[0] == '#no_multiple_blocks')):
+                                edges = self.__buildEdges(nodes, scoreBlocks_index, pvalBlocks_index, index_block,
+                                                          column_block, filter_type, hard_threshold, sign)
 
         self.__setNodes(nodes)
         self.__setEdges(edges)
@@ -139,9 +155,20 @@ class Edge:
             print("Error: \"Label\" column not in Peak Table. Please check your data.")
             sys.exit()
 
+        # Do not assume the peaks/nodes have been indexed correctly. Remove any index columns and reindex.
+        if 'Idx' in PeakTable.columns:
+            PeakTable = PeakTable.drop(columns=['Idx'])
+
+        if 'Index' in PeakTable.columns:
+            PeakTable = PeakTable.drop(columns=['Index'])
+
+        PeakTable.index.name = 'Idx'
+
+        PeakTable = PeakTable.reset_index()
+
         return PeakTable
 
-    def __paramCheck(self, filter_type, hard_threshold, internalScores, sign):
+    def __paramCheck(self, filter_type, hard_threshold, withinBlocks, sign):
 
         if filter_type.lower() not in ["pvalue", "score"]:
             print("Error: Filter type not valid. Choose either \"Pvalue\" or \"Score\".")
@@ -152,15 +179,15 @@ class Edge:
                 print("Error: Hard threshold is not valid. Choose a float or integer value.")
                 sys.exit()
 
-        if not type(internalScores) == bool:
-            print("Error: Internal scores not valid. Choose either \"True\" or \"False\".")
+        if not type(withinBlocks) == bool:
+            print("Error: Within blocks not valid. Choose either \"True\" or \"False\".")
             sys.exit()
 
         if sign.lower() not in ["pos", "neg", "both"]:
             print("Error: Sign is not valid. Choose either \"pos\" or \"neg\" or \"both\".")
             sys.exit()
 
-        return filter_type, hard_threshold, internalScores, sign
+        return filter_type, hard_threshold, withinBlocks, sign
 
     def __scoreBlockIndex(self, nodes, peaks, data, pvalues, blocks, index_block):
 
@@ -288,10 +315,12 @@ class Edge:
                     start_block_names = [x for x in start_block_names if x in index_set]
                     end_block_names = [x for x in end_block_names if x in columns_set]
 
-                    start_block_labels = list(start_block_nodes[start_block_nodes['Name'].isin(start_block_names)]['Label'])
+                    start_block_labels = list(
+                        start_block_nodes[start_block_nodes['Name'].isin(start_block_names)]['Label'])
                     end_block_labels = list(end_block_nodes[end_block_nodes['Name'].isin(end_block_names)]['Label'])
 
-                    start_block_indexes = list(start_block_nodes[start_block_nodes['Name'].isin(start_block_names)].index)
+                    start_block_indexes = list(
+                        start_block_nodes[start_block_nodes['Name'].isin(start_block_names)].index)
                     end_block_indexes = list(end_block_nodes[end_block_nodes['Name'].isin(end_block_names)].index)
 
                 for j_idx in range(col_idx, len(score_cols)):
@@ -310,29 +339,44 @@ class Edge:
                             if PVAL is None:
 
                                 if blocks[0] != '#no_multiple_blocks':
-                                    b = [start_index, start_name, start_label, start_block, end_index, end_name, end_label, end_block, SCORE.values[i_idx, j_idx], np.sign(SCORE.values[i_idx, j_idx])];
+                                    b = [start_index, start_name, start_label, start_block, end_index, end_name,
+                                         end_label, end_block, SCORE.values[i_idx, j_idx],
+                                         np.sign(SCORE.values[i_idx, j_idx])];
                                 else:
-                                    b = [start_index, start_name, start_label, end_index, end_name, end_label, SCORE.values[i_idx, j_idx], np.sign(SCORE.values[i_idx, j_idx])];
+                                    b = [start_index, start_name, start_label, end_index, end_name, end_label,
+                                         SCORE.values[i_idx, j_idx], np.sign(SCORE.values[i_idx, j_idx])];
                             else:
 
                                 if blocks[0] != '#no_multiple_blocks':
-                                    b = [start_index, start_name, start_label, start_block, end_index, end_name, end_label, end_block, SCORE.values[i_idx, j_idx], np.sign(SCORE.values[i_idx, j_idx]), PVAL.values[i_idx, j_idx]];
+                                    b = [start_index, start_name, start_label, start_block, end_index, end_name,
+                                         end_label, end_block, SCORE.values[i_idx, j_idx],
+                                         np.sign(SCORE.values[i_idx, j_idx]), PVAL.values[i_idx, j_idx]];
                                 else:
-                                    b = [start_index, start_name, start_label, end_index, end_name, end_label, SCORE.values[i_idx, j_idx], np.sign(SCORE.values[i_idx, j_idx]), PVAL.values[i_idx, j_idx]];
+                                    b = [start_index, start_name, start_label, end_index, end_name, end_label,
+                                         SCORE.values[i_idx, j_idx], np.sign(SCORE.values[i_idx, j_idx]),
+                                         PVAL.values[i_idx, j_idx]];
                             e.append(b)
 
             if PVAL is None:
 
                 if blocks[0] != '#no_multiple_blocks':
-                    score = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_label', 'start_block', 'end_index', 'end_name', 'end_label', 'end_block', 'score', 'sign'])
+                    score = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_label', 'start_block',
+                                                     'end_index', 'end_name', 'end_label', 'end_block', 'score',
+                                                     'sign'])
                 else:
-                    score = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_label', 'end_index', 'end_name', 'end_label', 'score', 'sign'])
+                    score = pd.DataFrame(e,
+                                         columns=['start_index', 'start_name', 'start_label', 'end_index', 'end_name',
+                                                  'end_label', 'score', 'sign'])
             else:
 
                 if blocks[0] != '#no_multiple_blocks':
-                    score = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_label', 'start_block', 'end_index', 'end_name', 'end_label', 'end_block', 'score', 'sign', 'pvalue'])
+                    score = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_label', 'start_block',
+                                                     'end_index', 'end_name', 'end_label', 'end_block', 'score', 'sign',
+                                                     'pvalue'])
                 else:
-                    score = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_label', 'end_index', 'end_name', 'end_label', 'score', 'sign', 'pvalue'])
+                    score = pd.DataFrame(e,
+                                         columns=['start_index', 'start_name', 'start_label', 'end_index', 'end_name',
+                                                  'end_label', 'score', 'sign', 'pvalue'])
 
             return score
 
@@ -366,10 +410,12 @@ class Edge:
                     start_block_names = [x for x in start_block_names if x in index_set]
                     end_block_names = [x for x in end_block_names if x in columns_set]
 
-                    start_block_labels = list(start_block_nodes[start_block_nodes['Name'].isin(start_block_names)]['Label'])
+                    start_block_labels = list(
+                        start_block_nodes[start_block_nodes['Name'].isin(start_block_names)]['Label'])
                     end_block_labels = list(end_block_nodes[end_block_nodes['Name'].isin(end_block_names)]['Label'])
 
-                    start_block_indexes = list(start_block_nodes[start_block_nodes['Name'].isin(start_block_names)].index)
+                    start_block_indexes = list(
+                        start_block_nodes[start_block_nodes['Name'].isin(start_block_names)].index)
                     end_block_indexes = list(end_block_nodes[end_block_nodes['Name'].isin(end_block_names)].index)
 
                 for j_idx in range(col_idx, len(score_cols)):
@@ -386,44 +432,59 @@ class Edge:
                         if PVAL is None:
 
                             if blocks[0] != '#no_multiple_blocks':
-                                b = [start_index, start_name, start_label, start_block, end_index, end_name, end_label, end_block, SCORE.values[i_idx, j_idx], np.sign(SCORE.values[i_idx, j_idx])];
+                                b = [start_index, start_name, start_label, start_block, end_index, end_name, end_label,
+                                     end_block, SCORE.values[i_idx, j_idx], np.sign(SCORE.values[i_idx, j_idx])];
                             else:
-                                b = [start_index, start_name, start_label, end_index, end_name, end_label, SCORE.values[i_idx, j_idx], np.sign(SCORE.values[i_idx, j_idx])];
+                                b = [start_index, start_name, start_label, end_index, end_name, end_label,
+                                     SCORE.values[i_idx, j_idx], np.sign(SCORE.values[i_idx, j_idx])];
 
                             e.append(b)
                         else:
                             if (PVAL.values[i_idx, j_idx] < hard_threshold):
 
                                 if blocks[0] != '#no_multiple_blocks':
-                                    b = [start_index, start_name, start_label, start_block, end_index, end_name, end_label, end_block, SCORE.values[i_idx, j_idx], np.sign(SCORE.values[i_idx, j_idx]), PVAL.values[i_idx, j_idx]]
+                                    b = [start_index, start_name, start_label, start_block, end_index, end_name,
+                                         end_label, end_block, SCORE.values[i_idx, j_idx],
+                                         np.sign(SCORE.values[i_idx, j_idx]), PVAL.values[i_idx, j_idx]]
                                 else:
-                                    b = [start_index, start_name, start_label, end_index, end_name, end_label, SCORE.values[i_idx, j_idx], np.sign(SCORE.values[i_idx, j_idx]), PVAL.values[i_idx, j_idx]];
+                                    b = [start_index, start_name, start_label, end_index, end_name, end_label,
+                                         SCORE.values[i_idx, j_idx], np.sign(SCORE.values[i_idx, j_idx]),
+                                         PVAL.values[i_idx, j_idx]];
 
                                 e.append(b)
 
             if PVAL is None:
 
                 if blocks[0] != '#no_multiple_blocks':
-                    pval = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_label', 'start_block', 'end_index', 'end_name', 'end_label', 'end_block', 'score', 'sign'])
+                    pval = pd.DataFrame(e,
+                                        columns=['start_index', 'start_name', 'start_label', 'start_block', 'end_index',
+                                                 'end_name', 'end_label', 'end_block', 'score', 'sign'])
                 else:
-                    pval = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_label', 'end_index', 'end_name', 'end_label', 'score', 'sign'])
+                    pval = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_label', 'end_index', 'end_name',
+                                                    'end_label', 'score', 'sign'])
             else:
 
                 if blocks[0] != '#no_multiple_blocks':
-                    pval = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_label', 'start_block', 'end_index', 'end_name', 'end_label', 'end_block', 'score', 'sign', 'pvalue'])
+                    pval = pd.DataFrame(e,
+                                        columns=['start_index', 'start_name', 'start_label', 'start_block', 'end_index',
+                                                 'end_name', 'end_label', 'end_block', 'score', 'sign', 'pvalue'])
                 else:
-                    pval = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_label', 'end_index', 'end_name', 'end_label', 'score', 'sign', 'pvalue'])
+                    pval = pd.DataFrame(e, columns=['start_index', 'start_name', 'start_label', 'end_index', 'end_name',
+                                                    'end_label', 'score', 'sign', 'pvalue'])
 
             return pval
 
-        options = {'score': __score(start_block_nodes, end_block_nodes, SCORE, PVAL, start_block, end_block, blocks, hard_threshold), 'pvalue': __pval(start_block_nodes, end_block_nodes, SCORE, PVAL, start_block, end_block, blocks, hard_threshold)}
+        options = {'score': __score(start_block_nodes, end_block_nodes, SCORE, PVAL, start_block, end_block, blocks,
+                                    hard_threshold),
+                   'pvalue': __pval(start_block_nodes, end_block_nodes, SCORE, PVAL, start_block, end_block, blocks,
+                                    hard_threshold)}
 
         edges = pd.DataFrame()
 
         if filter_type.lower() in options:
             edges = options[filter_type.lower()];
         else:
-            print ("Error: wrong score type specified. Valid entries are 'Score' or 'Pvalue'.")
+            print("Error: wrong score type specified. Valid entries are 'Score' or 'Pvalue'.")
 
         if sign.lower() == "pos":
             edges = edges[edges['sign'] > 0].reset_index(drop=True)

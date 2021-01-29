@@ -20,7 +20,7 @@ class Network(Edge):
             filter_type: The value type to filter the data on (default: 'pvalue')
             hard_threshold: Value to filter the data on (default: 0.005)
             link_type: The value type to represent links in the network (default: 'score')
-            internalScores: Include scores within blocks if building multi-block network (default: False)
+            withinBlocks: Include scores within blocks if building multi-block network (default: False)
             sign: The sign of the score/similarity to filter on ('pos', 'neg' or 'both') (default: 'both')
 
         build : Builds nodes, edges and NetworkX graph.
@@ -34,9 +34,9 @@ class Network(Edge):
 
         self.set_params()
 
-    def set_params(self, filter_type='pvalue', hard_threshold=0.005, link_type='score', internalScores=False, sign='both'):
+    def set_params(self, filter_type='pvalue', hard_threshold=0.005, link_type='score', withinBlocks=False, sign='both'):
 
-        Edge.set_params(self, filter_type, hard_threshold, internalScores, sign)
+        Edge.set_params(self, filter_type, hard_threshold, withinBlocks, sign)
 
         link_type = self.__paramCheck(link_type)
 
