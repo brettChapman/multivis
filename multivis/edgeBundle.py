@@ -795,24 +795,21 @@ class edgeBundle:
         .node--source,
         .node--target {
             stroke-opacity: 1.0;
+            font-weight: bold;            
+        }
+        
+        .node:hover,
+        .link--source,
+        .link--target {
+            stroke-opacity: 1.0;
             font-weight: bold;
             stroke-width: 4px;
-        }        
-    
+        }
+        
         .link {
             stroke-opacity: 0.4;
             fill: none;
             pointer-events: none;
-        }
-        
-        .link--source {
-            stroke-opacity: 1.0;
-            font-weight: 800;
-            stroke-width: 4px;
-        }
-    
-        .link--target {
-            stroke-opacity: 1.0;            
         }
         
         #edgeBundlePanel {
@@ -992,14 +989,21 @@ class edgeBundle:
             font: "Helvetica Neue", Helvetica, Arial, sans-serif;            
         }
         
-        .node:hover,   
+        .node:hover,
         .node--source,
         .node--target {
             stroke-opacity: 1.0;
-            font-weight: 800;
+            font-weight: bold;            
+        }
+        
+        .node:hover,
+        .link--source,
+        .link--target {
+            stroke-opacity: 1.0;
+            font-weight: bold;
             stroke-width: 4px;
         }
-
+        
         .link {
             stroke-opacity: 0.4;
             fill: none;

@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from matplotlib import gridspec
 import numpy as np
 import pandas as pd
+import copy
 
 class clustermap:
     """Class for clustermap to produce an Hierarchical Clustered Heatmap (HCH) plot.
@@ -44,7 +45,7 @@ class clustermap:
 
         scores, row_linkage, col_linkage = self.__checkData(scores, row_linkage, col_linkage)
 
-        self.__scores = scores;
+        self.__scores = copy.deepcopy(scores);
         self.__row_linkage = row_linkage;
         self.__col_linkage = col_linkage;
 
