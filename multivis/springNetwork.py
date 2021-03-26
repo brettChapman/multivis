@@ -21,7 +21,7 @@ class springNetwork:
         set_params : Set parameters -
             node_size_scale: dictionary(Peak Table column name as index: dictionary('scale': ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal")
                                                                                     , 'range': a number array of length 2 - minimum size to maximum size)) (default: sizes all nodes to 10 with no dropdown menu)
-            node_color_scale: dictionary(Peak Table column name as index: dictionary('scale': ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal")
+            node_color_scale: dictionary(Peak Table column name as index: dictionary('scale': ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal") (default: colours all nodes to 'black')
             html_file: Name to save the HTML file as (default: 'springNetwork.html')
             backgroundColor: Set the background colour of the plot (default: 'white')
             foregroundColor: Set the foreground colour of the plot (default: 'black')

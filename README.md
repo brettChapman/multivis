@@ -41,8 +41,8 @@ For further detail on the usage refer to the docstring.
 		- [pvalues] : Pandas dataframe matrix containing score/similarity pvalues (if available, otherwise set to None)
 	- [methods](https://github.com/brettChapman/multivis/blob/master/multivis/Edge.py#L45-L122)
 		- [set_params] : Set parameters
-			- [filter_type] : The value type to filter similarities on (default: 'pvalue')
-			- [hard_threshold] : Value to filter similarities on (default: 0.005)
+			- [filter_type] : The value type to filter the data on (default: 'pvalue')
+			- [hard_threshold] : Value to filter the data on (default: 0.005)
 			- [withinBlocks] : Include scores within blocks if building multi-block network (default: False)
 			- [sign] : The sign of the score/similarity to filter on ('pos', 'neg' or 'both') (default: 'both')
 					
@@ -89,7 +89,7 @@ For further detail on the usage refer to the docstring.
 			- [edge_cmap] : Set the CMAP colour palette to use for colouring the edges (default: 'brg')
 			- [addArcs] : Setting to 'True' adds arcs around the edge bundle for each block (default: False)
 			- [arcRadiusOffset] : Sets the arc radius offset from the inner radius (default: 20)
-			- [extendArcAngle] : Sets the angle value to add to each end of the arcs (default: 2)
+			- [extendArcAngle] : Sets the angle value to add to each end of the arc (default: 2)
 			- [arc_cmap] : Set the CMAP colour palette to use for colouring the arcs (default: 'Set1')
 
 		- [build] : Generates the JavaScript embedded HTML code, writes to a HTML file and opens it in a browser.
@@ -101,7 +101,7 @@ For further detail on the usage refer to the docstring.
 	- [methods](https://github.com/brettChapman/multivis/blob/master/multivis/plotNetwork.py#L47-L211)
 		- [set_params] : Set parameters
 			- [imageFileName] : The image file name to save to (default: 'networkPlot.jpg')
-			- [edgeLabels] : Setting to 'True' labels all edges with the similarity score (default: True)
+			- [edgeLabels] : Setting to 'True' labels all edges with the score/similarity value (default: True)
 			- [saveImage] : Setting to 'True' will save the image to file (default: True)
 			- [layout] : Set the NetworkX layout type ('circular', 'kamada_kawai', 'random', 'spring', 'spectral') (default: 'spring')
 			- [dpi] : The number of Dots Per Inch (DPI) for the image (default: 200)
@@ -115,7 +115,7 @@ For further detail on the usage refer to the docstring.
 			- [alpha] :  Node opacity value (default: 0.5)
 			- [nodeLabels] : Setting to 'True' will label the nodes (default: True)
 			- [fontSize] : The font size set for each node (default: 15)
-			- [keepSingletons] : Setting to 'True' will keep any single nodes not connected by edges in the NetworkX graph) (default: True)
+			- [keepSingletons] : Setting to 'True' will keep any single nodes not connected by edges in the NetworkX graph (default: True)
 			- [column] : Column from Peak Table to filter on (default: no filtering)
 			- [threshold] : Value to filter on (default: no filtering)
 			- [operator] : The comparison operator to use when filtering (default: '>')
@@ -130,7 +130,7 @@ For further detail on the usage refer to the docstring.
 		- [set_params] : Set parameters
 			- [node_size_scale] : dictionary(Peak Table column name as index: dictionary('scale': ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal")
                 	                                                                            'range': a number array of length 2 - minimum size to maximum size)) (default: sizes all nodes to 10 with no dropdown menu)
-			- [node_color_scale] : dictionary(Peak Table column name as index: dictionary('scale': ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal")
+			- [node_color_scale] : dictionary(Peak Table column name as index: dictionary('scale': ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal") (default: colours all nodes to 'black')
 			- [html_file] : Name to save the HTML file as (default: 'springNetwork.html')
 			- [backgroundColor] : Set the background colour of the plot (default: 'white')
 			- [foregroundColor] : Set the foreground colour of the plot (default: 'black')
@@ -158,8 +158,8 @@ For further detail on the usage refer to the docstring.
         	- [col_linkage] : Precomputed linkage matrix for the columns from a linkage clustered distance/similarities matrix
 	- [methods](https://github.com/brettChapman//multivis/blob/master/multivis/clustermap.py#L52-L350)
 		- [set_params] : Set parameters
-			- [xLabels] : A Pandas Series for labelling the X axis of the HCH
-			- [yLabels] : A Pandas Series for labelling the Y axis of the HCH
+			- [xLabels] : A Pandas Series for labelling the X axis
+			- [yLabels] : A Pandas Series for labelling the Y axis
 			- [imageFileName] : The image file name to save to (default: 'clusterMap.png')
 			- [saveImage] : Setting to 'True' will save the image to file (default: True)
 			- [dpi] : The number of Dots Per Inch (DPI) for the image (default: 200)
@@ -168,13 +168,13 @@ For further detail on the usage refer to the docstring.
 			- [dendrogram_line_width] : The line width of the dendrograms (default: 1.5)
 			- [fontSize] : The font size set for each node (default: 30)
 			- [heatmap_cmap] : The CMAP colour palette to use for the heatmap (default: 'RdYlGn')
-			- [cluster_cmap] : The CMAP colour palette to use for the branch seperation of clusters in the dendrogram (default: 'Set1')
+			- [cluster_cmap] : The CMAP colour palette to use for the branch separation of clusters in the dendrogram (default: 'Set1')
 			- [rowColorCluster] : Setting to 'True' will display a colour bar for the clustered rows (default: False)
 			- [colColorCluster] : Setting to 'True' will display a colour bar for the clustered columns (default: False)
 			- [row_color_threshold] : The colouring threshold for the row dendrogram (default: 10)
 			- [col_color_threshold] : The colouring threshold for the column dendrogram (default: 10)
 		
-		- [build] : : Generates and displays the Hierarchical Clustered Heatmap (HCH).
+		- [build] : Generates and displays the Hierarchical Clustered Heatmap (HCH).
 
 - [polarDendrogram](https://github.com/brettChapman/multivis/blob/master/multivis/polarDendrogram.py): Polar dendrogram
 	- [init_parameters](https://github.com/brettChapman/multivis/blob/master/multivis/polarDendrogram.py#L36-L40)
@@ -309,4 +309,4 @@ Dr. Brett Chapman, Post-doctoral Research Fellow at the Western Crop Genetics Al
 E-mail: brett.chapman@murdoch.edu.au, brett.chapman78@gmail.com
 
 ### Citation
-If you would cite multivis in a scientific publication, you can use the following: [currently pending publication submission
+If you would like to cite MultiVis in a scientific publication, please cite this GitHub page until a citation to a publication becomes available.
