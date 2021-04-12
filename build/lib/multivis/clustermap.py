@@ -22,8 +22,8 @@ class clustermap:
         Methods
         -------
         set_params : Set parameters -
-            xLabels: A Pandas Series for labelling the X axis of the HCH
-            yLabels: A Pandas Series for labelling the Y axis of the HCH
+            xLabels: A Pandas Series for labelling the X axis
+            yLabels: A Pandas Series for labelling the Y axis
             imageFileName: The image file name to save to (default: 'clusterMap.png')
             saveImage: Setting to 'True' will save the image to file (default: True)
             dpi: The number of Dots Per Inch (DPI) for the image (default: 200)
@@ -32,7 +32,7 @@ class clustermap:
             dendrogram_line_width: The line width of the dendrograms (default: 1.5)
             fontSize: The font size set for each node (default: 30)
             heatmap_cmap: The CMAP colour palette to use for the heatmap (default: 'RdYlGn')
-            cluster_cmap: The CMAP colour palette to use for the branch seperation of clusters in the dendrogram (default: 'Set1')
+            cluster_cmap: The CMAP colour palette to use for the branch separation of clusters in the dendrogram (default: 'Set1')
             rowColorCluster: Setting to 'True' will display a colour bar for the clustered rows (default: False)
             colColorCluster: Setting to 'True' will display a colour bar for the clustered columns (default: False)
             row_color_threshold: The colouring threshold for the row dendrogram (default: 10)

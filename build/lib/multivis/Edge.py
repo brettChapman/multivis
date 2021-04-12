@@ -39,6 +39,8 @@ class Edge:
         else:
             self.__pvalues = pvalues
 
+        self.__checkDataIntersect()
+
         self.__setNodes(pd.DataFrame())
         self.__setEdges(pd.DataFrame())
 
@@ -167,11 +169,65 @@ class Edge:
             column_name = PeakTable.columns[index]
             PeakTable = PeakTable.drop(columns=[column_name])
 
+        PeakTable = PeakTable.reset_index(drop=True)
+
         PeakTable.index.name = 'Idx'
 
         PeakTable = PeakTable.reset_index()
 
         return PeakTable
+
+    def __checkDataIntersect(self):
+        #Checks the datatable and peaktable contain the same number and order of nodes. If not, the intersect is taken and the order based on the node (peak) list.
+
+        DataTable = self.__datatable
+        Pvalues = self.__pvalues
+        PeakTable = self.__peaktable
+
+        data_node_list = list(list(DataTable.columns) + list(set(list(DataTable.index)) - set(list(DataTable.columns))))
+        peak_node_list = list(PeakTable.Name)
+
+        columns_set = frozenset(list(DataTable.columns))
+        index_set = frozenset(list(DataTable.index))
+
+        if len(peak_node_list) > len(data_node_list):
+            sliced_peaks = PeakTable[PeakTable.Name.isin(data_node_list)]
+
+            sliced_peaks_node_list = list(sliced_peaks.Name)
+
+            column_names = [x for x in sliced_peaks_node_list if x in columns_set]
+            index_names = [x for x in sliced_peaks_node_list if x in index_set]
+
+            tmp_data = DataTable[column_names]
+            DataTable = tmp_data.reindex(index_names)
+
+            if Pvalues is not None:
+                tmp_pvalues = Pvalues[column_names]
+                Pvalues = tmp_pvalues.reindex(index_names)
+
+            PeakTable = sliced_peaks.drop(columns='Idx')
+
+            PeakTable = PeakTable.reset_index(drop=True)
+
+            PeakTable.index.name = 'Idx'
+
+            PeakTable = PeakTable.reset_index()
+        else:
+            column_names = [x for x in peak_node_list if x in columns_set]
+            index_names = [x for x in peak_node_list if x in index_set]
+
+            tmp_data = DataTable[column_names]
+            tmp_data = tmp_data[tmp_data.index.isin(index_names)]
+            DataTable = tmp_data.reindex(index_names)
+
+            if Pvalues is not None:
+                tmp_pvalues = Pvalues[column_names]
+                tmp_pvalues = tmp_pvalues[tmp_pvalues.index.isin(index_names)]
+                Pvalues = tmp_pvalues.reindex(index_names)
+
+        self.__peaktable = PeakTable;
+        self.__datatable = DataTable;
+        self.__pvalues = Pvalues;
 
     def __paramCheck(self, filter_type, hard_threshold, withinBlocks, sign):
 
