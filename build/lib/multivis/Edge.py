@@ -31,15 +31,17 @@ class Edge:
 
     def __init__(self, peaktable, datatable, pvalues):
 
-        self.__peaktable = self.__checkPeakTable(self.__checkData(peaktable))
-        self.__datatable = self.__checkData(datatable)
+        peaktable = self.__checkPeakTable(self.__checkData(peaktable))
+        datatable = self.__checkData(datatable)
 
         if pvalues is not None:
-            self.__pvalues = self.__checkData(pvalues)
-        else:
-            self.__pvalues = pvalues
+            pvalues = self.__checkData(pvalues)
 
-        self.__checkDataIntersect()
+        peaktable, datatable, pvalues = self.__checkDataIntersect(peaktable, datatable, pvalues)
+
+        self.__peaktable = peaktable
+        self.__datatable = datatable
+        self.__pvalues = pvalues
 
         self.__setNodes(pd.DataFrame())
         self.__setEdges(pd.DataFrame())
@@ -177,57 +179,76 @@ class Edge:
 
         return PeakTable
 
-    def __checkDataIntersect(self):
-        #Checks the datatable and peaktable contain the same number and order of nodes. If not, the intersect is taken and the order based on the node (peak) list.
+    def __checkDataIntersect(self, peaktable, datatable, pvalues):
+        # Checks the datatable and peaktable contain the same number and order of nodes. If not, then the intersect is taken and the order based on the node (peak) list.
 
-        DataTable = self.__datatable
-        Pvalues = self.__pvalues
-        PeakTable = self.__peaktable
+        data_node_list = list(list(datatable.columns) + list(set(list(datatable.index)) - set(list(datatable.columns))))
+        peak_node_list = list(peaktable.Name)
 
-        data_node_list = list(list(DataTable.columns) + list(set(list(DataTable.index)) - set(list(DataTable.columns))))
-        peak_node_list = list(PeakTable.Name)
+        columns_set = frozenset(list(datatable.columns))
+        index_set = frozenset(list(datatable.index))
 
-        columns_set = frozenset(list(DataTable.columns))
-        index_set = frozenset(list(DataTable.index))
+        if sorted(peak_node_list) == sorted(data_node_list):
 
-        if len(peak_node_list) > len(data_node_list):
-            sliced_peaks = PeakTable[PeakTable.Name.isin(data_node_list)]
-
-            sliced_peaks_node_list = list(sliced_peaks.Name)
-
-            column_names = [x for x in sliced_peaks_node_list if x in columns_set]
-            index_names = [x for x in sliced_peaks_node_list if x in index_set]
-
-            tmp_data = DataTable[column_names]
-            DataTable = tmp_data.reindex(index_names)
-
-            if Pvalues is not None:
-                tmp_pvalues = Pvalues[column_names]
-                Pvalues = tmp_pvalues.reindex(index_names)
-
-            PeakTable = sliced_peaks.drop(columns='Idx')
-
-            PeakTable = PeakTable.reset_index(drop=True)
-
-            PeakTable.index.name = 'Idx'
-
-            PeakTable = PeakTable.reset_index()
-        else:
             column_names = [x for x in peak_node_list if x in columns_set]
             index_names = [x for x in peak_node_list if x in index_set]
 
-            tmp_data = DataTable[column_names]
-            tmp_data = tmp_data[tmp_data.index.isin(index_names)]
-            DataTable = tmp_data.reindex(index_names)
+            tmp_data = datatable[column_names]
+            datatable = tmp_data.reindex(index_names)
 
-            if Pvalues is not None:
-                tmp_pvalues = Pvalues[column_names]
-                tmp_pvalues = tmp_pvalues[tmp_pvalues.index.isin(index_names)]
-                Pvalues = tmp_pvalues.reindex(index_names)
+            if pvalues is not None:
+                tmp_pvalues = pvalues[column_names]
+                pvalues = tmp_pvalues.reindex(index_names)
+        else:
+            if len(peak_node_list) > len(data_node_list):
 
-        self.__peaktable = PeakTable;
-        self.__datatable = DataTable;
-        self.__pvalues = Pvalues;
+                check_intersect = set(peak_node_list).intersection(data_node_list)
+
+                if check_intersect:
+                    sliced_peaks = peaktable[peaktable.Name.isin(data_node_list)]
+
+                    sliced_peaks_node_list = list(sliced_peaks.Name)
+
+                    column_names = [x for x in sliced_peaks_node_list if x in columns_set]
+                    index_names = [x for x in sliced_peaks_node_list if x in index_set]
+
+                    tmp_data = datatable[column_names]
+                    datatable = tmp_data.reindex(index_names)
+
+                    if pvalues is not None:
+                        tmp_pvalues = pvalues[column_names]
+                        pvalues = tmp_pvalues.reindex(index_names)
+
+                    peaktable.drop('Idx', 1, inplace=True)
+
+                    peaktable = peaktable.reset_index(drop=True)
+
+                    peaktable.index.name = 'Idx'
+
+                    peaktable = peaktable.reset_index()
+                else:
+                    print("Error: The PeakTable Name list and DataTable row/column list do not have any common values!")
+                    sys.exit()
+            else:
+                check_intersect = set(data_node_list).intersection(peak_node_list)
+
+                if check_intersect:
+                    column_names = [x for x in peak_node_list if x in columns_set]
+                    index_names = [x for x in peak_node_list if x in index_set]
+
+                    tmp_data = datatable[column_names]
+                    tmp_data = tmp_data[tmp_data.index.isin(index_names)]
+                    datatable = tmp_data.reindex(index_names)
+
+                    if pvalues is not None:
+                        tmp_pvalues = pvalues[column_names]
+                        tmp_pvalues = tmp_pvalues[tmp_pvalues.index.isin(index_names)]
+                        pvalues = tmp_pvalues.reindex(index_names)
+                else:
+                    print("Error: The PeakTable Name list and DataTable row/column list do not have any common values!")
+                    sys.exit()
+
+        return peaktable, datatable, pvalues
 
     def __paramCheck(self, filter_type, hard_threshold, withinBlocks, sign):
 
