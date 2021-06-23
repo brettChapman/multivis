@@ -5,8 +5,8 @@ import scipy.spatial as sp, scipy.cluster.hierarchy as hc
 from scipy.spatial.distance import squareform
 
 def cluster(matrix, transpose_non_similarity, is_similarity, distance_metric, linkage_method):
-    """Performs linkage clustering given a matrix of correlations. If no correlated data is presented, then calculates spatial distance
-    given a distance metric such as Euclidean distance, then applies the linkage clustering method.
+    """Performs linkage clustering given a matrix of values. If the matrix does not contain correlation coefficients, then the spatial distance
+    is calculated given a distance metric such as Euclidean distance, which is then applied to the linkage clustering method.
 
         Parameters
         ----------

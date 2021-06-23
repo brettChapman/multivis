@@ -2,13 +2,14 @@ import sys
 import pandas as pd
 import collections
 
-def mergeBlocks(peak_blocks, data_blocks):
+def mergeBlocks(peak_blocks, data_blocks, mergeType):
     """Merge multiple Peak and Data Tables from different datasets.
 
         Parameters
         ----------
         peak_blocks : A dictionary of Pandas Peak Table dataframes from different datasets indexed by dataset type.
         data_blocks : A dictionary of Pandas Data Table dataframes from different datasets indexed by dataset type.
+        mergeType : The type of merging to perform. Either by 'SampleID' or 'Index'.
 
         Returns
         -------
@@ -31,11 +32,13 @@ def mergeBlocks(peak_blocks, data_blocks):
         peak = peak_blocks[block]
         data = data_blocks[block]
 
-        if 'Name' not in peak.columns:
+        peak_columns = peak.columns
+
+        if 'Name' not in peak_columns:
             print("Error: No \"Name\" column in {} peak block".format(block))
             sys.exit()
 
-        if 'Label' not in peak.columns:
+        if 'Label' not in peak_columns:
             print("Error: No \"Label\" column in {} peak block".format(block))
             sys.exit()
 
@@ -45,34 +48,45 @@ def mergeBlocks(peak_blocks, data_blocks):
         else:
             peak_dat = peak.copy(deep=True)
             peak_dat.insert(len(peak_dat.columns), "Block", block)
-            df_peaks = pd.concat([df_peaks, peak_dat], sort=False).reset_index(drop=True)
+
+            df_peaks = pd.concat([df_peaks, peak_dat], ignore_index=True).reset_index(drop=True)
 
         if df_data.empty:
             df_data = data.copy(deep=True)
 
-            if 'SampleID' in df_data.columns:
-                sampleIDcheck.append(list(df_data['SampleID'].values))
-            else:
-                print("Error: No \"SampleID\" column in {} data block".format(block))
-                sys.exit()
+            if mergeType.lower() == 'sampleid':
+                if 'SampleID' in df_data.columns:
+                    sampleIDcheck.append(list(df_data['SampleID'].values))
+                else:
+                    print("Error: No \"SampleID\" column in {} data block".format(block))
+                    sys.exit()
         else:
-            if 'SampleID' in data.columns:
+            if mergeType.lower() == 'sampleid':
+                if 'SampleID' in data.columns:
 
-                if len(sampleIDcheck) == 1:
-                    sampleIDcheck.append(list(data['SampleID'].values))
+                    if len(sampleIDcheck) == 1:
+                        sampleIDcheck.append(list(data['SampleID'].values))
 
-                    if not (compare(sampleIDcheck[0], sampleIDcheck[1])):
-                        print("Error: SampleID order or values are not consistant across data blocks. Please check")
-                        sys.exit()
+                        if not (compare(sampleIDcheck[0], sampleIDcheck[1])):
+                            print("Error: SampleID order or values are not consistant across data blocks. Please check")
+                            sys.exit()
 
-                    sampleIDcheck = []
-                    sampleIDcheck.append(list(data['SampleID'].values))
+                        sampleIDcheck = []
+                        sampleIDcheck.append(list(data['SampleID'].values))
 
-                x = data[["SampleID"] + list(peak['Name'].values)]
+                    x = data[["SampleID"] + list(peak['Name'].values)]
 
-                df_data = pd.merge(df_data, x, left_on="SampleID", right_on="SampleID").reset_index(drop=True)
+                    df_data = pd.merge(df_data, x, left_on="SampleID", right_on="SampleID").reset_index(drop=True)
+            elif mergeType.lower() == 'index':
+                if 'SampleID' in data.columns:
+                    x = data[["SampleID"] + list(peak['Name'].values)].reset_index(drop=True)
+                else:
+                    x = data[list(peak['Name'].values)].reset_index(drop=True)
+
+                df_data = pd.merge(df_data, x, left_index=True, right_index=True).reset_index(drop=True)
 
     df_peaks['Idx'] = df_peaks.index
+    df_peaks = df_peaks[list(['Idx'])+list(peak_columns)+list(['Block'])]
 
     return df_peaks, df_data
 

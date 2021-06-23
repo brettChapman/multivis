@@ -9,6 +9,7 @@ from .clustermap import clustermap
 from .polarDendrogram import polarDendrogram
 from .pca import pca
 from .pcoa import pcoa
+from .pcaLoadings import pcaLoadings
 from . import utils
 
-__all__ = ["Edge", "plotNetwork", "springNetwork", "edgeBundle", "clustermap", "polarDendrogram", "pca", "pcoa", "utils"]
+__all__ = ["Edge", "plotNetwork", "springNetwork", "edgeBundle", "clustermap", "polarDendrogram", "pca", "pcoa", "pcaLoadings", "utils"]

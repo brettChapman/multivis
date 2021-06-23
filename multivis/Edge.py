@@ -8,7 +8,7 @@ from .utils import *
 
 
 class Edge:
-    """ Class for edgeBundle and base class for network.
+    usage = """Builds nodes and edges and is the base class for the Network class.
 
         Initial_Parameters
         ----------
@@ -23,6 +23,8 @@ class Edge:
             hard_threshold: Value to filter the data on (default: 0.005)
             withinBlocks: Include scores within blocks if building multi-block network (default: False)
             sign: The sign of the score/similarity to filter on ('pos', 'neg' or 'both') (default: 'both')
+
+        help : Print this help text
 
         build : Builds the nodes and edges.
         getNodes : Returns a Pandas dataframe of all nodes.
@@ -47,6 +49,9 @@ class Edge:
         self.__setEdges(pd.DataFrame())
 
         self.set_params()
+
+    def help(self):
+        print(Edge.usage)
 
     def set_params(self, filter_type='pvalue', hard_threshold=0.005, withinBlocks=False, sign='both'):
 

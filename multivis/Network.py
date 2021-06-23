@@ -6,7 +6,7 @@ from .Edge import Edge
 from .utils import *
 
 class Network(Edge):
-    """Class for Network. Inherits from Edge.
+    usage = """Builds nodes and edges, with added NetworkX functionality. Inherits from Edge.
 
         Initial_Parameters
         ----------
@@ -23,6 +23,8 @@ class Network(Edge):
             withinBlocks: Include scores within blocks if building multi-block network (default: False)
             sign: The sign of the score/similarity to filter on ('pos', 'neg' or 'both') (default: 'both')
 
+        help : Print this help text
+
         build : Builds nodes, edges and NetworkX graph.
         getNetworkx : Returns a NetworkX graph.
         getLinkType : Returns the link type parameter used in building the network.
@@ -33,6 +35,9 @@ class Network(Edge):
         Edge.__init__(self, peaktable, datatable, pvalues)
 
         self.set_params()
+
+    def help(self):
+        print(Network.usage)
 
     def set_params(self, filter_type='pvalue', hard_threshold=0.005, link_type='score', withinBlocks=False, sign='both'):
 

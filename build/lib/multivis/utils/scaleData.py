@@ -9,7 +9,7 @@ def scaleData(data, scale, min, max):
         Parameters
         ----------
         data : A 1D numpy array of values
-        scale : The scaling option chosen to apply to the data
+        scale : The scaling option chosen to apply to the data ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal", "reverse_ordinal")
         min : The minimum value for scaling
         max : The maximum value for scaling
 
@@ -69,6 +69,14 @@ def scaleData(data, scale, min, max):
         scaled_data = encoder.fit_transform(data.reshape(-1, 1)).flatten()
 
         scaled_data = np.array([x for x in list(scaler(scaled_data, "minmax", min, max))])
+    elif scale == 'reverse_ordinal':
+        encoder = OrdinalEncoder()
+
+        scaled_data = encoder.fit_transform(data.reshape(-1, 1)).flatten()
+
+        scaled_data = np.divide(1, scaled_data)
+
+        scaled_data = np.array([x for x in list(scaler(scaled_data, "minmax", min, max))])
 
     return scaled_data
 
@@ -78,8 +86,8 @@ def __checkData(data, scale, min, max):
         print("Error: A numpy array was not entered. Please check your data.")
         sys.exit()
 
-    if scale.lower() not in ["linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal"]:
-        print("Error: Scale value not valid. Choose either \"linear\", \"reverse_linear\", \"log\", \"reverse_log\", \"square\", \"reverse_square\", \"area\", \"reverse_area\", \"volume\", \"reverse_volume\", \"ordinal\".")
+    if scale.lower() not in ["linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal", "reverse_ordinal"]:
+        print("Error: Scale value not valid. Choose either \"linear\", \"reverse_linear\", \"log\", \"reverse_log\", \"square\", \"reverse_square\", \"area\", \"reverse_area\", \"volume\", \"reverse_volume\", \"ordinal\", \"reverse_ordinal\".")
         sys.exit()
 
     if not isinstance(min, float):

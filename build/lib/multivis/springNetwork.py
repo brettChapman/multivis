@@ -10,7 +10,7 @@ from ast import literal_eval
 import json
 
 class springNetwork:
-    """Class for springNetwork to produce an interactive Spring-embedded Network (SEN) plot.
+    usage = """Produces an interactive spring-embedded network in D3.js, from a NetworkX graph.
 
         Initial_Parameters
         ----------
@@ -19,9 +19,9 @@ class springNetwork:
         Methods
         -------
         set_params : Set parameters -
-            node_size_scale: dictionary(Peak Table column name as index: dictionary('scale': ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal")
+            node_size_scale: dictionary(Peak Table column name as index: dictionary('scale': ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal", "reverse_ordinal")
                                                                                     , 'range': a number array of length 2 - minimum size to maximum size)) (default: sizes all nodes to 10 with no dropdown menu)
-            node_color_scale: dictionary(Peak Table column name as index: dictionary('scale': ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal") (default: colours all nodes to 'black')
+            node_color_scale: dictionary(Peak Table column name as index: dictionary('scale': ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal", "reverse_ordinal") (default: colours all nodes to 'black')
             html_file: Name to save the HTML file as (default: 'springNetwork.html')
             backgroundColor: Set the background colour of the plot (default: 'white')
             foregroundColor: Set the foreground colour of the plot (default: 'black')
@@ -38,6 +38,8 @@ class springNetwork:
             link_width: The width of the links (default: 0.5)
             pos_score_color: Colour value for positive scores. Can be HTML/CSS name, hex code, and (R,G,B) tuples (default: 'red')
             neg_score_color: Colour value for negative scores. Can be HTML/CSS name, hex code, and (R,G,B) tuples (default: 'black')
+            
+        help : Print this help text
 
         build: : Generates the JavaScript embedded HTML code and writes to a HTML file and opens it in a browser.
         buildDashboard : Generates the JavaScript embedded HTML code in a dashboard format, writes to a HTML file and opens it in a browser.
@@ -48,6 +50,9 @@ class springNetwork:
         self.__g = self.__checkData(g)
 
         self.set_params()
+
+    def help(self):
+        print(springNetwork.usage)
 
     def set_params(self, node_size_scale={}, node_color_scale={}, html_file='springNetwork.html', backgroundColor='white', foregroundColor='black', chargeStrength=-120, groupByBlock=False, groupFociStrength=0.2, intraGroupStrength=0.01, groupLayoutTemplate='treemap', node_text_size=15, fix_nodes=False, displayLabel=False, node_data=['Name', 'Label'], link_type='score', link_width=0.5, pos_score_color='red', neg_score_color='black'):
 
@@ -205,11 +210,11 @@ class springNetwork:
                     sys.exit()
                 else:
                     for idx, node in enumerate(g.nodes()):
-                        if node_size_scale[column]['scale'] != 'ordinal':
+                        if ((node_size_scale[column]['scale'] != 'ordinal') and (node_size_scale[column]['scale'] != 'reverse_ordinal')):
                             try:
-                                float(g.node[node][column])
+                                float(g.nodes[node][column])
                             except ValueError:
-                                print("Error: Node size scale column {} contains invalid values. While scale is not ordinal, choose a column containing float or integer values.".format(column))
+                                print("Error: Node size scale column {} contains invalid values. While scale is not ordinal or reverse_ordinal, choose a column containing float or integer values.".format(column))
                                 sys.exit()
 
                         for key in node_size_scale[column].keys():
@@ -218,8 +223,8 @@ class springNetwork:
                                 print("Error: Node size scale column {} dictionary keys are not valid. Use \"scale\" and \"range\".".format(column))
                                 sys.exit()
 
-                        if node_size_scale[column]['scale'].lower() not in ["linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal"]:
-                            print("Error: Node size scale column {} dictionary scale value not valid. Choose either \"linear\", \"reverse_linear\", \"log\", \"reverse_log\", \"square\", \"reverse_square\", \"area\", \"reverse_area\", \"volume\", \"reverse_volume\", \"ordinal\".".format(column))
+                        if node_size_scale[column]['scale'].lower() not in ["linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal", "reverse_ordinal"]:
+                            print("Error: Node size scale column {} dictionary scale value not valid. Choose either \"linear\", \"reverse_linear\", \"log\", \"reverse_log\", \"square\", \"reverse_square\", \"area\", \"reverse_area\", \"volume\", \"reverse_volume\", \"ordinal\", \"reverse_ordinal\".".format(column))
                             sys.exit()
 
                         if not isinstance(node_size_scale[column]['range'], list):
@@ -245,11 +250,11 @@ class springNetwork:
                     sys.exit()
                 else:
                     for idx, node in enumerate(g.nodes()):
-                        if node_color_scale[column]['scale'] != 'ordinal':
+                        if ((node_color_scale[column]['scale'] != 'ordinal') and (node_color_scale[column]['scale'] != 'reverse_ordinal')):
                             try:
-                                float(g.node[node][column])
+                                float(g.nodes[node][column])
                             except ValueError:
-                                print("Error: Node color scale column {} contains invalid values. While scale is not ordinal, choose a column containing float or integer values.".format(column))
+                                print("Error: Node color scale column {} contains invalid values. While scale is not ordinal or reverse_ordinal, choose a column containing float or integer values.".format(column))
                                 sys.exit()
 
                         for key in node_color_scale[column].keys():
@@ -258,8 +263,8 @@ class springNetwork:
                                 print("Error: Node color scale column {} dictionary keys are not valid. Use \"scale\".".format(column))
                                 sys.exit()
 
-                        if node_color_scale[column]['scale'].lower() not in ["linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal"]:
-                            print("Error: Node color scale column {} dictionary scale value not valid. Choose either \"linear\", \"reverse_linear\", \"log\", \"reverse_log\", \"square\", \"reverse_square\", \"area\", \"reverse_area\", \"volume\", \"reverse_volume\", \"ordinal\".".format(column))
+                        if node_color_scale[column]['scale'].lower() not in ["linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal", "reverse_ordinal"]:
+                            print("Error: Node color scale column {} dictionary scale value not valid. Choose either \"linear\", \"reverse_linear\", \"log\", \"reverse_log\", \"square\", \"reverse_square\", \"area\", \"reverse_area\", \"volume\", \"reverse_volume\", \"ordinal\", \"reverse_ordinal\".".format(column))
                             sys.exit()
         else:
             node_color_scale = dict({})  # Default to an empty dict
@@ -383,7 +388,7 @@ class springNetwork:
             elif isinstance(obj, np.ndarray):
                 return obj.tolist()
             else:
-                return super(graphEncoder, self).default(obj)
+                return super(self.__graphEncoder, self).default(obj)
 
     def __generateJson(self, G):
 
@@ -784,14 +789,21 @@ class springNetwork:
             
             function updateNodeSize(centrality) {
                 
+                var range = []
+                var reversed_range = []
+                
                 var scaleType = params.node_size_scale[centrality].scale
-                var range = params.node_size_scale[centrality].range
+                range = params.node_size_scale[centrality].range
+                reversed_range = JSON.parse(JSON.stringify(range.slice().reverse()))
                 
                 var centrality_values = []
                 graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { centrality_values.push(parseFloat(0)); } else { centrality_values.push(d[centrality]); }});
                 
                 scaledValues = []
-                if (scaleType != "ordinal") {
+                area_values = []
+                volume_values = []
+                
+                if ((scaleType != "ordinal") && (scaleType != "reverse_ordinal")) {
                     centrality_values = centrality_values.map(function (x) {
                             return parseFloat(x);
                     });
@@ -801,8 +813,21 @@ class springNetwork:
                                     .range([1,10]);
                     
                     centrality_values.forEach( function (d) { scaledValues.push(initScale(parseFloat(d))); });
+                    scaledValues.forEach( function (d) { area_values.push(parseFloat(Math.PI * (d * d))); });
+                    scaledValues.forEach( function (d) { volume_values.push(parseFloat(4 / 3 * (Math.PI * (d * d * d)))); });
                 } else {
                     scaledValues = centrality_values.reduce(function(a,b){if(a.indexOf(b)<0)a.push(b);return a;},[]);
+                    var ordinal_range = []
+                    ordinal_range = [...Array(scaledValues.length).keys()];
+                    
+                    initOrdinalRange = d3.scaleLinear()
+                                    .domain(d3.extent(ordinal_range))
+                                    .range(range);
+                    
+                    var scaled_range = []
+                    ordinal_range.forEach( function (d) { scaled_range.push(initOrdinalRange(d)); });
+                    var reversed_scaled_range = []
+                    reversed_scaled_range = JSON.parse(JSON.stringify(scaled_range.slice().reverse()))
                 }
                                   
                 if (scaleType == "linear") {
@@ -815,16 +840,12 @@ class springNetwork:
                   
                 } else if (scaleType == "reverse_linear") {
                     
-                    reversed_linear_values = []
-                     
-                    scaledValues.forEach( function (d) { reversed_linear_values.push(parseFloat(1/d)); });
-                     
                     reversedLinearScale = d3.scaleLinear()
-                        .domain(d3.extent(reversed_linear_values))
-                        .range(range);
-                    
-                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.size = reversedLinearScale(1 / initScale(parseFloat(0))); } else { d.size = reversedLinearScale(1 / initScale(parseFloat(d[centrality]))); }});
-                     
+                        .domain(d3.extent(scaledValues))
+                        .range(reversed_range);
+                        
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.size = reversedLinearScale(initScale(parseFloat(0))); } else { d.size = reversedLinearScale(initScale(parseFloat(d[centrality]))); }});
+                
                 } else if (scaleType == "log") {
                    
                     logScale = d3.scaleLog()
@@ -835,16 +856,12 @@ class springNetwork:
                   
                 } else if (scaleType == "reverse_log") {
                     
-                    reversed_log_values = []
-                     
-                    scaledValues.forEach( function (d) { reversed_log_values.push(parseFloat(1/d)); });
-                     
                     reversedLogScale = d3.scaleLog()
-                        .domain(d3.extent(reversed_log_values))
-                        .range(range);
+                        .domain(d3.extent(scaledValues))
+                        .range(reversed_range);
                      
-                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.size = reversedLogScale(1 / initScale(parseFloat(0))); } else { d.size = reversedLogScale(1 / initScale(parseFloat(d[centrality]))); }});
-                     
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.size = reversedLogScale(initScale(parseFloat(0))); } else { d.size = reversedLogScale(initScale(parseFloat(d[centrality]))); }});
+                
                 } else if (scaleType == "square") {
                    
                     squareScale = d3.scalePow()
@@ -856,23 +873,15 @@ class springNetwork:
                   
                 } else if (scaleType == "reverse_square") {
                    
-                    reversed_squared_values = []
-                     
-                    scaledValues.forEach( function (d) { reversed_squared_values.push(parseFloat(1/d)); });
-                     
                     reversedSquareScale = d3.scalePow()
-                        .domain(d3.extent(reversed_squared_values))
+                        .domain(d3.extent(scaledValues))
                         .exponent(2)
-                        .range(range);
+                        .range(reversed_range);
                     
-                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.size = reversedSquareScale(1 / initScale(parseFloat(0))); } else { d.size = reversedSquareScale(1 / initScale(parseFloat(d[centrality]))); }});
-                  
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.size = reversedSquareScale(initScale(parseFloat(0))); } else { d.size = reversedSquareScale(initScale(parseFloat(d[centrality]))); }});
+                
                 } else if (scaleType == "area") {
                     
-                    area_values = []
-                     
-                    scaledValues.forEach( function (d) { area_values.push(parseFloat(Math.PI * (d * d))); });
-                     
                     areaScale = d3.scaleLinear()
                         .domain(d3.extent(area_values))
                         .range(range);
@@ -881,22 +890,14 @@ class springNetwork:
                      
                 } else if (scaleType == "reverse_area") {
                     
-                    reversed_area_values = []
-                     
-                    scaledValues.forEach( function (d) { reversed_area_values.push(parseFloat(Math.PI * (parseFloat(1/d) * parseFloat(1/d)))); });
-                     
                     reversedAreaScale = d3.scaleLinear()
-                        .domain(d3.extent(reversed_area_values))
-                        .range(range);
-                     
-                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.size = reversedAreaScale(Math.PI * (1 / initScale(parseFloat(0))) * (1 / initScale(parseFloat(0)))); } else { d.size = reversedAreaScale(Math.PI * (1 / initScale(parseFloat(d[centrality]))) * (1 / initScale(parseFloat(d[centrality])))); }});
+                        .domain(d3.extent(area_values))
+                        .range(reversed_range);
+                        
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.size = reversedAreaScale(Math.PI * (initScale(parseFloat(0)) * initScale(parseFloat(0)))); } else { d.size = reversedAreaScale(Math.PI * (initScale(parseFloat(d[centrality])) * initScale(parseFloat(d[centrality])))); }});
                      
                 } else if (scaleType == "volume") {
                     
-                    volume_values = []
-                     
-                    scaledValues.forEach( function (d) { volume_values.push(parseFloat(4 / 3 * (Math.PI * (d * d * d)))); });
-                     
                     volumeScale = d3.scaleLinear()
                         .domain(d3.extent(volume_values))
                         .range(range);
@@ -905,44 +906,46 @@ class springNetwork:
                   
                 } else if (scaleType == "reverse_volume") {
                  
-                    reversed_volume_values = []             
-                    
-                    scaledValues.forEach( function (d) { reversed_volume_values.push(parseFloat(4 / 3 * (Math.PI * (parseFloat(1/d) * parseFloat(1/d) * parseFloat(1/d))))); });
-                     
                     reversedVolumeScale = d3.scaleLinear()
-                        .domain(d3.extent(reversed_volume_values))
-                        .range(range);
+                        .domain(d3.extent(volume_values))
+                        .range(reversed_range);
                     
-                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.size = reversedVolumeScale(4 / 3 * (Math.PI * ((1 / initScale(parseFloat(0))) * (1 / initScale(parseFloat(0))) * (1 / initScale(parseFloat(0)))))); } else { d.size = reversedVolumeScale(4 / 3 * (Math.PI * ((1 / initScale(parseFloat(d[centrality]))) * (1 / initScale(parseFloat(d[centrality]))) * (1 / initScale(parseFloat(d[centrality])))))); }});
-                       
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.size = reversedVolumeScale(4 / 3 * (Math.PI * (initScale(parseFloat(0)) * initScale(parseFloat(0)) * initScale(parseFloat(0))))); } else { d.size = reversedVolumeScale(4 / 3 * (Math.PI * (initScale(parseFloat(d[centrality])) * initScale(parseFloat(d[centrality])) * initScale(parseFloat(d[centrality]))))); }});
+                      
                 } else if (scaleType == "ordinal") {
-                
-                    var ordinal_range = [...Array(scaledValues.length).keys()];
-                    
-                    initScale = d3.scaleLinear()
-                                    .domain(d3.extent(ordinal_range))
-                                    .range(range);
-                    
-                    scaled_range = []
-                    ordinal_range.forEach( function (d) { scaled_range.push(initScale(d)); });
                 
                     ordinalScale = d3.scaleOrdinal()
                          .domain(scaledValues)
                          .range(scaled_range);
                                         
                     graph.nodes.forEach( function (d) { d.size = ordinalScale(d[centrality]); });
+                } else if (scaleType == "reverse_ordinal") {
+                
+                    reversedOrdinalScale = d3.scaleOrdinal()
+                         .domain(scaledValues)
+                         .range(reversed_scaled_range);
+                                        
+                    graph.nodes.forEach( function (d) { d.size = reversedOrdinalScale(d[centrality]); });
                 }
             }
             
             function updateNodeColor(centrality, colorOption) {
+                
+                var range = []
+                var reversed_range = []
+                
                 var scaleType = params.node_color_scale[centrality].scale
-                var range = [0,1]
+                range = [0,1]
+                reversed_range = JSON.parse(JSON.stringify(range.slice().reverse()))
                 
                 var centrality_values = []
                 graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { centrality_values.push(parseFloat(0)); } else { centrality_values.push(d[centrality]); }});
                 
                 scaledValues = []
-                if (scaleType != "ordinal") {
+                area_values = []
+                volume_values = []
+                
+                if ((scaleType != "ordinal") && (scaleType != "reverse_ordinal")) {                
                     centrality_values = centrality_values.map(function (x) {
                             return parseFloat(x);
                     });
@@ -952,8 +955,21 @@ class springNetwork:
                                     .range([1,10]);
                     
                     centrality_values.forEach( function (d) { scaledValues.push(initScale(parseFloat(d))); });
+                    scaledValues.forEach( function (d) { area_values.push(parseFloat(Math.PI * (d * d))); });
+                    scaledValues.forEach( function (d) { volume_values.push(parseFloat(4 / 3 * (Math.PI * (d * d * d)))); });
                 } else {
                     scaledValues = centrality_values.reduce(function(a,b){if(a.indexOf(b)<0)a.push(b);return a;},[]);
+                    var ordinal_range = []
+                    ordinal_range = [...Array(scaledValues.length).keys()];
+                    
+                    initOrdinalRange = d3.scaleLinear()
+                                    .domain(d3.extent(ordinal_range))
+                                    .range(range);
+                                                    
+                    var scaled_range = []
+                    ordinal_range.forEach( function (d) { scaled_range.push(initOrdinalRange(d)); });
+                    var reversed_scaled_range = []
+                    reversed_scaled_range = JSON.parse(JSON.stringify(scaled_range.slice().reverse()))
                 }        
                 
                 colorDomain = []                
@@ -968,17 +984,13 @@ class springNetwork:
                   
                 } else if (scaleType == "reverse_linear") {
                     
-                    reversed_linear_values = []
-                     
-                    scaledValues.forEach( function (d) { reversed_linear_values.push(parseFloat(1/d)); });
-                     
                     reversedLinearScale = d3.scaleLinear()
-                        .domain(d3.extent(reversed_linear_values))
-                        .range(range);
+                        .domain(d3.extent(scaledValues))
+                        .range(reversed_range);
                     
-                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.color = reversedLinearScale(1 / initScale(parseFloat(0))); } else { d.color = reversedLinearScale(1 / initScale(parseFloat(d[centrality]))); }});
-                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { colorDomain.push(reversedLinearScale(1 / initScale(parseFloat(0)))); } else { colorDomain.push(reversedLinearScale(1 / initScale(parseFloat(d[centrality])))); }});
-                     
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.color = reversedLinearScale(initScale(parseFloat(0))); } else { d.color = reversedLinearScale(initScale(parseFloat(d[centrality]))); }});
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { colorDomain.push(reversedLinearScale(initScale(parseFloat(0)))); } else { colorDomain.push(reversedLinearScale(initScale(parseFloat(d[centrality])))); }});
+                    
                 } else if (scaleType == "log") {
                    
                     logScale = d3.scaleLog()
@@ -990,17 +1002,13 @@ class springNetwork:
                   
                 } else if (scaleType == "reverse_log") {
                     
-                    reversed_log_values = []
-                     
-                    scaledValues.forEach( function (d) { reversed_log_values.push(parseFloat(1/d)); });
-                     
                     reversedLogScale = d3.scaleLog()
-                        .domain(d3.extent(reversed_log_values))
-                        .range(range);
+                        .domain(d3.extent(scaledValues))
+                        .range(reversed_range);
                     
-                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.color = reversedLogScale(1 / initScale(parseFloat(0))); } else { d.color = reversedLogScale(1 / initScale(parseFloat(d[centrality]))); }});
-                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { colorDomain.push(reversedLogScale(1 / initScale(parseFloat(0)))); } else { colorDomain.push(reversedLogScale(1 / initScale(parseFloat(d[centrality])))); }});
-                     
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.color = reversedLogScale(initScale(parseFloat(0))); } else { d.color = reversedLogScale(initScale(parseFloat(d[centrality]))); }});
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { colorDomain.push(reversedLogScale(initScale(parseFloat(0)))); } else { colorDomain.push(reversedLogScale(initScale(parseFloat(d[centrality])))); }});
+                    
                 } else if (scaleType == "square") {
                    
                     squareScale = d3.scalePow()
@@ -1013,24 +1021,16 @@ class springNetwork:
                   
                 } else if (scaleType == "reverse_square") {
                    
-                    reversed_squared_values = []
-                     
-                    scaledValues.forEach( function (d) { reversed_squared_values.push(parseFloat(1/d)); });
-                     
                     reversedSquareScale = d3.scalePow()
-                        .domain(d3.extent(reversed_squared_values))
+                        .domain(d3.extent(scaledValues))
                         .exponent(2)
-                        .range(range);
+                        .range(reversed_range);
                     
-                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.color = reversedSquareScale(1 / initScale(parseFloat(0))); } else { d.color = reversedSquareScale(1 / initScale(parseFloat(d[centrality]))); }});
-                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { colorDomain.push(reversedSquareScale(1 / initScale(parseFloat(0)))); } else { colorDomain.push(reversedSquareScale(1 / initScale(parseFloat(d[centrality])))); }});
-                  
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.color = reversedSquareScale(initScale(parseFloat(0))); } else { d.color = reversedSquareScale(initScale(parseFloat(d[centrality]))); }});
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { colorDomain.push(reversedSquareScale(initScale(parseFloat(0)))); } else { colorDomain.push(reversedSquareScale(initScale(parseFloat(d[centrality])))); }});
+                    
                 } else if (scaleType == "area") {
-                    
-                    area_values = []
-                     
-                    scaledValues.forEach( function (d) { area_values.push(parseFloat(Math.PI * (d * d))); });
-                     
+                
                     areaScale = d3.scaleLinear()
                         .domain(d3.extent(area_values))
                         .range(range);
@@ -1039,24 +1039,16 @@ class springNetwork:
                     graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { colorDomain.push(areaScale(Math.PI * (initScale(parseFloat(0)) * initScale(parseFloat(0))))); } else { colorDomain.push(areaScale(Math.PI * (initScale(parseFloat(d[centrality])) * initScale(parseFloat(d[centrality]))))); }});
                      
                 } else if (scaleType == "reverse_area") {
-                    
-                    reversed_area_values = []
-                     
-                    scaledValues.forEach( function (d) { reversed_area_values.push(parseFloat(Math.PI * (parseFloat(1/d) * parseFloat(1/d)))); });
-                     
+                
                     reversedAreaScale = d3.scaleLinear()
-                        .domain(d3.extent(reversed_area_values))
-                        .range(range);
+                        .domain(d3.extent(area_values))
+                        .range(reversed_range);
                     
-                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.color = reversedAreaScale(Math.PI * (1 / initScale(parseFloat(0))) * (1 / initScale(parseFloat(0)))); } else { d.color = reversedAreaScale(Math.PI * (1 / initScale(parseFloat(d[centrality]))) * (1 / initScale(parseFloat(d[centrality])))); }});
-                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { colorDomain.push(reversedAreaScale(Math.PI * (1 / initScale(parseFloat(0))) * (1 / initScale(parseFloat(0))))); } else { colorDomain.push(reversedAreaScale(Math.PI * (1 / initScale(parseFloat(d[centrality]))) * (1 / initScale(parseFloat(d[centrality]))))); }});
-                     
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.color = reversedAreaScale(Math.PI * (initScale(parseFloat(0)) * initScale(parseFloat(0)))); } else { d.color = reversedAreaScale(Math.PI * (initScale(parseFloat(d[centrality])) * initScale(parseFloat(d[centrality])))); }});
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { colorDomain.push(reversedAreaScale(Math.PI * (initScale(parseFloat(0)) * initScale(parseFloat(0))))); } else { colorDomain.push(reversedAreaScale(Math.PI * (initScale(parseFloat(d[centrality])) * initScale(parseFloat(d[centrality]))))); }});
+                    
                 } else if (scaleType == "volume") {
                     
-                    volume_values = []
-                     
-                    scaledValues.forEach( function (d) { volume_values.push(parseFloat(4 / 3 * (Math.PI * (d * d * d)))); });
-                     
                     volumeScale = d3.scaleLinear()
                         .domain(d3.extent(volume_values))
                         .range(range);
@@ -1066,34 +1058,30 @@ class springNetwork:
                   
                 } else if (scaleType == "reverse_volume") {
                  
-                    reversed_volume_values = []             
-                    
-                    scaledValues.forEach( function (d) { reversed_volume_values.push(parseFloat(4 / 3 * (Math.PI * (parseFloat(1/d) * parseFloat(1/d) * parseFloat(1/d))))); });
-                     
                     reversedVolumeScale = d3.scaleLinear()
-                        .domain(d3.extent(reversed_volume_values))
-                        .range(range);
+                        .domain(d3.extent(volume_values))
+                        .range(reversed_range);
                     
-                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.color = reversedVolumeScale(4 / 3 * (Math.PI * ((1 / initScale(parseFloat(0))) * (1 / initScale(parseFloat(0))) * (1 / initScale(parseFloat(0)))))); } else { d.color = reversedVolumeScale(4 / 3 * (Math.PI * ((1 / initScale(parseFloat(d[centrality]))) * (1 / initScale(parseFloat(d[centrality]))) * (1 / initScale(parseFloat(d[centrality])))))); }});
-                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { colorDomain.push(reversedVolumeScale(4 / 3 * (Math.PI * ((1 / initScale(parseFloat(0))) * (1 / initScale(parseFloat(0))) * (1 / initScale(parseFloat(0))))))); } else { colorDomain.push(reversedVolumeScale(4 / 3 * (Math.PI * ((1 / initScale(parseFloat(d[centrality]))) * (1 / initScale(parseFloat(d[centrality]))) * (1 / initScale(parseFloat(d[centrality]))))))); }});
-                       
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.color = reversedVolumeScale(4 / 3 * (Math.PI * (initScale(parseFloat(0)) * initScale(parseFloat(0)) * initScale(parseFloat(0))))); } else { d.color = reversedVolumeScale(4 / 3 * (Math.PI * (initScale(parseFloat(d[centrality])) * initScale(parseFloat(d[centrality])) * initScale(parseFloat(d[centrality]))))); }});
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { colorDomain.push(reversedVolumeScale(4 / 3 * (Math.PI * (initScale(parseFloat(0)) * initScale(parseFloat(0)) * initScale(parseFloat(0)))))); } else { colorDomain.push(reversedVolumeScale(4 / 3 * (Math.PI * (initScale(parseFloat(d[centrality])) * initScale(parseFloat(d[centrality])) * initScale(parseFloat(d[centrality])))))); }});
+                    
                 } else if (scaleType == "ordinal") {
                 
-                    var ordinal_range = [...Array(scaledValues.length).keys()];
-                    
-                    initScale = d3.scaleLinear()
-                                    .domain(d3.extent(ordinal_range))
-                                    .range(range);
-                                                    
-                    scaled_range = []
-                    ordinal_range.forEach( function (d) { scaled_range.push(initScale(d)); });
-                    
                     ordinalScale = d3.scaleOrdinal()
                         .domain(scaledValues)
                         .range(scaled_range);
                                         
                     graph.nodes.forEach( function (d) { d.color = ordinalScale(d[centrality]); });
                     graph.nodes.forEach( function (d) { colorDomain.push(ordinalScale(d[centrality])); });
+                    
+                } else if (scaleType == "reverse_ordinal") {
+                
+                    reversedOrdinalScale = d3.scaleOrdinal()
+                        .domain(scaledValues)
+                        .range(reversed_scaled_range);
+                                        
+                    graph.nodes.forEach( function (d) { d.color = reversedOrdinalScale(d[centrality]); });
+                    graph.nodes.forEach( function (d) { colorDomain.push(reversedOrdinalScale(d[centrality])); });
                 }
                         
                 if (scheme_list.includes(colorOption)) {
@@ -1140,7 +1128,7 @@ class springNetwork:
                                 if (Number.isNaN(Number(d[peak_data[0]]))) {                                
                                     var init_value = d[peak_data[0]]                                    
                                 } else if (typeof Number(d[peak_data[0]]) == 'number') { 
-                                    var init_value = Number(d[peak_data[0]]).toFixed(3)
+                                    var init_value = Number(d[peak_data[0]]).toExponential();
                                 }
                                 
                                 html_line = peak_data[0] + ": " + init_value;
@@ -1151,7 +1139,7 @@ class springNetwork:
                                         if (Number.isNaN(Number(d[p]))) {
                                             var data_value = d[p];
                                         } else if (typeof Number(d[p]) == 'number') {
-                                            var data_value = Number(d[p]).toFixed(3);
+                                            var data_value = Number(d[p]).toExponential();
                                         }
                                         
                                         html_line = html_line + "<br/>" + p + ": " + data_value;
@@ -1202,7 +1190,7 @@ class springNetwork:
                                 if (Number.isNaN(Number(d[peak_data[0]]))) {                                
                                     var init_value = d[peak_data[0]]                                    
                                 } else if (typeof Number(d[peak_data[0]]) == 'number') { 
-                                    var init_value = Number(d[peak_data[0]]).toFixed(3)
+                                    var init_value = Number(d[peak_data[0]]).toExponential();
                                 }
                                 
                                 html_line = peak_data[0] + ": " + init_value;
@@ -1213,7 +1201,7 @@ class springNetwork:
                                         if (Number.isNaN(Number(d[p]))) {
                                             var data_value = d[p];
                                         } else if (typeof Number(d[p]) == 'number') {
-                                            var data_value = Number(d[p]).toFixed(3);
+                                            var data_value = Number(d[p]).toExponential();
                                         }
                                         
                                         html_line = html_line + "<br/>" + p + ": " + data_value;
@@ -1433,7 +1421,7 @@ class springNetwork:
                         var colorOption = $$scope.selectedColorOption             
                         var scaleType = params.node_color_scale[nodeColorOption].scale                    
                     
-                        if (scaleType == "ordinal") {
+                        if ((scaleType == "ordinal") || (scaleType == "reverse_ordinal")) {
                         
                             if (!scheme_list.includes(colorOption)) {
                                 $$scope.selectedColorOption = scheme_list[0];
@@ -1464,7 +1452,7 @@ class springNetwork:
                     var colorOption = $$scope.selectedColorOption             
                     var scaleType = params.node_color_scale[nodeColorOption].scale
                     
-                    if (scaleType == "ordinal") {
+                    if ((scaleType == "ordinal") || (scaleType == "reverse_ordinal")) {
                     
                         if (!scheme_list.includes(colorOption)) {
                             $$scope.selectedColorOption = scheme_list[0];
@@ -1507,17 +1495,29 @@ class springNetwork:
         		}
         		
         		$$scope.searchNodes = function () {
-                		var term = document.getElementById('searchTerm').value;
-                		var selected = container.selectAll('.node').filter(function (d, i) {
-                    			return d.Label.toLowerCase().search(term.toLowerCase()) == -1;
-                		});
+        		        peak_data = params.node_data;
+        		        var term = document.getElementById('searchTerm').value;
+        		        
+        		        var matching_terms = []
+        		        
+        		        var selected = container.selectAll('.node').filter(function (d, i) {
+        		                //Default query column
+        		                var match = 'Label'
+        		                
+        		                peak_data.forEach( function(t) { if (d[t].toLowerCase().includes(term.toLowerCase())) { matching_terms.push(t); } });
+        		                
+        		                if (typeof matching_terms[0] != 'undefined') { match = matching_terms[0]; };
+        		                return d[match].toLowerCase().search(term.toLowerCase()) == -1;
+        		        });
                 		selected.style('opacity', '0');
 						var link = container.selectAll('.link');
                 		link.style('stroke-opacity', '0');
                 		d3.selectAll('.node').transition()
-                        		.duration(1000)
+                        		.duration(5000)
                         		.style('opacity', '1');
-                		d3.selectAll('.link').transition().duration(5000).style('stroke-opacity', '0.6');
+                		d3.selectAll('.link').transition()
+                		        .duration(5000)
+                		        .style('stroke-opacity', '0.6');
             	}
             	         	
             	var slider_options = {
@@ -1649,20 +1649,6 @@ class springNetwork:
                         toggle = 0;
                     }
                 };
-            }         
-            
-            function searchNodes() {
-                var term = document.getElementById('searchTerm').value;
-                var selected = container.selectAll('.node').filter(function (d, i) {
-                    return d.Label.toLowerCase().search(term.toLowerCase()) == -1;
-                });
-                selected.style('opacity', '0');
-                var link = container.selectAll('.link');
-                link.style('stroke-opacity', '0');
-                d3.selectAll('.node').transition()
-                        .duration(1000)
-                        .style('opacity', '1');
-                d3.selectAll('.link').transition().duration(5000).style('stroke-opacity', '0.6');
             }
         }
         
@@ -1766,14 +1752,21 @@ class springNetwork:
 
             function updateNodeSize(centrality) {
                 
+                var range = []
+                var reversed_range = []
+                
                 var scaleType = params.node_size_scale[centrality].scale
-                var range = params.node_size_scale[centrality].range
+                range = params.node_size_scale[centrality].range
+                reversed_range = JSON.parse(JSON.stringify(range.slice().reverse()))
                 
                 var centrality_values = []
                 graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { centrality_values.push(parseFloat(0)); } else { centrality_values.push(d[centrality]); }});
                 
                 scaledValues = []
-                if (scaleType != "ordinal") {
+                area_values = []
+                volume_values = []
+                
+                if ((scaleType != "ordinal") && (scaleType != "reverse_ordinal")) {
                     centrality_values = centrality_values.map(function (x) {
                             return parseFloat(x);
                     });
@@ -1783,8 +1776,21 @@ class springNetwork:
                                     .range([1,10]);
                     
                     centrality_values.forEach( function (d) { scaledValues.push(initScale(parseFloat(d))); });
+                    scaledValues.forEach( function (d) { area_values.push(parseFloat(Math.PI * (d * d))); });
+                    scaledValues.forEach( function (d) { volume_values.push(parseFloat(4 / 3 * (Math.PI * (d * d * d)))); });  
                 } else {                
                     scaledValues = centrality_values.reduce(function(a,b){if(a.indexOf(b)<0)a.push(b);return a;},[]);
+                    var ordinal_range = []
+                    ordinal_range = [...Array(scaledValues.length).keys()];
+                    
+                    initOrdinalRange = d3.scaleLinear()
+                                    .domain(d3.extent(ordinal_range))
+                                    .range(range);
+                                                    
+                    var scaled_range = []
+                    ordinal_range.forEach( function (d) { scaled_range.push(initOrdinalRange(d)); });
+                    var reversed_scaled_range = []
+                    reversed_scaled_range = JSON.parse(JSON.stringify(scaled_range.slice().reverse()))
                 }
                                   
                 if (scaleType == "linear") {
@@ -1796,16 +1802,12 @@ class springNetwork:
                     graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.size = linearScale(initScale(parseFloat(0))); } else { d.size = linearScale(initScale(parseFloat(d[centrality]))); }});
                   
                 } else if (scaleType == "reverse_linear") {
-                    
-                    reversed_linear_values = []
-                     
-                    scaledValues.forEach( function (d) { reversed_linear_values.push(parseFloat(1/d)); });
-                     
+                
                     reversedLinearScale = d3.scaleLinear()
-                        .domain(d3.extent(reversed_linear_values))
-                        .range(range);
+                        .domain(d3.extent(scaledValues))
+                        .range(reversed_range);
                     
-                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.size = reversedLinearScale(1 / initScale(parseFloat(0))); } else { d.size = reversedLinearScale(1 / initScale(parseFloat(d[centrality]))); }});
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.size = reversedLinearScale(initScale(parseFloat(0))); } else { d.size = reversedLinearScale(initScale(parseFloat(d[centrality]))); }});
                      
                 } else if (scaleType == "log") {
                    
@@ -1816,16 +1818,12 @@ class springNetwork:
                     graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.size = logScale(initScale(parseFloat(0))); } else { d.size = logScale(initScale(parseFloat(d[centrality]))); }});
                   
                 } else if (scaleType == "reverse_log") {
-                    
-                    reversed_log_values = []
-                     
-                    scaledValues.forEach( function (d) { reversed_log_values.push(parseFloat(1/d)); });
-                     
+                
                     reversedLogScale = d3.scaleLog()
-                        .domain(d3.extent(reversed_log_values))
-                        .range(range);
+                        .domain(d3.extent(scaledValues))
+                        .range(reversed_range);
                      
-                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.size = reversedLogScale(1 / initScale(parseFloat(0))); } else { d.size = reversedLogScale(1 / initScale(parseFloat(d[centrality]))); }});
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.size = reversedLogScale(initScale(parseFloat(0))); } else { d.size = reversedLogScale(initScale(parseFloat(d[centrality]))); }});
                      
                 } else if (scaleType == "square") {
                    
@@ -1837,24 +1835,16 @@ class springNetwork:
                     graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.size = squareScale(initScale(parseFloat(0))); } else { d.size = squareScale(initScale(parseFloat(d[centrality]))); }});
                   
                 } else if (scaleType == "reverse_square") {
-                   
-                    reversed_squared_values = []
-                     
-                    scaledValues.forEach( function (d) { reversed_squared_values.push(parseFloat(1/d)); });
                      
                     reversedSquareScale = d3.scalePow()
-                        .domain(d3.extent(reversed_squared_values))
+                        .domain(d3.extent(scaledValues))
                         .exponent(2)
-                        .range(range);
+                        .range(reversed_range);
                     
-                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.size = reversedSquareScale(1 / initScale(parseFloat(0))); } else { d.size = reversedSquareScale(1 / initScale(parseFloat(d[centrality]))); }});
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.size = reversedSquareScale(initScale(parseFloat(0))); } else { d.size = reversedSquareScale(initScale(parseFloat(d[centrality]))); }});
                   
                 } else if (scaleType == "area") {
-                    
-                    area_values = []
-                     
-                    scaledValues.forEach( function (d) { area_values.push(parseFloat(Math.PI * (d * d))); });
-                     
+                
                     areaScale = d3.scaleLinear()
                         .domain(d3.extent(area_values))
                         .range(range);
@@ -1863,22 +1853,14 @@ class springNetwork:
                      
                 } else if (scaleType == "reverse_area") {
                     
-                    reversed_area_values = []
-                     
-                    scaledValues.forEach( function (d) { reversed_area_values.push(parseFloat(Math.PI * (parseFloat(1/d) * parseFloat(1/d)))); });
-                     
                     reversedAreaScale = d3.scaleLinear()
-                        .domain(d3.extent(reversed_area_values))
-                        .range(range);
-                     
-                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.size = reversedAreaScale(Math.PI * (1 / initScale(parseFloat(0))) * (1 / initScale(parseFloat(0)))); } else { d.size = reversedAreaScale(Math.PI * (1 / initScale(parseFloat(d[centrality]))) * (1 / initScale(parseFloat(d[centrality])))); }});
-                     
+                        .domain(d3.extent(area_values))
+                        .range(reversed_range);
+                    
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.size = reversedAreaScale(Math.PI * (initScale(parseFloat(0)) * initScale(parseFloat(0)))); } else { d.size = reversedAreaScale(Math.PI * (initScale(parseFloat(d[centrality])) * initScale(parseFloat(d[centrality])))); }});
+                    
                 } else if (scaleType == "volume") {
                     
-                    volume_values = []
-                     
-                    scaledValues.forEach( function (d) { volume_values.push(parseFloat(4 / 3 * (Math.PI * (d * d * d)))); });
-                     
                     volumeScale = d3.scaleLinear()
                         .domain(d3.extent(volume_values))
                         .range(range);
@@ -1887,44 +1869,46 @@ class springNetwork:
                   
                 } else if (scaleType == "reverse_volume") {
                  
-                    reversed_volume_values = []             
-                    
-                    scaledValues.forEach( function (d) { reversed_volume_values.push(parseFloat(4 / 3 * (Math.PI * (parseFloat(1/d) * parseFloat(1/d) * parseFloat(1/d))))); });
-                     
                     reversedVolumeScale = d3.scaleLinear()
-                        .domain(d3.extent(reversed_volume_values))
-                        .range(range);
+                        .domain(d3.extent(volume_values))
+                        .range(reversed_range);
                     
-                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.size = reversedVolumeScale(4 / 3 * (Math.PI * ((1 / initScale(parseFloat(0))) * (1 / initScale(parseFloat(0))) * (1 / initScale(parseFloat(0)))))); } else { d.size = reversedVolumeScale(4 / 3 * (Math.PI * ((1 / initScale(parseFloat(d[centrality]))) * (1 / initScale(parseFloat(d[centrality]))) * (1 / initScale(parseFloat(d[centrality])))))); }});
-                       
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.size = reversedVolumeScale(4 / 3 * (Math.PI * (initScale(parseFloat(0)) * initScale(parseFloat(0)) * initScale(parseFloat(0))))); } else { d.size = reversedVolumeScale(4 / 3 * (Math.PI * (initScale(parseFloat(d[centrality])) * initScale(parseFloat(d[centrality])) * initScale(parseFloat(d[centrality]))))); }});
+                      
                 } else if (scaleType == "ordinal") {
                 
-                    var ordinal_range = [...Array(scaledValues.length).keys()];
-                    
-                    initScale = d3.scaleLinear()
-                                    .domain(d3.extent(ordinal_range))
-                                    .range(range);
-                    
-                    scaled_range = []
-                    ordinal_range.forEach( function (d) { scaled_range.push(initScale(d)); });
-                
                     ordinalScale = d3.scaleOrdinal()
-                         .domain(scaledValues)
-                         .range(scaled_range);                
+                        .domain(scaledValues)
+                        .range(scaled_range);
                                         
                     graph.nodes.forEach( function (d) { d.size = ordinalScale(d[centrality]); });
+                } else if (scaleType == "reverse_ordinal") {
+                    
+                    reversedOrdinalScale = d3.scaleOrdinal()
+                         .domain(scaledValues)
+                         .range(reversed_scaled_range);
+                                        
+                    graph.nodes.forEach( function (d) { d.size = reversedOrdinalScale(d[centrality]); });
                 }
             }
             
             function updateNodeColor(centrality, colorOption) {
+                
+                var range = []
+                var reversed_range = []
+                
                 var scaleType = params.node_color_scale[centrality].scale
-                var range = [0,1]
+                range = [0,1]
+                reversed_range = JSON.parse(JSON.stringify(range.slice().reverse()))
                   
                 var centrality_values = []
                 graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { centrality_values.push(parseFloat(0)); } else { centrality_values.push(d[centrality]); }});
                 
                 scaledValues = []
-                if (scaleType != "ordinal") {
+                area_values = []
+                volume_values = []
+                
+                if ((scaleType != "ordinal") && (scaleType != "reverse_ordinal")) {
                     centrality_values = centrality_values.map(function (x) {
                             return parseFloat(x);
                     });
@@ -1934,8 +1918,21 @@ class springNetwork:
                                     .range([1,10]);
                     
                     centrality_values.forEach( function (d) { scaledValues.push(initScale(parseFloat(d))); });
+                    scaledValues.forEach( function (d) { area_values.push(parseFloat(Math.PI * (d * d))); });
+                    scaledValues.forEach( function (d) { volume_values.push(parseFloat(4 / 3 * (Math.PI * (d * d * d)))); });  
                 } else {                
                     scaledValues = centrality_values.reduce(function(a,b){if(a.indexOf(b)<0)a.push(b);return a;},[]);
+                    var ordinal_range = []
+                    ordinal_range = [...Array(scaledValues.length).keys()];
+                    
+                    initOrdinalRange = d3.scaleLinear()
+                                    .domain(d3.extent(ordinal_range))
+                                    .range(range);
+                                                    
+                    var scaled_range = []
+                    ordinal_range.forEach( function (d) { scaled_range.push(initOrdinalRange(d)); });
+                    var reversed_scaled_range = []
+                    reversed_scaled_range = JSON.parse(JSON.stringify(scaled_range.slice().reverse()))
                 }        
                 
                 colorDomain = []                
@@ -1949,18 +1946,14 @@ class springNetwork:
                     graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { colorDomain.push(linearScale(initScale(parseFloat(0)))); } else { colorDomain.push(linearScale(initScale(parseFloat(d[centrality])))); }});
                   
                 } else if (scaleType == "reverse_linear") {
-                    
-                    reversed_linear_values = []
-                     
-                    scaledValues.forEach( function (d) { reversed_linear_values.push(parseFloat(1/d)); });
                      
                     reversedLinearScale = d3.scaleLinear()
-                        .domain(d3.extent(reversed_linear_values))
-                        .range(range);
+                        .domain(d3.extent(scaledValues))
+                        .range(reversed_range);
                     
-                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.color = reversedLinearScale(1 / initScale(parseFloat(0))); } else { d.color = reversedLinearScale(1 / initScale(parseFloat(d[centrality]))); }});
-                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { colorDomain.push(reversedLinearScale(1 / initScale(parseFloat(0)))); } else { colorDomain.push(reversedLinearScale(1 / initScale(parseFloat(d[centrality])))); }});
-                     
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.color = reversedLinearScale(initScale(parseFloat(0))); } else { d.color = reversedLinearScale(initScale(parseFloat(d[centrality]))); }});
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { colorDomain.push(reversedLinearScale(initScale(parseFloat(0)))); } else { colorDomain.push(reversedLinearScale(initScale(parseFloat(d[centrality])))); }});
+                  
                 } else if (scaleType == "log") {
                    
                     logScale = d3.scaleLog()
@@ -1971,18 +1964,14 @@ class springNetwork:
                     graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { colorDomain.push(logScale(initScale(parseFloat(0)))); } else { colorDomain.push(logScale(initScale(parseFloat(d[centrality])))); }});
                   
                 } else if (scaleType == "reverse_log") {
-                    
-                    reversed_log_values = []
-                     
-                    scaledValues.forEach( function (d) { reversed_log_values.push(parseFloat(1/d)); });
                      
                     reversedLogScale = d3.scaleLog()
-                        .domain(d3.extent(reversed_log_values))
-                        .range(range);
+                        .domain(d3.extent(scaledValues))
+                        .range(reversed_range);
                     
-                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.color = reversedLogScale(1 / initScale(parseFloat(0))); } else { d.color = reversedLogScale(1 / initScale(parseFloat(d[centrality]))); }});
-                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { colorDomain.push(reversedLogScale(1 / initScale(parseFloat(0)))); } else { colorDomain.push(reversedLogScale(1 / initScale(parseFloat(d[centrality])))); }});
-                     
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.color = reversedLogScale(initScale(parseFloat(0))); } else { d.color = reversedLogScale(initScale(parseFloat(d[centrality]))); }});
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { colorDomain.push(reversedLogScale(initScale(parseFloat(0)))); } else { colorDomain.push(reversedLogScale(initScale(parseFloat(d[centrality])))); }});
+                  
                 } else if (scaleType == "square") {
                    
                     squareScale = d3.scalePow()
@@ -1995,24 +1984,16 @@ class springNetwork:
                   
                 } else if (scaleType == "reverse_square") {
                    
-                    reversed_squared_values = []
-                     
-                    scaledValues.forEach( function (d) { reversed_squared_values.push(parseFloat(1/d)); });
-                     
                     reversedSquareScale = d3.scalePow()
-                        .domain(d3.extent(reversed_squared_values))
+                        .domain(d3.extent(scaledValues))
                         .exponent(2)
-                        .range(range);
+                        .range(reversed_range);
                     
-                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.color = reversedSquareScale(1 / initScale(parseFloat(0))); } else { d.color = reversedSquareScale(1 / initScale(parseFloat(d[centrality]))); }});
-                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { colorDomain.push(reversedSquareScale(1 / initScale(parseFloat(0)))); } else { colorDomain.push(reversedSquareScale(1 / initScale(parseFloat(d[centrality])))); }});
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.color = reversedSquareScale(initScale(parseFloat(0))); } else { d.color = reversedSquareScale(initScale(parseFloat(d[centrality]))); }});
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { colorDomain.push(reversedSquareScale(initScale(parseFloat(0)))); } else { colorDomain.push(reversedSquareScale(initScale(parseFloat(d[centrality])))); }});
                   
                 } else if (scaleType == "area") {
                     
-                    area_values = []
-                     
-                    scaledValues.forEach( function (d) { area_values.push(parseFloat(Math.PI * (d * d))); });
-                     
                     areaScale = d3.scaleLinear()
                         .domain(d3.extent(area_values))
                         .range(range);
@@ -2021,24 +2002,16 @@ class springNetwork:
                     graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { colorDomain.push(areaScale(Math.PI * (initScale(parseFloat(0)) * initScale(parseFloat(0))))); } else { colorDomain.push(areaScale(Math.PI * (initScale(parseFloat(d[centrality])) * initScale(parseFloat(d[centrality]))))); }});
                      
                 } else if (scaleType == "reverse_area") {
-                    
-                    reversed_area_values = []
-                     
-                    scaledValues.forEach( function (d) { reversed_area_values.push(parseFloat(Math.PI * (parseFloat(1/d) * parseFloat(1/d)))); });
                      
                     reversedAreaScale = d3.scaleLinear()
-                        .domain(d3.extent(reversed_area_values))
-                        .range(range);
+                        .domain(d3.extent(area_values))
+                        .range(reversed_range);
                     
-                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.color = reversedAreaScale(Math.PI * (1 / initScale(parseFloat(0))) * (1 / initScale(parseFloat(0)))); } else { d.color = reversedAreaScale(Math.PI * (1 / initScale(parseFloat(d[centrality]))) * (1 / initScale(parseFloat(d[centrality])))); }});
-                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { colorDomain.push(reversedAreaScale(Math.PI * (1 / initScale(parseFloat(0))) * (1 / initScale(parseFloat(0))))); } else { colorDomain.push(reversedAreaScale(Math.PI * (1 / initScale(parseFloat(d[centrality]))) * (1 / initScale(parseFloat(d[centrality]))))); }});
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.color = reversedAreaScale(Math.PI * (initScale(parseFloat(0)) * initScale(parseFloat(0)))); } else { d.color = reversedAreaScale(Math.PI * (initScale(parseFloat(d[centrality])) * initScale(parseFloat(d[centrality])))); }});
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { colorDomain.push(reversedAreaScale(Math.PI * (initScale(parseFloat(0)) * initScale(parseFloat(0))))); } else { colorDomain.push(reversedAreaScale(Math.PI * (initScale(parseFloat(d[centrality])) * initScale(parseFloat(d[centrality]))))); }});
                      
                 } else if (scaleType == "volume") {
                     
-                    volume_values = []
-                     
-                    scaledValues.forEach( function (d) { volume_values.push(parseFloat(4 / 3 * (Math.PI * (d * d * d)))); });
-                     
                     volumeScale = d3.scaleLinear()
                         .domain(d3.extent(volume_values))
                         .range(range);
@@ -2048,27 +2021,14 @@ class springNetwork:
                   
                 } else if (scaleType == "reverse_volume") {
                  
-                    reversed_volume_values = []             
-                    
-                    scaledValues.forEach( function (d) { reversed_volume_values.push(parseFloat(4 / 3 * (Math.PI * (parseFloat(1/d) * parseFloat(1/d) * parseFloat(1/d))))); });
-                     
                     reversedVolumeScale = d3.scaleLinear()
-                        .domain(d3.extent(reversed_volume_values))
-                        .range(range);
+                        .domain(d3.extent(volume_values))
+                        .range(reversed_range);
                     
-                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.color = reversedVolumeScale(4 / 3 * (Math.PI * ((1 / initScale(parseFloat(0))) * (1 / initScale(parseFloat(0))) * (1 / initScale(parseFloat(0)))))); } else { d.color = reversedVolumeScale(4 / 3 * (Math.PI * ((1 / initScale(parseFloat(d[centrality]))) * (1 / initScale(parseFloat(d[centrality]))) * (1 / initScale(parseFloat(d[centrality])))))); }});
-                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { colorDomain.push(reversedVolumeScale(4 / 3 * (Math.PI * ((1 / initScale(parseFloat(0))) * (1 / initScale(parseFloat(0))) * (1 / initScale(parseFloat(0))))))); } else { colorDomain.push(reversedVolumeScale(4 / 3 * (Math.PI * ((1 / initScale(parseFloat(d[centrality]))) * (1 / initScale(parseFloat(d[centrality]))) * (1 / initScale(parseFloat(d[centrality]))))))); }});
-                       
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { d.color = reversedVolumeScale(4 / 3 * (Math.PI * (initScale(parseFloat(0)) * initScale(parseFloat(0)) * initScale(parseFloat(0))))); } else { d.color = reversedVolumeScale(4 / 3 * (Math.PI * (initScale(parseFloat(d[centrality])) * initScale(parseFloat(d[centrality])) * initScale(parseFloat(d[centrality]))))); }});
+                    graph.nodes.forEach( function (d) { if (typeof d[centrality] === 'undefined') { colorDomain.push(reversedVolumeScale(4 / 3 * (Math.PI * (initScale(parseFloat(0)) * initScale(parseFloat(0)) * initScale(parseFloat(0)))))); } else { colorDomain.push(reversedVolumeScale(4 / 3 * (Math.PI * (initScale(parseFloat(d[centrality])) * initScale(parseFloat(d[centrality])) * initScale(parseFloat(d[centrality])))))); }});
+                  
                 } else if (scaleType == "ordinal") {
-                
-                    var ordinal_range = [...Array(scaledValues.length).keys()];
-                    
-                    initScale = d3.scaleLinear()
-                                    .domain(d3.extent(ordinal_range))
-                                    .range(range);
-                                                    
-                    scaled_range = []
-                    ordinal_range.forEach( function (d) { scaled_range.push(initScale(d)); });
                     
                     ordinalScale = d3.scaleOrdinal()
                         .domain(scaledValues)
@@ -2076,6 +2036,15 @@ class springNetwork:
                                         
                     graph.nodes.forEach( function (d) { d.color = ordinalScale(d[centrality]); });
                     graph.nodes.forEach( function (d) { colorDomain.push(ordinalScale(d[centrality])); });
+                    
+                } else if (scaleType == "reverse_ordinal") {
+                
+                    reversedOrdinalScale = d3.scaleOrdinal()
+                        .domain(scaledValues)
+                        .range(reversed_scaled_range);
+                                        
+                    graph.nodes.forEach( function (d) { d.color = reversedOrdinalScale(d[centrality]); });
+                    graph.nodes.forEach( function (d) { colorDomain.push(reversedOrdinalScale(d[centrality])); });
                 }
                 
                 if (scheme_list.includes(colorOption)) {
@@ -2119,7 +2088,7 @@ class springNetwork:
                                 if (Number.isNaN(Number(d[peak_data[0]]))) {                                
                                     var init_value = d[peak_data[0]]                                    
                                 } else if (typeof Number(d[peak_data[0]]) == 'number') { 
-                                    var init_value = Number(d[peak_data[0]]).toFixed(3)
+                                    var init_value = Number(d[peak_data[0]]).toExponential();
                                 }
                                 
                                 html_line = "\\""+ peak_data[0] + "\\",\\"" + init_value + "\\"";
@@ -2130,7 +2099,7 @@ class springNetwork:
                                         if (Number.isNaN(Number(d[p]))) {
                                             var data_value = d[p];
                                         } else if (typeof Number(d[p]) == 'number') {
-                                            var data_value = Number(d[p]).toFixed(3);
+                                            var data_value = Number(d[p]).toExponential();
                                         }
 
                                         html_line = html_line + "\\n\\"" + p + "\\",\\"" + data_value + "\\"";
@@ -2170,7 +2139,7 @@ class springNetwork:
                                 if (Number.isNaN(Number(d[peak_data[0]]))) {                                
                                     var init_value = d[peak_data[0]]                                    
                                 } else if (typeof Number(d[peak_data[0]]) == 'number') { 
-                                    var init_value = Number(d[peak_data[0]]).toFixed(3)
+                                    var init_value = Number(d[peak_data[0]]).toExponential();
                                 }
 
                                 html_line = "\\""+ peak_data[0] + "\\",\\"" + init_value + "\\"";
@@ -2181,7 +2150,7 @@ class springNetwork:
                                         if (Number.isNaN(Number(d[p]))) {
                                             var data_value = d[p];
                                         } else if (typeof Number(d[p]) == 'number') {
-                                            var data_value = Number(d[p]).toFixed(3);
+                                            var data_value = Number(d[p]).toExponential();
                                         }
 
                                         html_line = html_line + "\\n\\"" + p + "\\",\\"" + data_value + "\\"";
@@ -2380,9 +2349,9 @@ class springNetwork:
                 
                     if (typeof nodeColorOption != 'undefined') {                        
                         var colorOption = $$scope.selectedColorOption             
-                        var scaleType = params.node_color_scale[nodeColorOption].scale                    
-                                        
-                        if (scaleType == "ordinal") {
+                        var scaleType = params.node_color_scale[nodeColorOption].scale
+                        
+                        if ((scaleType == "ordinal") || (scaleType == "reverse_ordinal")) {
                         
                             if (!scheme_list.includes(colorOption)) {
                                 $$scope.selectedColorOption = scheme_list[0];
@@ -2413,7 +2382,7 @@ class springNetwork:
                     var colorOption = $$scope.selectedColorOption             
                     var scaleType = params.node_color_scale[nodeColorOption].scale
                     
-                    if (scaleType == "ordinal") {
+                    if ((scaleType == "ordinal") || (scaleType == "reverse_ordinal")) {
                     
                         if (!scheme_list.includes(colorOption)) {
                             $$scope.selectedColorOption = scheme_list[0];
@@ -2456,17 +2425,31 @@ class springNetwork:
         		}
         		
         		$$scope.searchNodes = function () {
+        		
+        		        peak_data = params.node_data;
                 		var term = document.getElementById('searchTerm').value;
+                		
+                		var matching_terms = []
+                		
                 		var selected = container.selectAll('.node').filter(function (d, i) {
-                    			return d.Label.toLowerCase().search(term.toLowerCase()) == -1;
+                		        //Default query column
+                		        var match = 'Label'
+                		        
+                		        peak_data.forEach( function(t) { if (d[t].toLowerCase().includes(term.toLowerCase())) { matching_terms.push(t); } });
+                		        
+                		        if (typeof matching_terms[0] != 'undefined') { match = matching_terms[0]; };
+                		        
+                    			return d[match].toLowerCase().search(term.toLowerCase()) == -1;
                 		});
                 		selected.style('opacity', '0');
 						var link = container.selectAll('.link');
                 		link.style('stroke-opacity', '0');
                 		d3.selectAll('.node').transition()
-                        		.duration(1000)
+                        		.duration(5000)
                         		.style('opacity', '1');
-                		d3.selectAll('.link').transition().duration(5000).style('stroke-opacity', '0.6');
+                		d3.selectAll('.link').transition()
+                		        .duration(5000)
+                		        .style('stroke-opacity', '0.6');
             	}
             	
             	var slider_options = {
@@ -2599,20 +2582,6 @@ class springNetwork:
                         toggle = 0;
                     }
                 };
-            }         
-
-            function searchNodes() {
-                var term = document.getElementById('searchTerm').value;
-                var selected = container.selectAll('.node').filter(function (d, i) {
-                    return d.Label.toLowerCase().search(term.toLowerCase()) == -1;
-                });
-                selected.style('opacity', '0');
-                var link = container.selectAll('.link');
-                link.style('stroke-opacity', '0');
-                d3.selectAll('.node').transition()
-                        .duration(1000)
-                        .style('opacity', '1');
-                d3.selectAll('.link').transition().duration(5000).style('stroke-opacity', '0.6');
             }
             
             function displayNodeData(datasetText) {

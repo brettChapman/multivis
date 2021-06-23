@@ -11,7 +11,7 @@ import pandas as pd
 import copy
 
 class clustermap:
-    """Class for clustermap to produce an Hierarchical Clustered Heatmap (HCH) plot.
+    usage = """Produces a Hierarchical Clustered Heatmap.
 
         Initial_Parameters
         ----------
@@ -30,13 +30,18 @@ class clustermap:
             figSize: The figure size as a tuple (width,height) (default: (80,70))
             dendrogram_ratio_shift: The ratio to shift the position of the dendrogram in relation to the heatmap (default: 0.0)
             dendrogram_line_width: The line width of the dendrograms (default: 1.5)
-            fontSize: The font size set for each node (default: 30)
+            background_colour: Set the background colour (default: 'white')
+            transparent: Setting to 'True' will ignore background_colour and make the background transparent (default: False)
+            fontSize: The font size for all text (default: 30)
+            heatmap_annotation: Annotate the heatmap with values (default: False)
             heatmap_cmap: The CMAP colour palette to use for the heatmap (default: 'RdYlGn')
             cluster_cmap: The CMAP colour palette to use for the branch separation of clusters in the dendrogram (default: 'Set1')
             rowColorCluster: Setting to 'True' will display a colour bar for the clustered rows (default: False)
             colColorCluster: Setting to 'True' will display a colour bar for the clustered columns (default: False)
             row_color_threshold: The colouring threshold for the row dendrogram (default: 10)
             col_color_threshold: The colouring threshold for the column dendrogram (default: 10)
+        
+        help : Print this help text
 
         build : Generates and displays the Hierarchical Clustered Heatmap (HCH).
     """
@@ -51,9 +56,12 @@ class clustermap:
 
         self.set_params(xLabels=pd.Series(scores.columns), yLabels=pd.Series(scores.index))
 
-    def set_params(self, xLabels, yLabels, imageFileName='clusterMap.png', saveImage=True, dpi=200, figSize=(80, 70), dendrogram_ratio_shift=0.0, dendrogram_line_width=1.5, fontSize=30, heatmap_cmap='RdYlGn', cluster_cmap='Set1', rowColorCluster=False, colColorCluster=False, row_color_threshold=10, col_color_threshold=10):
+    def help(self):
+        print(clustermap.usage)
 
-        imageFileName, saveImage, dpi, figSize, dendrogram_ratio_shift, dendrogram_line_width, fontSize, xLabels, yLabels, heatmap_cmap, cluster_cmap, rowColorCluster, colColorCluster, row_color_threshold, col_color_threshold = self.__paramCheck(imageFileName, saveImage, dpi, figSize, dendrogram_ratio_shift, dendrogram_line_width, fontSize, xLabels, yLabels, heatmap_cmap, cluster_cmap, rowColorCluster, colColorCluster, row_color_threshold, col_color_threshold)
+    def set_params(self, xLabels, yLabels, imageFileName='clusterMap.png', saveImage=True, dpi=200, figSize=(80, 70), dendrogram_ratio_shift=0.0, dendrogram_line_width=1.5, background_colour='white', transparent=False, fontSize=30, heatmap_annotation=False, heatmap_cmap='RdYlGn', cluster_cmap='Set1', rowColorCluster=False, colColorCluster=False, row_color_threshold=10, col_color_threshold=10):
+
+        imageFileName, saveImage, dpi, figSize, dendrogram_ratio_shift, dendrogram_line_width, background_colour, transparent, fontSize, heatmap_annotation, xLabels, yLabels, heatmap_cmap, cluster_cmap, rowColorCluster, colColorCluster, row_color_threshold, col_color_threshold = self.__paramCheck(imageFileName, saveImage, dpi, figSize, dendrogram_ratio_shift, dendrogram_line_width, background_colour, transparent, fontSize, heatmap_annotation, xLabels, yLabels, heatmap_cmap, cluster_cmap, rowColorCluster, colColorCluster, row_color_threshold, col_color_threshold)
 
         scores = self.__scores
 
@@ -68,7 +76,10 @@ class clustermap:
         self.__dpi = dpi;
         self.__figSize = figSize;
         self.__dendrogram_ratio_shift = dendrogram_ratio_shift;
+        self.__background_colour = background_colour
+        self.__transparent = transparent
         self.__fontSize = fontSize;
+        self.__heatmap_annotation = heatmap_annotation;
         self.__dendrogram_line_width = dendrogram_line_width;
         self.__heatmap_cmap = heatmap_cmap;
         self.__cluster_cmap = cluster_cmap;
@@ -94,7 +105,13 @@ class clustermap:
         col_color_threshold = self.__col_color_threshold
         dendrogram_ratio_shift = self.__dendrogram_ratio_shift
         dendrogram_line_width = self.__dendrogram_line_width
+        background_colour = self.__background_colour
+        transparent = self.__transparent
         fontSize = self.__fontSize
+        heatmap_annotation = self.__heatmap_annotation
+
+        #Set the background colour
+        plt.rcParams['figure.facecolor'] = background_colour
 
         wspace = 0.0025
         colorBar_thickness = 0.01
@@ -127,6 +144,7 @@ class clustermap:
 
                 if np.nan not in row_colors:
                     if np.nan not in col_colors:
+
                         grid = sns.clustermap(scores.astype(float)
                                               , row_linkage=row_linkage
                                               , col_linkage=col_linkage
@@ -134,6 +152,8 @@ class clustermap:
                                               , col_colors=col_colors
                                               , row_colors=row_colors
                                               , robust=True
+                                              , annot=heatmap_annotation
+                                              , annot_kws={"fontsize":fontSize*0.50}
                                               , xticklabels=scores.columns
                                               , yticklabels=scores.index
                                               , cmap=heatmap_cmap)
@@ -191,7 +211,7 @@ class clustermap:
                             line.set_linewidth(dendrogram_line_width)
 
                         if saveImage:
-                            grid.savefig(imageFileName, dpi=dpi)
+                            grid.savefig(imageFileName, dpi=dpi, transparent=transparent)
 
                     else:
                         print("Too few colours in colour map. Please choose alternative cluster colour map or colour by row only.")
@@ -214,6 +234,7 @@ class clustermap:
                                           , figsize=figSize
                                           , row_colors=row_colors
                                           , robust=True
+                                          , annot=heatmap_annotation
                                           , xticklabels=scores.columns
                                           , yticklabels=scores.index
                                           , cmap=heatmap_cmap)
@@ -258,7 +279,7 @@ class clustermap:
                         line.set_linewidth(dendrogram_line_width)
 
                     if saveImage:
-                        grid.savefig(imageFileName, dpi=dpi)
+                        grid.savefig(imageFileName, dpi=dpi, transparent=transparent)
 
                 else:
                     print("Error: Too few colours in colour map. Please choose alternative cluster colour map or colour by column only.")
@@ -280,6 +301,7 @@ class clustermap:
                                           , figsize=figSize
                                           , col_colors=col_colors
                                           , robust=True
+                                          , annot=heatmap_annotation
                                           , xticklabels=scores.columns
                                           , yticklabels=scores.index
                                           , cmap=heatmap_cmap)
@@ -327,18 +349,19 @@ class clustermap:
                         line.set_linewidth(dendrogram_line_width)
 
                     if saveImage:
-                        grid.savefig(imageFileName, dpi=dpi)
+                        grid.savefig(imageFileName, dpi=dpi, transparent=transparent)
 
                 else:
                     print("Error: Too few colors in color map. Please choose alternative group colour map or colour by row only.")
                     sys.exit()
         else:
 
-            grid = sns.clustermap(X.astype(float)
+            grid = sns.clustermap(scores.astype(float)
                                   , row_linkage=row_linkage
                                   , col_linkage=col_linkage
                                   , figsize=figSize
                                   , robust=True
+                                  , annot=heatmap_annotation
                                   , xticklabels=scores.columns
                                   , yticklabels=scores.index
                                   , cmap=heatmap_cmap)
@@ -375,7 +398,7 @@ class clustermap:
                 line.set_linewidth(dendrogram_line_width)
 
             if saveImage:
-                grid.savefig(imageFileName, dpi=dpi)
+                grid.savefig(imageFileName, dpi=dpi, transparent=transparent)
 
     def __checkData(self, scores, row_linkage, col_linkage):
 
@@ -399,7 +422,7 @@ class clustermap:
 
         return scores, row_linkage, col_linkage
 
-    def __paramCheck(self, imageFileName, saveImage, dpi, figSize, dendrogram_ratio_shift, dendrogram_line_width, fontSize, xLabels, yLabels, heatmap_cmap, cluster_cmap, rowColorCluster, colColorCluster, row_color_threshold, col_color_threshold):
+    def __paramCheck(self, imageFileName, saveImage, dpi, figSize, dendrogram_ratio_shift, dendrogram_line_width, background_colour, transparent, fontSize, heatmap_annotation, xLabels, yLabels, heatmap_cmap, cluster_cmap, rowColorCluster, colColorCluster, row_color_threshold, col_color_threshold):
 
         if not isinstance(imageFileName, str):
             print("Error: Image file name is not valid. Choose a string value.")
@@ -433,10 +456,22 @@ class clustermap:
                 print("Error: Dendrogram line width is not valid. Choose a float or integer value.")
                 sys.exit()
 
+        if not matplotlib.colors.is_color_like(background_colour):
+            print("Error: The background colour value is not valid. Choose a valid colour as a HTML/CSS name, hex code, or (R,G,B) tuple.")
+            sys.exit()
+
+        if not type(transparent) == bool:
+            print("Error: The transparent value is not valid. Choose either \"True\" or \"False\".")
+            sys.exit()
+
         if not isinstance(fontSize, float):
             if not isinstance(fontSize, int):
                 print("Error: Font size is not valid. Choose a float or integer value.")
                 sys.exit()
+
+        if not type(heatmap_annotation) == bool:
+            print("Error: The heatmap annotation value is not valid. Choose either \"True\" or \"False\".")
+            sys.exit()
 
         scores = self.__scores
 
@@ -495,7 +530,7 @@ class clustermap:
                 print("Error: Column colour threshold is not valid. Choose a float or integer value.")
                 sys.exit()
 
-        return imageFileName, saveImage, dpi, figSize, dendrogram_ratio_shift, dendrogram_line_width, fontSize, xLabels, yLabels, heatmap_cmap, cluster_cmap, rowColorCluster, colColorCluster, row_color_threshold, col_color_threshold
+        return imageFileName, saveImage, dpi, figSize, dendrogram_ratio_shift, dendrogram_line_width, background_colour, transparent, fontSize, heatmap_annotation, xLabels, yLabels, heatmap_cmap, cluster_cmap, rowColorCluster, colColorCluster, row_color_threshold, col_color_threshold
 
     def __get_cluster_classes(self, dn, labels, label='ivl'):
         cluster_idxs = defaultdict(list)

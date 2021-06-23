@@ -9,8 +9,12 @@ from .utils import *
 import numpy as np
 import pandas as pd
 
+import warnings
+#added to supress the cmap warning (cmap dictonary since became private API)
+warnings.filterwarnings("ignore",category=matplotlib.mplDeprecation)
+
 class polarDendrogram:
-    """Class for polarDendrogram to produce a polar dendrogram given a cartesian dendrogram
+    usage = """Produces a polar dendrogram given a cartesian dendrogram
 
             Initial_Parameters
             ----------
@@ -24,24 +28,27 @@ class polarDendrogram:
                 branch_scale: The branch distance scale to apply ('linear', 'log', 'square') (default: 'linear')
                 gap: The gap size within the polar dendrogram (default: 0.1)
                 grid: Setting to 'True' will overlay a grid over the polar dendrogram (default: False)
-                style_sheet: Setting the Seaborn style-sheet (see https://python-graph-gallery.com/104-seaborn-themes/) (default: 'seaborn-white')
+                style: Set the matplotlib style (see https://matplotlib.org/stable/tutorials/introductory/customizing.html) (default: 'seaborn-white')
                 dpi: The number of Dots Per Inch (DPI) for the image (default: 200)
                 figSize: The figure size as a tuple (width,height) (default: (10,10))
                 fontSize: The font size for all text (default: 15)
                 PeakTable: The Peak Table Pandas dataframe (default: empty dataframe)
-                textColorScale: The scale to use for colouring the text ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal") (default: 'linear')
+                DataTable: The Data Table Pandas dataframe (default: empty dataframe)
+                textColorScale: The scale to use for colouring the text ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal", "reverse_ordinal") (default: 'linear')
                 text_color_column: The colour column to use from Peak Table (default: None sets to black)
                 label_column: The label column to use from Peak Table (default: use original Peak Table index from cartesian dendrogram)
                 text_cmap: The CMAP colour palette to use (default: 'brg')
 
             getClusterPlots : Generates plots of mean peak area over the 'Class' variable for each cluster from the polar dendrogram
-                column_numbers: The number of columns to display in the plots (default: 2)
+                column_numbers: The number of columns to display in the plots (default: 4)
                 log: Setting to 'True' will log the data (default: True)
                 autoscale:  Setting to 'True' will scale the data to unit variance (Default: True)
-                figSize: The figure size as a tuple (width,height) (default: (10,20))
+                figSize: The figure size as a tuple (width,height) (default: (15,10))
                 saveImage: Setting to 'True' will save the image to file (default: True)
                 imageFileName: The image file name to save to (default: 'clusterPlots.png')
                 dpi: The number of Dots Per Inch (DPI) for the image (default: 200)
+            
+            help : Print this help text
 
             build : Generates and displays the Polar dendrogram.
     """
@@ -52,16 +59,19 @@ class polarDendrogram:
 
         self.set_params()
 
-    def set_params(self, imageFileName='polarDendrogram.png', saveImage=True, branch_scale='linear', gap=0.1, grid=False, style_sheet='seaborn-white', dpi=200, figSize=(10,10), fontSize=15, PeakTable=pd.DataFrame(), DataTable=pd.DataFrame(), textColorScale='linear', text_color_column='none', label_column='none', text_cmap='brg'):
+    def help(self):
+        print(polarDendrogram.usage)
 
-        imageFileName, saveImage, branch_scale, gap, grid, style_sheet, dpi, figSize, fontSize, PeakTable, DataTable, textColorScale, text_color_column, label_column, text_cmap = self.__paramCheck(imageFileName, saveImage, branch_scale, gap, grid, style_sheet, dpi, figSize, fontSize, PeakTable, DataTable, textColorScale, text_color_column, label_column, text_cmap)
+    def set_params(self, imageFileName='polarDendrogram.png', saveImage=True, branch_scale='linear', gap=0.1, grid=False, style='seaborn-white', dpi=200, figSize=(10,10), fontSize=15, PeakTable=pd.DataFrame(), DataTable=pd.DataFrame(), textColorScale='linear', text_color_column='none', label_column='none', text_cmap='brg'):
+
+        imageFileName, saveImage, branch_scale, gap, grid, style, dpi, figSize, fontSize, PeakTable, DataTable, textColorScale, text_color_column, label_column, text_cmap = self.__paramCheck(imageFileName, saveImage, branch_scale, gap, grid, style, dpi, figSize, fontSize, PeakTable, DataTable, textColorScale, text_color_column, label_column, text_cmap)
 
         self.__imageFileName = imageFileName;
         self.__saveImage = saveImage;
         self.__branch_scale = branch_scale;
         self.__gap = gap;
         self.__grid = grid;
-        self.__style_sheet = style_sheet;
+        self.__style = style;
         self.__dpi = dpi;
         self.__figSize = figSize;
         self.__fontSize = fontSize;
@@ -107,8 +117,8 @@ class polarDendrogram:
                     if matplotlib.colors.is_color_like(text_color_values[0]):
                         text_colors = dict(zip(peaktable.index, text_color_values))
                     else:
-                        if self.__textColorScale != "ordinal":
-                            print("Error: Text colour column is not valid. While textColorScale is not ordinal, choose a column containing colour values (names, hex code or RGB values), floats or integer values.")
+                        if ((self.__textColorScale != "ordinal") and (self.__textColorScale != "reverse_ordinal")):
+                            print("Error: Text colour column is not valid. While textColorScale is not ordinal or reverse_ordinal, choose a column containing colour values (names, hex code or RGB values), floats or integer values.")
                             sys.exit()
                         else:
                             colorsRGB = self.__get_colors(text_color_values, textCmap)[:, :3]
@@ -134,7 +144,7 @@ class polarDendrogram:
         gap = self.__gap
         grid = self.__grid
         fontSize = self.__fontSize
-        style_sheet = self.__style_sheet
+        style = self.__style
         dpi = self.__dpi
         figSize = self.__figSize
 
@@ -157,7 +167,7 @@ class polarDendrogram:
 
         icoord = ((icoord - imin) / (imax - imin) * (1 - gap) + gap / 2) * 2 * np.pi
 
-        with plt.style.context(style_sheet):
+        with plt.style.context(style):
             fig = plt.figure(figsize=figSize)
             ax = fig.add_subplot(111, polar=True)
 
@@ -227,18 +237,21 @@ class polarDendrogram:
 
             ax.grid(grid)
 
+            ax.patch.set_alpha(1.0)
+
             if saveImage:
-                plt.savefig(imageFileName, dpi=dpi);
+                plt.savefig(imageFileName, dpi=dpi, transparent=True);
 
             plt.show()
 
-    def getClusterPlots(self, column_numbers=2, log=True, autoscale=True, figSize=(10, 20), saveImage=True, imageFileName='clusterPlots.png', dpi=200):
+    def getClusterPlots(self, column_numbers=4, log=True, autoscale=True, figSize=(15, 10), saveImage=True, imageFileName='clusterPlots.png', dpi=200):
 
         scaler = StandardScaler()
 
         dendrogram = self.__dn
         peaktable = self.__peaktable
         datatable = self.__datatable
+        style = self.__style
 
         peaklist = peaktable['Name']
         X = datatable[peaklist]
@@ -264,50 +277,50 @@ class polarDendrogram:
 
             clusters = self.__getClusters(ordered_list, col_palette)
 
-            fig, axes = plt.subplots(nrows=len(clusters), ncols=column_numbers, sharey=True, figsize=figSize)
+            with plt.style.context(style):
 
-            axes = self.__trim_axes(axes, len(clusters))
+                fig, axes = plt.subplots(nrows=int(len(clusters)/column_numbers), ncols=column_numbers, sharey=True, figsize=figSize)
 
-            for cluster_index, cluster in enumerate(clusters):
+                for cluster_index, cluster in enumerate(clusters):
 
-                peak_cluster = peaktable[peaktable.index.isin(cluster)]
+                    peak_cluster = peaktable[peaktable.index.isin(cluster)]
 
-                x = X_data[peak_cluster['Name']]
+                    x = X_data[peak_cluster['Name']]
 
-                df_merged = pd.DataFrame()
+                    df_merged = pd.DataFrame()
 
-                cluster_names = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
-                                 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
+                    cluster_names = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
+                                     'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
 
-                peak_count = 0;
-                for index, peak in enumerate(x.columns):
+                    peak_count = 0;
+                    for index, peak in enumerate(x.columns):
 
-                    peak_count = peak_count + 1;
+                        peak_count = peak_count + 1;
 
-                    if df_merged.empty:
-                        df_merged = pd.merge(
-                            datatable.T[~datatable.T.index.isin(peaktable['Name'])].T.reset_index(drop=True),
-                            pd.Series(x.values[:, index], name='Peak').reset_index(drop=True), left_index=True,
-                            right_index=True)
-                    else:
-                        df_dat = pd.merge(
-                            datatable.T[~datatable.T.index.isin(peaktable['Name'])].T.reset_index(drop=True),
-                            pd.Series(x.values[:, index], name='Peak').reset_index(drop=True), left_index=True,
-                            right_index=True)
-                        df_merged = pd.concat([df_merged, df_dat], axis=0, sort=False).reset_index(drop=True)
+                        if df_merged.empty:
+                            df_merged = pd.merge(
+                                datatable.T[~datatable.T.index.isin(peaktable['Name'])].T.reset_index(drop=True),
+                                pd.Series(x.values[:, index], name='Peak').reset_index(drop=True), left_index=True,
+                                right_index=True)
+                        else:
+                            df_dat = pd.merge(
+                                datatable.T[~datatable.T.index.isin(peaktable['Name'])].T.reset_index(drop=True),
+                                pd.Series(x.values[:, index], name='Peak').reset_index(drop=True), left_index=True,
+                                right_index=True)
+                            df_merged = pd.concat([df_merged, df_dat], axis=0, sort=False).reset_index(drop=True)
 
-                ax = sns.pointplot(data=df_merged, x='Class', y='Peak', x_estimator=np.mean, capsize=0.1, ci=95,
-                                   ax=axes[cluster_index])
+                    ax = sns.pointplot(data=df_merged, x='Class', y='Peak', x_estimator=np.mean, capsize=0.1, ci=95,
+                                       ax=axes.flat[cluster_index])
 
-                ax.set(xlabel='', ylabel='Scaled Peak Area',
-                       title='Cluster {} (N={})'.format(cluster_names[cluster_index], peak_count))
+                    ax.set(xlabel='', ylabel='Scaled Peak Area',
+                           title='Cluster {} (N={})'.format(cluster_names[cluster_index], peak_count))
 
-            fig.tight_layout(h_pad=5, w_pad=2)
+                fig.tight_layout(h_pad=5, w_pad=2)
 
-            if saveImage:
-                plt.savefig(imageFileName, dpi=dpi)
+                if saveImage:
+                    plt.savefig(imageFileName, dpi=dpi, transparent=False)
 
-            plt.show()
+                plt.show()
 
     def __checkDendrogram(self, dn):
 
@@ -317,7 +330,7 @@ class polarDendrogram:
 
         return dn
 
-    def __paramCheck(self, imageFileName, saveImage, branch_scale, gap, grid, style_sheet, dpi, figSize, fontSize, PeakTable, DataTable, textColorScale, text_color_column, label_column, text_cmap):
+    def __paramCheck(self, imageFileName, saveImage, branch_scale, gap, grid, style, dpi, figSize, fontSize, PeakTable, DataTable, textColorScale, text_color_column, label_column, text_cmap):
 
         if not isinstance(imageFileName, str):
             print("Error: Image file name is not valid. Choose a string value.")
@@ -340,14 +353,14 @@ class polarDendrogram:
             print("Error: Grid is not valid. Choose either \"True\" or \"False\".")
             sys.exit()
 
-        if not isinstance(style_sheet, str):
-            print("Error: Style sheet is not valid. Choose a string value.")
+        if not isinstance(style, str):
+            print("Error: Seaborn style is not valid. Choose a string value.")
             sys.exit()
         else:
             styleList = list(plt.style.available)
 
-            if style_sheet not in styleList:
-                print("Error: Chosen style sheet is not valid. Choose one of the following: {}.".format(', '.join(styleList)))
+            if style not in styleList:
+                print("Error: Chosen style is not valid. Choose one of the following: {}.".format(', '.join(styleList)))
                 sys.exit()
 
         if not isinstance(dpi, float):
@@ -378,8 +391,8 @@ class polarDendrogram:
             print("Error: Provided Data Table is not valid. Choose a Pandas dataframe.")
             sys.exit()
 
-        if textColorScale.lower() not in ["linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal"]:
-            print("Error: Node color scale type not valid. Choose either \"linear\", \"reverse_linear\", \"log\", \"reverse_log\", \"square\", \"reverse_square\", \"area\", \"reverse_area\", \"volume\", \"reverse_volume\", \"ordinal\".")
+        if textColorScale.lower() not in ["linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal", "reverse_ordinal"]:
+            print("Error: Node color scale type not valid. Choose either \"linear\", \"reverse_linear\", \"log\", \"reverse_log\", \"square\", \"reverse_square\", \"area\", \"reverse_area\", \"volume\", \"reverse_volume\", \"ordinal\", \"reverse_ordinal\".")
             sys.exit()
 
         col_list = list(PeakTable.columns) + ['none']
@@ -391,12 +404,12 @@ class polarDendrogram:
             if text_color_column != 'none':
                 text_color_values = np.array(PeakTable[text_color_column].values)
 
-                if textColorScale != 'ordinal':
+                if ((textColorScale != 'ordinal') and (textColorScale != 'reverse_ordinal')):
                     try:
                         float(text_color_values[0])
                     except ValueError:
                         if not matplotlib.colors.is_color_like(text_color_values[0]):
-                            print("Error: Text colour column is not valid. While textColorScale is not ordinal, choose a column containing colour values (names, hex code or RGB values), floats or integer values.")
+                            print("Error: Text colour column is not valid. While textColorScale is not ordinal or reverse_ordinal, choose a column containing colour values (names, hex code or RGB values), floats or integer values.")
                             sys.exit()
 
         if label_column not in col_list:
@@ -413,7 +426,7 @@ class polarDendrogram:
                 print("Error: Text CMAP is not valid. Choose one of the following: {}.".format(', '.join(cmap_list)))
                 sys.exit()
 
-        return imageFileName, saveImage, branch_scale, gap, grid, style_sheet, dpi, figSize, fontSize, PeakTable, DataTable, textColorScale, text_color_column, label_column, text_cmap
+        return imageFileName, saveImage, branch_scale, gap, grid, style, dpi, figSize, fontSize, PeakTable, DataTable, textColorScale, text_color_column, label_column, text_cmap
 
     def __smoothsegment(self, seg, Nsmooth=100):
         return np.concatenate([[seg[0]], np.linspace(seg[1], seg[2], Nsmooth), [seg[3]]])
@@ -470,10 +483,3 @@ class polarDendrogram:
             prev_color = color
 
         return clusters
-
-    def __trim_axes(self, axes, N):
-        """Reformat axes to mirror cluster number"""
-        axes = axes.flat
-        for ax in axes[N:]:
-            ax.remove()
-        return axes[:N]

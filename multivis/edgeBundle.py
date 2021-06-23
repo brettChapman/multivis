@@ -12,13 +12,13 @@ from .utils import *
 import json
 
 class edgeBundle:
-    """Class for edgeBundle to produce a hierarchical edge bundle.
+    usage = """Produces an interactive hierarchical edge bundle in D3.js, from nodes and edges.
 
         Parameters
         ----------
-        edges : Pandas dataframe containing edges generated from Edge.
         nodes : Pandas dataframe containing nodes generated from Edge.
-
+        edges : Pandas dataframe containing edges generated from Edge.
+        
         Methods
         -------
         set_params : Set parameters -
@@ -31,16 +31,18 @@ class edgeBundle:
             backgroundColor: Set the background colour of the plot (default: 'white')
             foregroundColor: Set the foreground colour of the plot (default: 'black')
             node_data: Peak Table column names to include in the mouse over information (default: 'Name' and 'Label')
-            nodeColorScale: The scale to use for colouring the nodes ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal") (default: 'linear')
+            nodeColorScale: The scale to use for colouring the nodes ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal", "reverse_ordinal") (default: 'linear')
             node_color_column: The Peak Table column to use for node colours (default: None sets to black)
             node_cmap: Set the CMAP colour palette to use for colouring the nodes (default: 'brg')
-            edgeColorScale: The scale to use for colouring the edges, if edge_color_value is 'pvalue' ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal") (default: 'linear')
+            edgeColorScale: The scale to use for colouring the edges, if edge_color_value is 'pvalue' ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal", "reverse_ordinal") (default: 'linear')
             edge_color_value: Set the values to colour the edges by. Either 'sign', 'score or 'pvalue' (default: 'score')
             edge_cmap: Set the CMAP colour palette to use for colouring the edges (default: 'brg')
             addArcs: Setting to 'True' adds arcs around the edge bundle for each block (default: False)
             arcRadiusOffset: Sets the arc radius offset from the inner radius (default: 20)
             extendArcAngle: Sets the angle value to add to each end of the arcs (default: 2)
             arc_cmap: Set the CMAP colour palette to use for colouring the arcs (default: 'Set1')
+
+        help : Print this help text
 
         build : Generates the JavaScript embedded HTML code and writes to a HTML file and opens it in a browser.
         buildDashboard : Generates the JavaScript embedded HTML code in a dashboard format, writes to a HTML file and opens it in a browser.
@@ -52,6 +54,9 @@ class edgeBundle:
         self.__edges = self.__checkEdges(copy.deepcopy(edges));
 
         self.set_params()
+
+    def help(self):
+        print(edgeBundle.usage)
 
     def set_params(self, html_file='hEdgeBundle.html', innerRadiusOffset=120, blockSeparation=1, linkFadeOpacity=0.05, mouseOver=True, fontSize=10, backgroundColor='white', foregroundColor='black', node_data=['Name', 'Label'], nodeColorScale='linear', node_color_column='none', node_cmap='brg', edgeColorScale='linear', edge_color_value='score', edge_cmap="brg", addArcs=False, arcRadiusOffset=20, extendArcAngle=2, arc_cmap="Set1"):
 
@@ -220,7 +225,7 @@ class edgeBundle:
 
         for value in nodes_col:
             if value not in nodes.columns:
-                print("Error: Nodes dataframe items not valid. Include the following {}.".format('and '.join(nodes_col)))
+                print("Error: Nodes dataframe items not valid. Include the following {}.".format(' and '.join(nodes_col)))
                 sys.exit()
 
         return nodes
@@ -314,8 +319,8 @@ class edgeBundle:
                 print("Error: Column \"Label\" should be node data. Please correct")
                 sys.exit()
 
-        if nodeColorScale.lower() not in ["linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal"]:
-            print("Error: Node color scale type not valid. Choose either \"linear\", \"reverse_linear\", \"log\", \"reverse_log\", \"square\", \"reverse_square\", \"area\", \"reverse_area\", \"volume\", \"reverse_volume\", \"ordinal\".")
+        if nodeColorScale.lower() not in ["linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal", "reverse_ordinal"]:
+            print("Error: Node color scale type not valid. Choose either \"linear\", \"reverse_linear\", \"log\", \"reverse_log\", \"square\", \"reverse_square\", \"area\", \"reverse_area\", \"volume\", \"reverse_volume\", \"ordinal\", \"reverse_ordinal\".")
             sys.exit()
 
         if node_color_column not in col_list:
@@ -325,12 +330,12 @@ class edgeBundle:
             if node_color_column != 'none':
                 node_color_values = np.array(nodes[node_color_column].values)
 
-                if nodeColorScale != 'ordinal':
+                if ((nodeColorScale != 'ordinal') and (nodeColorScale != 'reverse_ordinal')):
                     try:
                         float(node_color_values[0])
                     except ValueError:
                         if not matplotlib.colors.is_color_like(node_color_values[0]):
-                            print("Error: Node colour column is not valid. While colorScale is not ordinal, choose a column containing HTML/CSS name, hex code, (R,G,B) tuples, floats or integer values")
+                            print("Error: Node colour column is not valid. While colorScale is not ordinal or reverse_ordinal, choose a column containing HTML/CSS name, hex code, (R,G,B) tuples, floats or integer values")
                             sys.exit()
 
         if not isinstance(node_cmap, str):
@@ -341,8 +346,8 @@ class edgeBundle:
                 print("Error: Node CMAP is not valid. Choose one of the following: {}.".format(', '.join(cmap_list)))
                 sys.exit()
 
-        if edgeColorScale.lower() not in ["linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal"]:
-            print("Error: Node color scale type not valid. Choose either \"linear\", \"reverse_linear\", \"log\", \"reverse_log\", \"square\", \"reverse_square\", \"area\", \"reverse_area\", \"volume\", \"reverse_volume\", \"ordinal\".")
+        if edgeColorScale.lower() not in ["linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal", "reverse_ordinal"]:
+            print("Error: Node color scale type not valid. Choose either \"linear\", \"reverse_linear\", \"log\", \"reverse_log\", \"square\", \"reverse_square\", \"area\", \"reverse_area\", \"volume\", \"reverse_volume\", \"ordinal\", \"reverse_ordinal\".")
             sys.exit()
 
         if edge_color_value.lower() not in ["sign", "pvalue", "score"]:
@@ -669,8 +674,8 @@ class edgeBundle:
                 if matplotlib.colors.is_color_like(node_color_values[0]):
                     nodes["color"] = node_color_values
                 else:
-                    if self.__nodeColorScale != "ordinal":
-                        print("Error: Node colour column is not valid. While colorScale is not ordinal, choose a column containing HTML/CSS name, hex code, (R,G,B) tuples, floats or integer values.")
+                    if ((self.__nodeColorScale != 'ordinal') and (self.__nodeColorScale != 'reverse_ordinal')):
+                        print("Error: Node colour column is not valid. While colorScale is not ordinal or reverse_ordinal, choose a column containing HTML/CSS name, hex code, (R,G,B) tuples, floats or integer values.")
                         sys.exit()
                     else:
                         colorsRGB = self.__get_colors(self.__nodeColorScale, node_color_values, nodeCmap)[:, :3]
@@ -1376,16 +1381,16 @@ class edgeBundle:
                     });
                 };
                 
-                var sliderScoreDecimalPlaces = 5;
-                
+                var sliderScoreDecimalPlaces = 6;
+                     
                 $$scope.abs_slider = {
                         minValue: Number(d3.min(abs_scores).toFixed(sliderScoreDecimalPlaces)),
-                        maxValue: Number(d3.max(abs_scores).toFixed(sliderScoreDecimalPlaces)),                     
+                        maxValue: Number(d3.max(abs_scores).toFixed(sliderScoreDecimalPlaces)),                
                         options: {
                                 showSelectionBar: true,                    
                                 floor: Number(d3.min(abs_scores).toFixed(sliderScoreDecimalPlaces)),
-                                ceil: Number(d3.max(abs_scores).toFixed(sliderScoreDecimalPlaces)),                          		
-                                step: 0.01,
+                                ceil: Number(d3.max(abs_scores).toFixed(sliderScoreDecimalPlaces)),                    		
+                                step: Number(1/Math.pow(10, sliderScoreDecimalPlaces)),
                                 precision: sliderScoreDecimalPlaces,                                
                                 getSelectionBarColor: function() { return '#2AE02A'; },
                                 getPointerColor: function() { return '#D3D3D3'; },
@@ -1428,12 +1433,12 @@ class edgeBundle:
                 
                     $$scope.pos_slider = {
                             minValue: Number(d3.min(p_scores).toFixed(sliderScoreDecimalPlaces)),
-                            maxValue: Number(d3.max(p_scores).toFixed(sliderScoreDecimalPlaces)),                          
+                            maxValue: Number(d3.max(p_scores).toFixed(sliderScoreDecimalPlaces)),                     
                             options: {
                                     showSelectionBar: true,                    
                                     floor: Number(d3.min(p_scores).toFixed(sliderScoreDecimalPlaces)),
-                                    ceil: Number(d3.max(p_scores).toFixed(sliderScoreDecimalPlaces)),                          		
-                                    step: 0.01,
+                                    ceil: Number(d3.max(p_scores).toFixed(sliderScoreDecimalPlaces)),                        		
+                                    step: Number(1/Math.pow(10, sliderScoreDecimalPlaces)),
                                     precision: sliderScoreDecimalPlaces,                                    
                                     getSelectionBarColor: function() { return '#2AE02A'; },
                                     getPointerColor: function() { return '#D3D3D3'; },
@@ -1477,12 +1482,12 @@ class edgeBundle:
                         
                     $$scope.neg_slider = {
                             minValue: Number(d3.min(n_scores).toFixed(sliderScoreDecimalPlaces)),
-                            maxValue: Number(d3.max(n_scores).toFixed(sliderScoreDecimalPlaces)),               
+                            maxValue: Number(d3.max(n_scores).toFixed(sliderScoreDecimalPlaces)),         
                             options: {
                                     showSelectionBar: true,                    
                                     floor: Number(d3.min(n_scores).toFixed(sliderScoreDecimalPlaces)),
-                                    ceil: Number(d3.max(n_scores).toFixed(sliderScoreDecimalPlaces)),                          		
-                                    step: 0.01,
+                                    ceil: Number(d3.max(n_scores).toFixed(sliderScoreDecimalPlaces)),                        		
+                                    step: Number(1/Math.pow(10, sliderScoreDecimalPlaces)),
                                     precision: sliderScoreDecimalPlaces,                                    
                                     getSelectionBarColor: function() { return '#2AE02A'; },
                                     getPointerColor: function() { return '#D3D3D3'; },
@@ -1524,7 +1529,6 @@ class edgeBundle:
                 
                 if ("$pmFlag" == "true") {
                     if (pvalues.length != 0) {
-                                                    
                         $$scope.pvalue_slider = {
                                         minValue: Number(d3.min(pvalues).toFixed(Number(d3.min(pvalues).countDecimals()))),
                                         maxValue: Number(d3.max(pvalues).toFixed(Number(d3.min(pvalues).countDecimals()))),
@@ -2373,7 +2377,7 @@ class edgeBundle:
                     });
                 };
                 
-                var sliderScoreDecimalPlaces = 5;
+                var sliderScoreDecimalPlaces = 6;
                 
                 $$scope.abs_slider = {
                         minValue: Number(d3.min(abs_scores).toFixed(sliderScoreDecimalPlaces)),
@@ -2382,7 +2386,7 @@ class edgeBundle:
                                 showSelectionBar: true,                    
                                 floor: Number(d3.min(abs_scores).toFixed(sliderScoreDecimalPlaces)),
                                 ceil: Number(d3.max(abs_scores).toFixed(sliderScoreDecimalPlaces)),                          		
-                                step: 0.01,
+                                step: Number(1/Math.pow(10, sliderScoreDecimalPlaces)),
                                 precision: sliderScoreDecimalPlaces,                                
                                 getSelectionBarColor: function() { return '#2AE02A'; },
                                 getPointerColor: function() { return '#D3D3D3'; },
@@ -2430,7 +2434,7 @@ class edgeBundle:
                                     showSelectionBar: true,                    
                                     floor: Number(d3.min(p_scores).toFixed(sliderScoreDecimalPlaces)),
                                     ceil: Number(d3.max(p_scores).toFixed(sliderScoreDecimalPlaces)),                          		
-                                    step: 0.01,
+                                    step: Number(1/Math.pow(10, sliderScoreDecimalPlaces)),
                                     precision: sliderScoreDecimalPlaces,                                    
                                     getSelectionBarColor: function() { return '#2AE02A'; },
                                     getPointerColor: function() { return '#D3D3D3'; },
@@ -2479,7 +2483,7 @@ class edgeBundle:
                                     showSelectionBar: true,                    
                                     floor: Number(d3.min(n_scores).toFixed(sliderScoreDecimalPlaces)),
                                     ceil: Number(d3.max(n_scores).toFixed(sliderScoreDecimalPlaces)),                          		
-                                    step: 0.01,
+                                    step: Number(1/Math.pow(10, sliderScoreDecimalPlaces)),
                                     precision: sliderScoreDecimalPlaces,                                    
                                     getSelectionBarColor: function() { return '#2AE02A'; },
                                     getPointerColor: function() { return '#D3D3D3'; },
@@ -2529,7 +2533,7 @@ class edgeBundle:
                                                 showSelectionBar: true,     
                                                 floor: Number(d3.min(pvalues).toFixed(Number(d3.min(pvalues).countDecimals()))),
                                                 ceil: Number(d3.max(pvalues).toFixed(Number(d3.min(pvalues).countDecimals()))),
-                                                step: Number(d3.min(pvalues).toFixed(Number(d3.min(pvalues)).countDecimals())),
+                                                step: Number(d3.min(pvalues).toFixed(Number(d3.min(pvalues)).countDecimals())),                                                
                                                 logScale: true,
                                                 precision: Number(d3.min(pvalues).countDecimals()),                                            
                                                 getSelectionBarColor: function() { return '#2AE02A'; },
@@ -3013,7 +3017,7 @@ class edgeBundle:
                     if (Number.isNaN(Number(d.data[peak_data[0]]))) {                           
                         var init_value = d.data[peak_data[0]]                                   
                     } else if (typeof Number(d.data[peak_data[0]]) == 'number') { 
-                        var init_value = Number(d.data[peak_data[0]]).toFixed(3)
+                        var init_value = Number(d.data[peak_data[0]]).toExponential();
                     }
                                 
                     html_line = "\\""+ peak_data[0] + "\\",\\"" + init_value + "\\"";
@@ -3024,7 +3028,7 @@ class edgeBundle:
                             if (Number.isNaN(Number(d.data[p]))) {
                                 var data_value = d.data[p];
                             } else if (typeof Number(d.data[p]) == 'number') {
-                                var data_value = Number(d.data[p]).toFixed(3);
+                                var data_value = Number(d.data[p]).toExponential();
                             }
                   
                             html_line = html_line + "\\n\\"" + p + "\\",\\"" + data_value + "\\"";

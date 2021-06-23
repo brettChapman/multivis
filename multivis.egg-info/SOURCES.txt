@@ -8,6 +8,7 @@ multivis/__version__.py
 multivis/clustermap.py
 multivis/edgeBundle.py
 multivis/pca.py
+multivis/pcaLoadings.py
 multivis/pcoa.py
 multivis/plotNetwork.py
 multivis/polarDendrogram.py
@@ -20,7 +21,9 @@ multivis.egg-info/top_level.txt
 multivis/utils/__init__.py
 multivis/utils/cluster.py
 multivis/utils/corrAnalysis.py
+multivis/utils/imputeData.py
 multivis/utils/loadData.py
 multivis/utils/mergeBlocks.py
 multivis/utils/scaleData.py
 multivis/utils/scaler.py
+multivis/utils/statistics.py

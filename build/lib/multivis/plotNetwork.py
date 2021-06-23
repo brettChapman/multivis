@@ -9,7 +9,7 @@ from .utils import *
 import warnings
 
 class plotNetwork:
-    """Class for plotNetwork to produce a static spring-embedded network.
+    usage = """Produces a static spring-embedded network from a NetworkX graph.
 
         Initial_Parameters
         ----------
@@ -25,9 +25,9 @@ class plotNetwork:
             dpi: The number of Dots Per Inch (DPI) for the image (default: 200)
             figSize: The figure size as a tuple (width,height) (default: (30,20))
             node_cmap: The CMAP colour palette to use for nodes (default: 'brg')
-            colorScale: The scale to use for colouring the nodes ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal") (default: 'linear')
+            colorScale: The scale to use for colouring the nodes ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal", "reverse_ordinal") (default: 'linear')
             node_color_column: The Peak Table column to use for node colours (default: None sets to black)
-            sizeScale: The node size scale to apply ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal") (default: 'reverse_linear')
+            sizeScale: The node size scale to apply ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal", "reverse_ordinal") (default: 'reverse_linear')
             size_range: The node size scale range to apply. Tuple of length 2. Minimum size to maximum size (default: (150,2000))
             sizing_column: The node sizing column to use (default: sizes all nodes to 1)
             alpha:  Node opacity value (default: 0.5)
@@ -39,6 +39,8 @@ class plotNetwork:
             operator: The comparison operator to use when filtering (default: '>')
             sign: The sign of the score to filter on ('pos', 'neg' or 'both') (default: 'pos')
 
+        help : Print this help text
+
         build : Generates and displays the NetworkX graph.
     """
 
@@ -47,6 +49,9 @@ class plotNetwork:
         self.__g = self.__checkData(copy.deepcopy(g))
 
         self.set_params()
+
+    def help(self):
+        print(plotNetwork.usage)
 
     def set_params(self, imageFileName='networkPlot.jpg', edgeLabels=True, saveImage=True, layout='spring', dpi=200, figSize=(30,20), node_cmap='brg', colorScale='linear', node_color_column='none', sizeScale='reverse_linear', size_range=(150,2000), sizing_column='none', alpha=0.5, nodeLabels=True, fontSize=15, keepSingletons=True, column='none', threshold=0.01, operator='>', sign='pos'):
 
@@ -99,7 +104,7 @@ class plotNetwork:
             nodeList = []
             for idx, node in enumerate(g.nodes()):
 
-                value = float(g.node[node][self.__filter_column])
+                value = float(g.nodes[node][self.__filter_column])
                 if np.isnan(value):
                     value = 0;
 
@@ -145,7 +150,7 @@ class plotNetwork:
         else:
             size_attr = np.array(list(nx.get_node_attributes(g, str(self.__sizing_column)).values()))
 
-            if self.__sizeScale != "ordinal":
+            if ((self.__sizeScale != "ordinal") and (self.__sizeScale != "reverse_ordinal")):
                 df_size_attr = pd.Series(size_attr, dtype=np.float);
                 size_attr = np.array(list(df_size_attr.fillna(0).values))
 
@@ -187,8 +192,8 @@ class plotNetwork:
                 if matplotlib.colors.is_color_like(node_color_values[0]):
                     node_color = node_color_values
                 else:
-                    if self.__colorScale != "ordinal":
-                        print("Error: Node colour column is not valid. While colorScale is not ordinal, choose a column containing colour values, floats or integer values.")
+                    if ((self.__colorScale != "ordinal") and (self.__colorScale != "reverse_ordinal")):
+                        print("Error: Node colour column is not valid. While colorScale is not ordinal or reverse_ordinal, choose a column containing colour values, floats or integer values.")
                         sys.exit()
                     else:
                         colorsRGB = self.__get_colors(node_color_values, nodeCmap)[:, :3]
@@ -269,8 +274,8 @@ class plotNetwork:
                 print("Error: Node CMAP is not valid. Choose one of the following: {}.".format(', '.join(cmap_list)))
                 sys.exit()
 
-        if colorScale.lower() not in ["linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal"]:
-            print("Error: Color scale type not valid. Choose either \"linear\", \"reverse_linear\", \"log\", \"reverse_log\", \"square\", \"reverse_square\", \"area\", \"reverse_area\", \"volume\", \"reverse_volume\", \"ordinal\".")
+        if colorScale.lower() not in ["linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal", "reverse_ordinal"]:
+            print("Error: Color scale type not valid. Choose either \"linear\", \"reverse_linear\", \"log\", \"reverse_log\", \"square\", \"reverse_square\", \"area\", \"reverse_area\", \"volume\", \"reverse_volume\", \"ordinal\", \"reverse_ordinal\".")
             sys.exit()
 
         if node_color_column not in col_list:
@@ -280,16 +285,16 @@ class plotNetwork:
             if node_color_column != 'none':
                 node_color_values = np.array(list(nx.get_node_attributes(g, str(node_color_column)).values()))
 
-                if colorScale != 'ordinal':
+                if ((colorScale != 'ordinal') and (colorScale != 'reverse_ordinal')):
                     try:
                         float(node_color_values[0])
                     except ValueError:
                         if not matplotlib.colors.is_color_like(node_color_values[0]):
-                            print("Error: Node colour column is not valid. While colorScale is not ordinal, choose a column containing colour values, floats or integer values.")
+                            print("Error: Node colour column is not valid. While colorScale is not ordinal or reverse_ordinal, choose a column containing colour values, floats or integer values.")
                             sys.exit()
 
-        if sizeScale.lower() not in ["linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal"]:
-            print("Error: Size scale type not valid. Choose either \"linear\", \"reverse_linear\", \"log\", \"reverse_log\", \"square\", \"reverse_square\", \"area\", \"reverse_area\", \"volume\", \"reverse_volume\", \"ordinal\".")
+        if sizeScale.lower() not in ["linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal", "reverse_ordinal"]:
+            print("Error: Size scale type not valid. Choose either \"linear\", \"reverse_linear\", \"log\", \"reverse_log\", \"square\", \"reverse_square\", \"area\", \"reverse_area\", \"volume\", \"reverse_volume\", \"ordinal\", \"reverse_ordinal\".")
             sys.exit()
 
         if not isinstance(size_range, tuple):
@@ -309,11 +314,11 @@ class plotNetwork:
 
             if sizing_column != 'none':
                 for idx, node in enumerate(g.nodes()):
-                    if sizeScale != 'ordinal':
+                    if ((sizeScale != 'ordinal') and (sizeScale != 'reverse_ordinal')):
                         try:
-                            float(g.node[node][sizing_column])
+                            float(g.nodes[node][sizing_column])
                         except ValueError:
-                            print("Error: Sizing column contains invalid values. While sizeScale is not ordinal, choose a sizing column containing float or integer values.")
+                            print("Error: Sizing column contains invalid values. While sizeScale is not ordinal or reverse_ordinal, choose a sizing column containing float or integer values.")
                             sys.exit()
 
         if not isinstance(alpha, float):
@@ -342,7 +347,7 @@ class plotNetwork:
             if filter_column != 'none':
                 for idx, node in enumerate(g.nodes()):
                     try:
-                        float(g.node[node][filter_column])
+                        float(g.nodes[node][filter_column])
                     except ValueError:
                         print("Error: Filter column contains invalid values. Choose a filter column containing float or integer values.")
                         sys.exit()
