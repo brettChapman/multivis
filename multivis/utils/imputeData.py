@@ -3,6 +3,16 @@ import numpy as np
 from sklearn.impute import KNNImputer
 
 def imputeData(data, k=3):
+    """Imputes data using K-nearest neighbours function, with a try-except for any errors
+        Parameters
+        ----------
+        data : A pandas dataframe of values
+        k : The number of nearest neighbours
+
+        Returns
+        -------
+        data_filled : Imputed data
+    """
 
     try:
         data_array = data.select_dtypes(include=float).values
