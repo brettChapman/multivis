@@ -6,7 +6,7 @@ def readme():
 
 setup(
     name="multivis",
-    version="0.5.0",
+    version="0.5.2",
     description="MultiVis is a data visualisation package that produces both static and interactive visualisations targeted towards the Omics community.",
     long_description=readme(),
     long_description_content_type='text/markdown',
@@ -19,6 +19,8 @@ setup(
                       "matplotlib==3.4.1",
                       "seaborn==0.11.1",
                       "networkx==2.4.0",
+                      "statsmodels==0.10.1",
+                      "scikits-bootstrap==1.0.1",
                       "scipy==1.6.3",
                       "scikit-learn==0.24.2",
                       "tqdm==4.36.1",

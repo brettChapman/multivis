@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: multivis
-Version: 0.5.0
+Version: 0.5.2
 Summary: MultiVis is a data visualisation package that produces both static and interactive visualisations targeted towards the Omics community.
 Home-page: https://github.com/brettChapman/multivis
 Author: Brett Chapman
@@ -24,6 +24,8 @@ multivis requires:
 - Matplotlib (==3.4.1)
 - Seaborn (==0.11.1)
 - Networkx (==2.4.0)
+- statsmodels (==0.10.1_
+- scikits-bootstrap (==1.0.1)
 - SciPy (==1.6.3)
 - Scikit-learn (==0.24.2)
 - tqdm (==4.36.1)
@@ -330,6 +332,46 @@ For further detail on the usage refer to the docstring.
 		- [newMax] : The maximum value for scaling
 	- [Returns](https://github.com/brettChapman/multivis/blob/master/multivis/utils/scaler.py#L39)
 		- [scaled_data] : A scaled numpy array
+
+- [imputeData](https://github.com/brettChapman/multivis/blob/master/multivis/utils/imputeData.py): Imputes data given a pandas dataframe of values
+	- [parameters](https://github.com/brettChapman/multivis/blob/master/multivis/utils/imputeData.py#L5)
+		- [data] : A pandas dataframe of values
+		- [k] : The number of nearest neighbours
+	- [Returns](https://github.com/brettChapman/multivis/blob/master/multivis/utils/imputeData.py#L25)
+		- [data_filled] : Imputed data
+
+- [statistics](https://github.com/brettChapman/multivis/blob/master/multivis/utils/statistics.py): Generate a table of parametric or non-parametric statistics and merges them with the Peak Table (node table).
+	- [init_parameters](https://github.com/brettChapman/multivis/blob/master/multivis/utils/statistics.py#L51-L64)
+		- [peaktable] : Pandas dataframe containing peak data. Must contain 'Name' and 'Label'.
+            	- [datatable] : Pandas dataframe matrix containing scores
+	- [methods](https://github.com/brettChapman/multivis/blob/master/multivis/utils/statistics.py#L66-L482)
+		- [set_params] : Set parameters
+			- [parametric] : Perform parametric statistical analysis, assuming the data is normally distributed (default: True)
+                	- [log_data] : Perform a log on all data prior to statistical analysis (default: False)
+                	- [group_column_name] : The group column name used in the datatable (default: None)
+                	- [control_group_name] : The control group name in the datatable, if available (default: None)
+                	- [group_alpha_CI] : The alpha value for group confidence intervals (default: 0.05)
+                	- [median_fold_change_alpha_CI] : The alpha value for median fold change confidence intervals (default: 0.05)
+                	- [pca_alpha_CI] : The alpha value for the PCA confidence intervals (default: 0.05)
+                	- [total_missing] : Calculate the total missing values per feature (Default: False)
+                	- [group_missing] : Calculate the missing values per feature per group (if group_column_name not None) (Default: False)
+               		- [pca_loadings] : Calculate PC1 and PC2 loadings for each feature (Default: True)
+                	- [normality_test] : Determine normal distribution across whole dataset using Shapiro-Wilk test (pvalues < 0.05 ~ non-normal distribution) (default: True)
+                	- [group_normality_test] : Determine normal distribution across each group (if group_column_name not None) using Shapiro-Wilk test (pvalues < 0.05 ~ non-normal distribution) (default: True)
+                	- [group_mean_CI] : Determine the mean (if parametric = True) with bootstrapped CI across each group (if group_column_name not None) (default: True)
+                	- [group_median_CI] : Determine the median (if parametric = False) with bootstrapped CI across each group (if group_column_name not None) (default: True)
+               		- [median_fold_change] : Calculate the median fold change with bootstrapped confidence intervals (if parametric = False, group_column_name not None and control_group_name not None) (default: False)
+                	- [levene_twoGroup] : Test null hypothesis that control group and each of the other groups come from populations with equal variances (if group_column_name not None and control_group_name not None) (default: False)
+                	- [levene_allGroup] : Test null hypothesis that all groups come from populations with equal variances (if group_column_name not None) (default: False)
+                	- [oneway_Anova_test] : Test null hypothesis that all groups have the same population mean, with included Benjamini-Hochberg FDR (if parametric = True and group_column_name not None) (default: False)
+                	- [kruskal_wallis_test] : Test null hypothesis that population median of all groups are equal, with included Benjamini-Hochberg FDR (if parametric = False and group_column_name not None) (default: False)
+                	- [ttest_oneGroup] : Calculate the T-test for the mean across all the data (one group), with included Benjamini-Hochberg FDR (if parametric = True, group_column_name is None or there is only 1 group in the data) (default: False)
+                	- [ttest_twoGroup] : Calculate the T-test for the mean of two groups, with one group being the control group, with included Benjamini-Hochberg FDR (if parametric = True, group_column_name not None and control_group_name not None) (default: False)
+                	- [mann_whitney_u_test] : Compute the Mann-Whitney rank test on two groups, with one being the control group, with included Benjamini-Hochberg FDR (if parametric = False, group_column_name not None and control_group_name not None) (default: False)
+
+		- [help] : Print this help text
+		
+		- [calculate] : Performs the statistical calculations and outputs the Peak Table (node table) with the results appended.
 
 - [corrAnalysis](https://github.com/brettChapman/multivis/blob/master/multivis/utils/corrAnalysis.py): Correlation analysis on a matrix of values with Pearson, Spearman or Kendall's Tau.
 	- [parameters](https://github.com/brettChapman/multivis/blob/master/multivis/utils/corrAnalysis.py#L7)

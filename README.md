@@ -11,6 +11,8 @@ multivis requires:
 - Matplotlib (==3.4.1)
 - Seaborn (==0.11.1)
 - Networkx (==2.4.0)
+- statsmodels (==0.10.1_
+- scikits-bootstrap (==1.0.1)
 - SciPy (==1.6.3)
 - Scikit-learn (==0.24.2)
 - tqdm (==4.36.1)
