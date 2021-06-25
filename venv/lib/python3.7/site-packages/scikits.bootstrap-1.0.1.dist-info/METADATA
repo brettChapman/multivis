@@ -1,0 +1,26 @@
+Metadata-Version: 2.1
+Name: scikits.bootstrap
+Version: 1.0.1
+Summary: Bootstrap confidence interval estimation routines for SciPy
+Home-page: http://github.com/cgevans/scikits-bootstrap
+Author: Constantine Evans
+Author-email: cevans@evanslabs.org
+License: Modified BSD
+Platform: UNKNOWN
+Classifier: Development Status :: 4 - Beta
+Classifier: Environment :: Console
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: Implementation :: PyPy
+Classifier: Programming Language :: Python :: Implementation :: CPython
+Classifier: Topic :: Scientific/Engineering
+Classifier: Operating System :: OS Independent
+Requires-Dist: numpy
+Requires-Dist: pyerf
+
+UNKNOWN
+
+

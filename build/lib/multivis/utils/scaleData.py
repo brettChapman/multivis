@@ -2,13 +2,14 @@ import sys
 from .scaler import scaler
 from sklearn.preprocessing import OrdinalEncoder
 import numpy as np
+import pandas as pd
 
 def scaleData(data, scale, min, max):
     """Scales data in forward or reverse order based on different scaling options
 
         Parameters
         ----------
-        data : A 1D numpy array of values
+        data :  A 1D numpy array of values
         scale : The scaling option chosen to apply to the data ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal", "reverse_ordinal")
         min : The minimum value for scaling
         max : The maximum value for scaling

@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: multivis
-Version: 0.5.2
+Version: 0.5.3
 Summary: MultiVis is a data visualisation package that produces both static and interactive visualisations targeted towards the Omics community.
 Home-page: https://github.com/brettChapman/multivis
 Author: Brett Chapman
@@ -24,7 +24,7 @@ multivis requires:
 - Matplotlib (==3.4.1)
 - Seaborn (==0.11.1)
 - Networkx (==2.4.0)
-- statsmodels (==0.10.1_
+- statsmodels (==0.10.1)
 - scikits-bootstrap (==1.0.1)
 - SciPy (==1.6.3)
 - Scikit-learn (==0.24.2)
@@ -322,16 +322,16 @@ For further detail on the usage refer to the docstring.
 		- [min] : The minimum value for scaling
 		- [max] : The maximum value for scaling
 	- [Returns](https://github.com/brettChapman/multivis/blob/master/multivis/utils/scaler.py#L81)
-		- [scaled_data] : A scaled numpy array
+		- [scaled_data] : A scaled 1D numpy array
 
-- [scaler](https://github.com/brettChapman/multivis/blob/master/multivis/utils/scaler.py): Scales a series of values in a numpy array based on different scaling functions.
+- [scaler](https://github.com/brettChapman/multivis/blob/master/multivis/utils/scaler.py): Scales a series of values in a 1D numpy array or pandas dataframe matrix based on different scaling functions
 	- [parameters](https://github.com/brettChapman/multivis/blob/master/multivis/utils/scaler.py#L9)
-		- [data] : A 1D numpy array of values
-		- [type] : The scaler type to apply based on sklearn preprocessing functions
-		- [newMin] : The minimum value for scaling
-		- [newMax] : The maximum value for scaling
+		- [data] : A pandas dataframe matrix or 1D numpy array of numerical values
+		- [type] : The scaler type to apply based on sklearn preprocessing functions (default: "standard")
+		- [newMin] : The minimum value for scaling (default: 1)
+		- [newMax] : The maximum value for scaling (default: 10)
 	- [Returns](https://github.com/brettChapman/multivis/blob/master/multivis/utils/scaler.py#L39)
-		- [scaled_data] : A scaled numpy array
+		- [scaled_data] : A scaled pandas dataframe matrix or 1D numpy array of numerical values
 
 - [imputeData](https://github.com/brettChapman/multivis/blob/master/multivis/utils/imputeData.py): Imputes data given a pandas dataframe of values
 	- [parameters](https://github.com/brettChapman/multivis/blob/master/multivis/utils/imputeData.py#L5)
@@ -358,8 +358,8 @@ For further detail on the usage refer to the docstring.
                		- [pca_loadings] : Calculate PC1 and PC2 loadings for each feature (Default: True)
                 	- [normality_test] : Determine normal distribution across whole dataset using Shapiro-Wilk test (pvalues < 0.05 ~ non-normal distribution) (default: True)
                 	- [group_normality_test] : Determine normal distribution across each group (if group_column_name not None) using Shapiro-Wilk test (pvalues < 0.05 ~ non-normal distribution) (default: True)
-                	- [group_mean_CI] : Determine the mean (if parametric = True) with bootstrapped CI across each group (if group_column_name not None) (default: True)
-                	- [group_median_CI] : Determine the median (if parametric = False) with bootstrapped CI across each group (if group_column_name not None) (default: True)
+                	- [group_mean_CI] : Determine the mean with bootstrapped CI across each group (if parametric = True and group_column_name not None) (default: True)
+                	- [group_median_CI] : Determine the median with bootstrapped CI across each group (if parametric = False and group_column_name not None) (default: True)
                		- [median_fold_change] : Calculate the median fold change with bootstrapped confidence intervals (if parametric = False, group_column_name not None and control_group_name not None) (default: False)
                 	- [levene_twoGroup] : Test null hypothesis that control group and each of the other groups come from populations with equal variances (if group_column_name not None and control_group_name not None) (default: False)
                 	- [levene_allGroup] : Test null hypothesis that all groups come from populations with equal variances (if group_column_name not None) (default: False)

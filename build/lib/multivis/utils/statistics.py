@@ -32,8 +32,8 @@ class statistics:
                 pca_loadings: Calculate PC1 and PC2 loadings for each feature (Default: True)
                 normality_test: Determine normal distribution across whole dataset using Shapiro-Wilk test (pvalues < 0.05 ~ non-normal distribution) (default: True)
                 group_normality_test: Determine normal distribution across each group (if group_column_name not None) using Shapiro-Wilk test (pvalues < 0.05 ~ non-normal distribution) (default: True)
-                group_mean_CI: Determine the mean (if parametric = True) with bootstrapped CI across each group (if group_column_name not None) (default: True)
-                group_median_CI: Determine the median (if parametric = False) with bootstrapped CI across each group (if group_column_name not None) (default: True)
+                group_mean_CI: Determine the mean with bootstrapped CI across each group (if parametric = True and group_column_name not None) (default: True)
+                group_median_CI: Determine the median with bootstrapped CI across each group (if parametric = False and group_column_name not None) (default: True)
                 median_fold_change: Calculate the median fold change with bootstrapped confidence intervals (if parametric = False, group_column_name not None and control_group_name not None) (default: False)
                 levene_twoGroup: Test null hypothesis that control group and each of the other groups come from populations with equal variances (if group_column_name not None and control_group_name not None) (default: False)
                 levene_allGroup: Test null hypothesis that all groups come from populations with equal variances (if group_column_name not None) (default: False)
@@ -151,7 +151,8 @@ class statistics:
             df_ttest = pd.DataFrame()
             df_levene_twoGroup = pd.DataFrame()
             df_groupNormality = pd.DataFrame()
-            df_grpCI = pd.DataFrame()
+            df_grpMeanCI = pd.DataFrame()
+            df_grpMedianCI = pd.DataFrame()
             mannWhitneyTitles = []
             ttestTitles = []
             leveneTwoGroupTitles = []
@@ -184,11 +185,11 @@ class statistics:
 
                     if parametric:
                         if group_mean_CI:
-                            df_grpMeanCI = self.__GroupMeanCI(key, group, df_grpCI, group_alpha_CI)
+                            df_grpMeanCI = self.__GroupMeanCI(key, group, df_grpMeanCI, group_alpha_CI)
                             statsDataDict['GroupMeanCI'] = df_grpMeanCI
                     else:
                         if group_median_CI:
-                            df_grpMedianCI = self.__GroupMedianCI(key, group, df_grpCI, group_alpha_CI)
+                            df_grpMedianCI = self.__GroupMedianCI(key, group, df_grpMedianCI, group_alpha_CI)
                             statsDataDict['GroupMedianCI'] = df_grpMedianCI
 
                     if key != control_group_name and control_group_name is not None:
@@ -196,28 +197,35 @@ class statistics:
                         groupList = list(zip(controlGroup, group))
 
                         if parametric:
-                            # T-test statistic calculation for two samples (one always being the control)
-                            TTEST_twoGroup_statistic, TTEST_twoGroup_pvalue = self.__TTEST_twoGroup(groupList)
+                            if ttest_twoGroup:
+                                # T-test statistic calculation for two samples (one always being the control)
+                                TTEST_twoGroup_statistic, TTEST_twoGroup_pvalue = self.__TTEST_twoGroup(groupList)
                         else:
-                            medianFoldChange = self.__median_fold(groupList)
+                            if median_fold_change:
+                                medianFoldChange = self.__median_fold(groupList)
 
-                            # Boostrap for confidence intervals for the median fold change
-                            if ((len(group) >= 2) and (len(controlGroup) >= 2)):
-                                medianFold = lambda groupList: self.__median_fold(groupList)
-                                CIs = bootstrap.ci(data=groupList, statfunction=medianFold, n_samples=10000, alpha=median_fold_change_alpha_CI)
-                            else:
-                                CIs = [np.nan, np.nan]
+                                # Boostrap for confidence intervals for the median fold change
+                                if ((len(group) > 2) and (len(controlGroup) > 2)):
+                                    medianFold = lambda groupList: self.__median_fold(groupList)
+                                    CIs = bootstrap.ci(data=groupList, statfunction=medianFold, n_samples=10000, alpha=median_fold_change_alpha_CI)
+                                else:
+                                    CIs = [np.nan, np.nan]
 
-                            # Mann-Whitney U statistic calculation for two samples (one always being the control)
-                            MannWhitney_statistic, MannWhitney_pvalue = self.__MANN_WHITNEY_U(groupList)
+                            if mann_whitney_u_test:
+                                # Mann-Whitney U statistic calculation for two samples (one always being the control)
+                                MannWhitney_statistic, MannWhitney_pvalue = self.__MANN_WHITNEY_U(groupList)
 
-                        # Levene statistic calculation for two samples (one always being the control)
-                        LEVENE_twoGroup_statistic, LEVENE_twoGroup_pvalue = self.__LEVENE_twoGroup(groupList)
+                        if levene_twoGroup:
+                            # Levene statistic calculation for two samples (one always being the control)
+                            LEVENE_twoGroup_statistic, LEVENE_twoGroup_pvalue = self.__LEVENE_twoGroup(groupList)
 
                         if len(groupDict) > 2:
                             if parametric:
                                 ttest_twoGroup_statistics_name = 'TTEST_' + str(key) + '_statistic'
                                 ttest_twoGroup_pvalue_name = 'TTEST_' + str(key) + '_pvalue'
+
+                                ttestTitles.append(ttest_twoGroup_statistics_name)
+                                ttestTitles.append(ttest_twoGroup_pvalue_name)
                             else:
                                 median_fold_change_name = 'MedianFoldChange_' + str(key)
                                 median_fold_change_name_CIlower = 'MedianFoldChange_' + str(key) + '_CI_lower'
@@ -225,8 +233,11 @@ class statistics:
                                 mannwhitney_statistic_name = 'MannWhitneyU_' + str(key) + '_statistic'
                                 mannwhitney_pvalue_name = 'MannWhitneyU_' + str(key) + '_pvalue'
 
-                            levene_twoGroup_statistics_name = 'LEVENE_twoGroup' + str(key) + '_statistic'
-                            levene_twoGroup_pvalue_name = 'LEVENE_twoGroup' + str(key) + '_pvalue'
+                                mannWhitneyTitles.append(mannwhitney_statistic_name)
+                                mannWhitneyTitles.append(mannwhitney_pvalue_name)
+
+                            levene_twoGroup_statistics_name = 'LEVENE_twoGroup_' + str(key) + '_statistic'
+                            levene_twoGroup_pvalue_name = 'LEVENE_twoGroup_' + str(key) + '_pvalue'
 
                         else:
                             if parametric:
@@ -248,8 +259,8 @@ class statistics:
                             levene_twoGroup_statistics_name = 'LEVENE_twoGroup_statistic'
                             levene_twoGroup_pvalue_name = 'LEVENE_twoGroup_pvalue'
 
-                            leveneTwoGroupTitles.append(levene_twoGroup_statistics_name)
-                            leveneTwoGroupTitles.append(levene_twoGroup_pvalue_name)
+                        leveneTwoGroupTitles.append(levene_twoGroup_statistics_name)
+                        leveneTwoGroupTitles.append(levene_twoGroup_pvalue_name)
 
                         if median_fold_change and not parametric:
                             if df_medianFold.empty:
@@ -438,6 +449,7 @@ class statistics:
                 MannWhitney_qvalueData[val_BHFDR_qvalue] = pd.Series(MannWhitney_BHFDR_qval)
 
             statsData = pd.merge(statsData, MannWhitney_qvalueData, left_index=True, right_index=True)
+
 
         if pca_loadings:
             d_filled = imputeData(peakData, 3)
@@ -679,7 +691,7 @@ class statistics:
     def __GroupNormality(self, key, group, df_groupNormality):
 
         #Calculation of normal distribution for each group
-        if len(group) >= 3:
+        if len(group) > 2:
             Shapiro_statistic_grp, Shapiro_pvalue_grp = stats.shapiro(group)
         else:
             Shapiro_pvalue_grp = np.nan
@@ -705,7 +717,7 @@ class statistics:
         grpMeanCIlowerName = 'Group_'+ str(key) +'_mean_CI_lower'
         grpMeanCIupperName = 'Group_'+ str(key) +'_mean_CI_upper'
 
-        if len(group) > 3:
+        if len(group) > 2:
             grpMean = np.mean(group)
             grpMean_CI = bootstrap.ci(data=group, statfunction=np.mean, n_samples=10000, alpha=grpAlphaCI)
         else:
@@ -716,10 +728,12 @@ class statistics:
                 grpMean = np.nan
                 grpMean_CI = [np.nan, np.nan]
 
+        df_grp_dat = pd.DataFrame({grpMeanName: [grpMean], grpMeanCIlowerName: grpMean_CI[0], grpMeanCIupperName: grpMean_CI[1]})
+
         if df_grpMCI.empty:
-            df_grpMCI = pd.DataFrame({grpMeanName: [grpMean], grpMeanCIlowerName: grpMean_CI[0], grpMeanCIupperName: grpMean_CI[1]})
+            df_grpMCI = df_grp_dat
         else:
-            df_grpMCI = pd.concat([df_grpMCI, pd.DataFrame({grpMeanName: [grpMean], grpMeanCIlowerName: grpMean_CI[0], grpMeanCIupperName: grpMean_CI[1]})], axis=1)
+            df_grpMCI = pd.concat([df_grpMCI, df_grp_dat], axis=1)
 
         return df_grpMCI
 
@@ -729,21 +743,23 @@ class statistics:
         grpMedianCIlowerName = 'Group_' + str(key) + '_median_CI_lower'
         grpMedianCIupperName = 'Group_' + str(key) + '_median_CI_upper'
 
-        if len(group) > 3:
+        if len(group) > 2:
             grpMedian = np.median(group)
             grpMedian_CI = bootstrap.ci(data=group, statfunction=np.median, n_samples=10000, alpha=grpAlphaCI)
         else:
             if len(group) > 0:
-                grpMedian = np.mean(group)
+                grpMedian = np.median(group)
                 grpMedian_CI = [np.nan, np.nan]
             else:
                 grpMedian = np.nan
                 grpMedian_CI = [np.nan, np.nan]
 
+        df_grp_dat = pd.DataFrame({grpMedianName: [grpMedian], grpMedianCIlowerName: grpMedian_CI[0], grpMedianCIupperName: grpMedian_CI[1]})
+
         if df_grpMCI.empty:
-            df_grpMCI = pd.DataFrame({grpMedianName: [grpMedian], grpMedianCIlowerName: grpMedian_CI[0], grpMedianCIupperName: grpMedian_CI[1]})
+            df_grpMCI = df_grp_dat
         else:
-            df_grpMCI = pd.concat([df_grpMCI, pd.DataFrame({grpMedianName: [grpMedian], grpMedianCIlowerName: grpMedian_CI[0], grpMedianCIupperName: grpMedian_CI[1]})], axis=1)
+            df_grpMCI = pd.concat([df_grpMCI, df_grp_dat], axis=1)
 
         return df_grpMCI
 
@@ -800,7 +816,7 @@ class statistics:
         controlGroup, group = zip(*groupList)
 
         if ((len(group) > 0) and (len(controlGroup) > 0)):
-            MannWhitney_statistic, MannWhitney_pvalue = stats.mannwhitneyu(controlGroup, group)
+            MannWhitney_statistic, MannWhitney_pvalue = stats.mannwhitneyu(controlGroup, group, alternative="two-sided")
         else:
             MannWhitney_statistic = np.nan
             MannWhitney_pvalue = np.nan
