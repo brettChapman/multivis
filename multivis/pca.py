@@ -77,7 +77,7 @@ def pca(data, imageFileName='PCA.png', saveImage=True, dpi=200, pcx=1, pcy=2, gr
 
     if list(peak_label) != None:
         for i, txt in enumerate(list(peak_label)):
-            ax2.annotate(txt, (x_load[i]+.02, y_load[i]), fontsize=fontSize)
+            ax2.annotate(txt, (x_load[i]+.001, y_load[i]), fontsize=fontSize)
 
     sns.scatterplot(x=x_load, y=y_load, ax=ax2, s=markerSize, alpha=0.7)
 

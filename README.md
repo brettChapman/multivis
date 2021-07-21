@@ -7,11 +7,11 @@ The MultiVis package contains the necessary tools for visualisation of multivari
 multivis requires:
 - Python (>=3.5)
 - NumPy (==1.20.2)
-- Pandas (==1.2.4)
-- Matplotlib (==3.4.1)
+- Pandas (==1.2.5)
+- Matplotlib (==3.4.2)
 - Seaborn (==0.11.1)
 - Networkx (==2.4.0)
-- statsmodels (==0.10.1)
+- statsmodels (==0.12.2)
 - scikits-bootstrap (==1.0.1)
 - SciPy (==1.6.3)
 - Scikit-learn (==0.24.2)
@@ -40,7 +40,7 @@ For further detail on the usage refer to the docstring.
 	- [init_parameters](https://github.com/brettChapman/multivis/blob/master/multivis/Edge.py#L34-L51)
 		- [peaktable] : Pandas dataframe containing peak data. Must contain 'Name' and 'Label'.
 		- [datatable] : Pandas dataframe matrix containing scores.
-		- [pvalues] : Pandas dataframe matrix containing score/similarity pvalues (if available, otherwise set to None)
+		- [pvalues] : Pandas dataframe matrix containing score/similarity pvalues (if available, otherwise set to None).
 	- [methods](https://github.com/brettChapman/multivis/blob/master/multivis/Edge.py#L53-L148)
 		- [set_params] : Set parameters
 			- [filter_type] : The value type to filter the data on (default: 'pvalue')
@@ -113,6 +113,7 @@ For further detail on the usage refer to the docstring.
 			- [edgeLabels] : Setting to 'True' labels all edges with the score/similarity value (default: True)
 			- [saveImage] : Setting to 'True' will save the image to file (default: True)
 			- [layout] : Set the NetworkX layout type ('circular', 'kamada_kawai', 'random', 'spring', 'spectral') (default: 'spring')
+			- [transparent] : Setting to 'True' will make the background transparent (default: False)
 			- [dpi] : The number of Dots Per Inch (DPI) for the image (default: 200)
 			- [figSize] : The figure size as a tuple (width,height) (default: (30,20))
 			- [node_cmap] : The CMAP colour palette to use for nodes (default: 'brg')
@@ -205,24 +206,30 @@ For further detail on the usage refer to the docstring.
 			- [gap] : The gap size within the polar dendrogram (default: 0.1)
 			- [grid] : Setting to 'True' will overlay a grid (default: False)
 			- [style] : Set the matplotlib style (see https://matplotlib.org/stable/tutorials/introductory/customizing.html) (default: 'seaborn-white')
+			- [transparent] : Setting to 'True' will make the background of all plots transparent (default: False)
 			- [dpi] : The number of Dots Per Inch (DPI) for the image (default: 200)
 			- [figSize] : The figure size as a tuple (width,height) (default: (10,10))
 			- [fontSize] : The font size for all text (default: 15)
 			- [PeakTable] : The Peak Table Pandas dataframe (default: empty dataframe)
 			- [DataTable] : The Data Table Pandas dataframe (default: empty dataframe)
+			- [group_column_name] : The group column name used in the datatable (e.g. 'Class') (default: None)
 			- [textColorScale] : The scale to use for colouring the text ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal", "reverse_ordinal") (default: 'linear')
 			- [text_color_column] : The colour column to use from Peak Table (Can be colour or numerical values such as 'pvalue') (default: 'black')
 			- [label_column] : The label column to use from Peak Table (default: use original Peak Table index from cartesian dendrogram)
 			- [text_cmap] : The CMAP colour palette to use (default: 'brg')
 
-		- [getClusterPlots] : Generates plots of mean peak area over the 'Class' variable for each cluster from the polar dendrogram
+		- [getClusterPlots] : Generates plots of mean/median peak area over the group/class variable for each cluster from the polar dendrogram
+			- [plot_type] : The type of plot to plot. Either mean peak area or median peak area (default: 'mean')
 			- [column_numbers] : The number of columns to display in the plots (default: 4)
-			- [log] : Setting to 'True' will log the data (default: True)
-			- [autoscale] :  Setting to 'True' will scale the data to unit variance (Default: True)
-			- [figSize] : The figure size as a tuple (width,height) (default: (15,10))
-			- [saveImage] : Setting to 'True' will save the image to file (default: True)
-			- [imageFileName] : The image file name to save to (default: 'clusterPlots.png')
-			- [dpi] : The number of Dots Per Inch (DPI) for the image (default: 200)
+                	- [log_data] : Perform a log ('natural', base 2 or base 10) on all data (default: (True, 2))
+                	- [scale_data] : Scale the data to unit variance (default: True)
+                	- [impute_data] : Impute any missing values using KNN impute with a set number of nearest neighbours (default: (True, 3))
+                	- [figSize] : The figure size as a tuple (width,height) (default: (15,10))
+                	- [x_axis_rotation] : Rotate the x axis labels this number of degrees (default: 0)
+                	- [ci] : The bootstrapped confidence interval. Can also be standard deviation ("sd") (default: 95)
+                	- [saveImage] : Setting to 'True' will save the image to file (default: True)
+                	- [imageFileName] : The image file name to save to (default: 'clusterPlots.png')
+                	- [dpi] : The number of Dots Per Inch (DPI) for the image (default: 200)
 
 		- [help] : Print this help text
 		
@@ -255,14 +262,14 @@ For further detail on the usage refer to the docstring.
 		- [saveImage] : Setting to 'True' will save the image to file (default: True)
         	- [dpi] : The number of Dots Per Inch (DPI) for the image (default: 200)
         	- [pc_num] : The principal component to plot (default: 1)
-        	- [boot_num] : The number of bootstrap samples to use to calculate confidence internals (default: 10000)
+        	- [boot_num] : The number of bootstrap samples to use to calculate confidence internals (default: 500)
         	- [alpha] : The alpha value for the bootstrapped confidence intervals (default: 0.05)
         	- [fontSize] : The font size for all text (default: 30)
         	- [markerSize] : The size of each marker (default: 100)
         	- [figSize] : The figure size as a tuple (width,height) (default: (40,40))
         	- [transparent] : Setting to 'True' will make the background transparent (default: False)
 
-- [pcoa](https://github.com/brettChapman/multivis/blob/master/multivis/pcoa.py): Creates a Principle Coordinate Analysis (PCoA) plot.
+- [pcoa](https://github.com/brettChapman/multivis/blob/master/multivis/pcoa.py): Creates a Principal Coordinate Analysis (PCoA) plot.
 	- [parameters](https://github.com/brettChapman/multivis/blob/master/multivis/pcoa.py#L8)
 		- [similarities] : array-like matrix, shape (n_samples, n_features)
 		- [imageFileName] : The image file name to save to (default: 'PCOA.png')
@@ -293,14 +300,23 @@ For further detail on the usage refer to the docstring.
 		- DataTable: Pandas dataFrame
 		- PeakTable: Pandas dataFrame
 
-- [mergeBlocks](https://github.com/brettChapman/multivis/blob/master/multivis/utils/mergeBlocks.py): Merges multiply different Data Tables and Peak Tables into a single Peak Table and Data Table (used for multi-block/multi-omics data preparation). The 'Name' column needs to be unique across all blocks. Automatically annotates the merged Peak Table with a 'Block' column using the dictionary keys.
+- [groups2blocks](https://github.com/brettChapman/multivis/blob/master/multivis/utils/groups2blocks.py): Slices the data by group/class name into blocks for later identification of multi-block associations and places the data into a dictionary indexed by group/class name.
+	- [parameters](https://github.com/brettChapman/multivis/blob/master/multivis/utils/groups2blocks.py#L7)
+		- [PeakTable] : Pandas dataframe containing the feature/peak data. Must contain 'Name' and 'Label'.
+		- [DataTable] : Pandas dataframe matrix containing values. The data must contain a column separating out the different groups in the data (e.g. Class)
+		- [group_column_name] : The group column name used in the datatable (e.g. Class)
+	- [Returns](https://github.com/brettChapman/multivis/blob/master/multivis/utils/groups2blocks.p#57)
+		- [DataBlocks] : A dictionary containing DataTables indexed by group names
+		- [PeakBlocks] : A dictionary containing PeakTables indexed by group names
+
+- [mergeBlocks](https://github.com/brettChapman/multivis/blob/master/multivis/utils/mergeBlocks.py): Merges multiply different Data Tables and Peak Tables from dictionaries into a single Peak Table and Data Table (used for multi-block/multi-omics data preparation). The 'Name' column needs to be unique across all blocks. Automatically annotates the merged Peak Table with a 'Block' column and consolidates any statistical results generated from the multivis.utils.statistics package in relation to each block.
 	- [parameters](https://github.com/brettChapman/multivis/blob/master/multivis/utils/mergeBlocks.py#L5)
 		- [peak_blocks] : A dictionary of Pandas Peak Table dataframes from different datasets indexed by dataset type.
 		- [data_blocks] : A dictionary of Pandas Data Table dataframes from different datasets indexed by dataset type.
 		- [mergeType] : The type of merging to perform. Either by 'SampleID' or 'Index'.
 	- [Returns](https://github.com/brettChapman/multivis/blob/master/multivis/utils/mergeBlocks.p#91)
 		- [DataTable] : Merged Pandas dataFrame
-		- [PeakTable] : Merged Pandas dataFrame
+		- [PeakTable] : Merged Pandas dataFrame (with any statistical results generated by multivis.utils.statistics consolidated into each block)
 
 - [scaleData](https://github.com/brettChapman/multivis/blob/master/multivis/utils/scaleData.py): Scales data in forward or reverse order based on different scaling options.
 	- [parameters](https://github.com/brettChapman/multivis/blob/master/multivis/utils/scaleData.py#L6)
@@ -330,15 +346,17 @@ For further detail on the usage refer to the docstring.
 - [statistics](https://github.com/brettChapman/multivis/blob/master/multivis/utils/statistics.py): Generate a table of parametric or non-parametric statistics and merges them with the Peak Table (node table).
 	- [init_parameters](https://github.com/brettChapman/multivis/blob/master/multivis/utils/statistics.py#L51-L64)
 		- [peaktable] : Pandas dataframe containing peak data. Must contain 'Name' and 'Label'.
-            	- [datatable] : Pandas dataframe matrix containing scores
+            	- [datatable] : Pandas dataframe matrix containing values for statistical analysis
 	- [methods](https://github.com/brettChapman/multivis/blob/master/multivis/utils/statistics.py#L66-L482)
 		- [set_params] : Set parameters
 			- [parametric] : Perform parametric statistical analysis, assuming the data is normally distributed (default: True)
-                	- [log_data] : Perform a log on all data prior to statistical analysis (default: False)
-                	- [group_column_name] : The group column name used in the datatable (default: None)
+                	- [log_data] : Perform a log ('natural', base 2 or base 10) on all data prior to statistical analysis (default: (False, 2))
+                	- [scale_data] : Scale the data to unit variance (default: False)
+                	- [impute_data] : Impute any missing values using KNN impute with a set number of nearest neighbours (default: (False, 3))
+			- [group_column_name] : The group column name used in the datatable (default: None)
                 	- [control_group_name] : The control group name in the datatable, if available (default: None)
                 	- [group_alpha_CI] : The alpha value for group confidence intervals (default: 0.05)
-                	- [median_fold_change_alpha_CI] : The alpha value for median fold change confidence intervals (default: 0.05)
+                	- [fold_change_alpha_CI] : The alpha value for mean/median fold change confidence intervals (default: 0.05)
                 	- [pca_alpha_CI] : The alpha value for the PCA confidence intervals (default: 0.05)
                 	- [total_missing] : Calculate the total missing values per feature (Default: False)
                 	- [group_missing] : Calculate the missing values per feature per group (if group_column_name not None) (Default: False)
@@ -347,7 +365,8 @@ For further detail on the usage refer to the docstring.
                 	- [group_normality_test] : Determine normal distribution across each group (if group_column_name not None) using Shapiro-Wilk test (pvalues < 0.05 ~ non-normal distribution) (default: True)
                 	- [group_mean_CI] : Determine the mean with bootstrapped CI across each group (if parametric = True and group_column_name not None) (default: True)
                 	- [group_median_CI] : Determine the median with bootstrapped CI across each group (if parametric = False and group_column_name not None) (default: True)
-               		- [median_fold_change] : Calculate the median fold change with bootstrapped confidence intervals (if parametric = False, group_column_name not None and control_group_name not None) (default: False)
+               		- [mean_fold_change] : Calculate the mean fold change with bootstrapped confidence intervals (if parametric = True, group_column_name not None and control_group_name not None) (default: False)
+			- [median_fold_change] : Calculate the median fold change with bootstrapped confidence intervals (if parametric = False, group_column_name not None and control_group_name not None) (default: False)
                 	- [levene_twoGroup] : Test null hypothesis that control group and each of the other groups come from populations with equal variances (if group_column_name not None and control_group_name not None) (default: False)
                 	- [levene_allGroup] : Test null hypothesis that all groups come from populations with equal variances (if group_column_name not None) (default: False)
                 	- [oneway_Anova_test] : Test null hypothesis that all groups have the same population mean, with included Benjamini-Hochberg FDR (if parametric = True and group_column_name not None) (default: False)

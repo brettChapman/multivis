@@ -3,7 +3,6 @@ import sys
 import numpy as np
 import networkx as nx
 import matplotlib
-import matplotlib.pyplot as plt
 import webbrowser as wb
 from string import Template
 from ast import literal_eval
@@ -1356,12 +1355,12 @@ class springNetwork:
             var sliderMin = '';
             var sliderMax = '';
             
-            var sliderScoreDecimalPlaces = 5;
+            var sliderScoreDecimalPlaces = 6;
             
             if (params.link_type == "score") {
                 sliderMin = Number(d3.min(graph.links, function(d) {return d.weight; }).toFixed(sliderScoreDecimalPlaces))
                 sliderMax = Number(d3.max(graph.links, function(d) {return d.weight; }).toFixed(sliderScoreDecimalPlaces))
-                sliderStep = 0.01;
+                sliderStep = Number(1/Math.pow(10, sliderScoreDecimalPlaces));
                 sliderPrecision = sliderScoreDecimalPlaces;
             } else if (params.link_type == "pvalue") {
                 sliderMin = Number(d3.min(graph.links, function(d) {return d.weight; }).toFixed(Number(d3.min(graph.links, function(d) {return d.weight; }).countDecimals())))
@@ -1772,10 +1771,10 @@ class springNetwork:
                     });
                     
                     initScale = d3.scaleLinear()
-                                    .domain(d3.extent(centrality_values))
+                                    .domain(d3.extent(centrality_values))                                    
                                     .range([1,10]);
                     
-                    centrality_values.forEach( function (d) { scaledValues.push(initScale(parseFloat(d))); });
+                    centrality_values.forEach( function (d) { scaledValues.push(initScale(parseFloat(d))); });                    
                     scaledValues.forEach( function (d) { area_values.push(parseFloat(Math.PI * (d * d))); });
                     scaledValues.forEach( function (d) { volume_values.push(parseFloat(4 / 3 * (Math.PI * (d * d * d)))); });  
                 } else {                
@@ -2286,12 +2285,12 @@ class springNetwork:
             var sliderMin = '';
             var sliderMax = '';
             
-            var sliderScoreDecimalPlaces = 5;
+            var sliderScoreDecimalPlaces = 6;
             
             if (params.link_type == "score") {
                 sliderMin = Number(d3.min(graph.links, function(d) {return d.weight; }).toFixed(sliderScoreDecimalPlaces))
                 sliderMax = Number(d3.max(graph.links, function(d) {return d.weight; }).toFixed(sliderScoreDecimalPlaces))
-                sliderStep = 0.01;
+                sliderStep = Number(1/Math.pow(10, sliderScoreDecimalPlaces));
                 sliderPrecision = sliderScoreDecimalPlaces;
             } else if (params.link_type == "pvalue") {                
                 sliderMin = Number(d3.min(graph.links, function(d) {return d.weight; }).toFixed(Number(d3.min(graph.links, function(d) {return d.weight; }).countDecimals())))

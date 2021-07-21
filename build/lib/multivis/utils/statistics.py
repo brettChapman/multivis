@@ -6,26 +6,27 @@ from itertools import compress
 import statsmodels.stats.multitest as smt
 import scikits.bootstrap as bootstrap
 from sklearn.decomposition import PCA
-from sklearn.preprocessing import StandardScaler
+from .scaler import scaler
 from .imputeData import imputeData
-import warnings
 
 class statistics:
     usage = """Generate a table of parametric or non-parametric statistics and merges them with the Peak Table (node table).
         Initial_Parameters
             ----------
             peaktable : Pandas dataframe containing peak data. Must contain 'Name' and 'Label'.
-            datatable : Pandas dataframe matrix containing scores
+            datatable : Pandas dataframe matrix containing values for statistical analysis
 
         Methods
             -------
             set_params : Set parameters -
                 parametric: Perform parametric statistical analysis, assuming the data is normally distributed (default: True)
-                log_data: Perform a log on all data prior to statistical analysis (default: False)
+                log_data: Perform a log ('natural', base 2 or base 10) on all data prior to statistical analysis (default: (False, 2))
+                scale_data: Scale the data to unit variance (default: False)
+                impute_data: Impute any missing values using KNN impute with a set number of nearest neighbours (default: (False, 3))
                 group_column_name: The group column name used in the datatable (default: None)
                 control_group_name: The control group name in the datatable, if available (default: None)
                 group_alpha_CI: The alpha value for group confidence intervals (default: 0.05)
-                median_fold_change_alpha_CI: The alpha value for median fold change confidence intervals (default: 0.05)
+                fold_change_alpha_CI: The alpha value for mean/median fold change confidence intervals (default: 0.05)
                 pca_alpha_CI: The alpha value for the PCA confidence intervals (default: 0.05)
                 total_missing: Calculate the total missing values per feature (Default: False)
                 group_missing: Calculate the missing values per feature per group (if group_column_name not None) (Default: False)
@@ -34,14 +35,15 @@ class statistics:
                 group_normality_test: Determine normal distribution across each group (if group_column_name not None) using Shapiro-Wilk test (pvalues < 0.05 ~ non-normal distribution) (default: True)
                 group_mean_CI: Determine the mean with bootstrapped CI across each group (if parametric = True and group_column_name not None) (default: True)
                 group_median_CI: Determine the median with bootstrapped CI across each group (if parametric = False and group_column_name not None) (default: True)
-                median_fold_change: Calculate the median fold change with bootstrapped confidence intervals (if parametric = False, group_column_name not None and control_group_name not None) (default: False)
+                mean_fold_change: Calculate the mean fold change with bootstrapped confidence intervals (if parametric = True, group_column_name not None and control_group_name not None) (default: False)
+                median_fold_change: Calculate the median fold change with bootstrapped confidence intervals (if parametric = False, group_column_name not None and control_group_name not None) (default: False) 
                 levene_twoGroup: Test null hypothesis that control group and each of the other groups come from populations with equal variances (if group_column_name not None and control_group_name not None) (default: False)
                 levene_allGroup: Test null hypothesis that all groups come from populations with equal variances (if group_column_name not None) (default: False)
                 oneway_Anova_test: Test null hypothesis that all groups have the same population mean, with included Benjamini-Hochberg FDR (if parametric = True and group_column_name not None) (default: False)
                 kruskal_wallis_test: Test null hypothesis that population median of all groups are equal, with included Benjamini-Hochberg FDR (if parametric = False and group_column_name not None) (default: False)
                 ttest_oneGroup: Calculate the T-test for the mean across all the data (one group), with included Benjamini-Hochberg FDR (if parametric = True, group_column_name is None or there is only 1 group in the data) (default: False)
                 ttest_twoGroup: Calculate the T-test for the mean of two groups, with one group being the control group, with included Benjamini-Hochberg FDR (if parametric = True, group_column_name not None and control_group_name not None) (default: False)
-                mann_whitney_u_test: Compute the Mann-Whitney rank test on two groups, with one being the control group, with included Benjamini-Hochberg FDR (if parametric = False, group_column_name not None and control_group_name not None) (default: False)
+                mann_whitney_u_test: Compute the Mann-Whitney U test to determine differences in distribution between two groups, with one being the control group, with included Benjamini-Hochberg FDR (if parametric = False, group_column_name not None and control_group_name not None) (default: False)
             
             help : Print this help text
             
@@ -66,16 +68,18 @@ class statistics:
     def help(self):
         print(statistics.usage)
 
-    def set_params(self, parametric=True, log_data=False, group_column_name=None, control_group_name=None, group_alpha_CI=0.05, median_fold_change_alpha_CI=0.05, pca_alpha_CI=0.05, total_missing=False, group_missing=False, pca_loadings=True, normality_test=True, group_normality_test=True, group_mean_CI=True, group_median_CI=True, median_fold_change=False, kruskal_wallis_test=False, levene_twoGroup=False, levene_allGroup=False, oneway_Anova_test=False, ttest_oneGroup=False, ttest_twoGroup=False, mann_whitney_u_test=False):
+    def set_params(self, parametric=True, log_data=(False,2), scale_data=False, impute_data=(False, 3), group_column_name=None, control_group_name=None, group_alpha_CI=0.05, fold_change_alpha_CI=0.05, pca_alpha_CI=0.05, total_missing=False, group_missing=False, pca_loadings=True, normality_test=True, group_normality_test=True, group_mean_CI=True, group_median_CI=True, mean_fold_change=False, median_fold_change=False, kruskal_wallis_test=False, levene_twoGroup=False, levene_allGroup=False, oneway_Anova_test=False, ttest_oneGroup=False, ttest_twoGroup=False, mann_whitney_u_test=False):
 
-        parametric, log_data, group_column_name, control_group_name, group_alpha_CI, median_fold_change_alpha_CI, pca_alpha_CI, total_missing, group_missing, pca_loadings, normality_test, group_normality_test, group_mean_CI, group_median_CI, median_fold_change, oneway_Anova_test, kruskal_wallis_test, levene_twoGroup, levene_allGroup, ttest_oneGroup, ttest_twoGroup, mann_whitney_u_test = self.__paramCheck(parametric, log_data, group_column_name, control_group_name, group_alpha_CI, median_fold_change_alpha_CI, pca_alpha_CI, total_missing, group_missing, pca_loadings, normality_test, group_normality_test, group_mean_CI, group_median_CI, median_fold_change, oneway_Anova_test, kruskal_wallis_test, levene_twoGroup, levene_allGroup, ttest_oneGroup, ttest_twoGroup, mann_whitney_u_test)
+        parametric, log_data, scale_data, impute_data, group_column_name, control_group_name, group_alpha_CI, fold_change_alpha_CI, pca_alpha_CI, total_missing, group_missing, pca_loadings, normality_test, group_normality_test, group_mean_CI, group_median_CI, mean_fold_change, median_fold_change, oneway_Anova_test, kruskal_wallis_test, levene_twoGroup, levene_allGroup, ttest_oneGroup, ttest_twoGroup, mann_whitney_u_test = self.__paramCheck(parametric, log_data, scale_data, impute_data, group_column_name, control_group_name, group_alpha_CI, fold_change_alpha_CI, pca_alpha_CI, total_missing, group_missing, pca_loadings, normality_test, group_normality_test, group_mean_CI, group_median_CI, mean_fold_change, median_fold_change, oneway_Anova_test, kruskal_wallis_test, levene_twoGroup, levene_allGroup, ttest_oneGroup, ttest_twoGroup, mann_whitney_u_test)
 
         self.__parametric = parametric;
         self.__log_data = log_data;
+        self.__scale_data = scale_data;
+        self.__impute_data = impute_data;
         self.__group_column_name = group_column_name;
         self.__control_group_name = control_group_name;
         self.__group_alpha_CI = group_alpha_CI;
-        self.__median_fold_change_alpha_CI = median_fold_change_alpha_CI;
+        self.__fold_change_alpha_CI = fold_change_alpha_CI;
         self.__pca_alpha_CI = pca_alpha_CI;
         self.__total_missing = total_missing;
         self.__group_missing = group_missing;
@@ -84,6 +88,7 @@ class statistics:
         self.__group_normality_test = group_normality_test;
         self.__group_mean_CI = group_mean_CI;
         self.__group_median_CI = group_median_CI;
+        self.__mean_fold_change = mean_fold_change;
         self.__median_fold_change = median_fold_change;
         self.__oneway_Anova_test = oneway_Anova_test;
         self.__kruskal_wallis_test = kruskal_wallis_test;
@@ -99,10 +104,12 @@ class statistics:
         datatable = self.__datatable
         parametric = self.__parametric
         log_data = self.__log_data
+        scale_data = self.__scale_data
+        impute_data = self.__impute_data
         group_column_name = self.__group_column_name
         control_group_name = self.__control_group_name
         group_alpha_CI = self.__group_alpha_CI
-        median_fold_change_alpha_CI = self.__median_fold_change_alpha_CI
+        fold_change_alpha_CI = self.__fold_change_alpha_CI
         pca_alpha_CI = self.__pca_alpha_CI
         total_missing = self.__total_missing
         group_missing = self.__group_missing
@@ -111,6 +118,7 @@ class statistics:
         group_normality_test = self.__group_normality_test
         group_mean_CI = self.__group_mean_CI
         group_median_CI = self.__group_median_CI
+        mean_fold_change = self.__mean_fold_change
         median_fold_change = self.__median_fold_change
         kruskal_wallis_test = self.__kruskal_wallis_test
         levene_twoGroup = self.__levene_twoGroup
@@ -120,12 +128,38 @@ class statistics:
         ttest_twoGroup = self.__ttest_twoGroup
         mann_whitney_u_test = self.__mann_whitney_u_test
 
-        peakData = datatable[peaktable['Name']]
-
-        if log_data:
-            peakData = peakData.applymap(np.log);
-
         peakNames = list(peaktable['Name'].values)
+
+        meta = datatable.T[~datatable.T.index.isin(peakNames)].T.reset_index(drop=True)
+
+        peakData = datatable[peakNames].reset_index(drop=True)
+
+        (log_bool, log_base) = log_data;
+
+        if log_bool:
+            if isinstance(log_base, str) and log_base.lower() == 'natural':
+                peakData = peakData.applymap(np.log)
+            elif log_base == 2:
+                peakData = peakData.applymap(np.log2)
+            elif log_base == 10:
+                peakData = peakData.applymap(np.log10)
+            else:
+                print("Error: The chosen log type is invalid.")
+                sys.exit()
+
+        if scale_data:
+            peakData = scaler(peakData, "standard").reset_index(drop=True)
+
+        (impute_bool, k) = impute_data;
+
+        if impute_bool:
+            peakData = imputeData(peakData, k=k).reset_index(drop=True)
+
+        if not isinstance(peakData, pd.DataFrame):
+            peakData = pd.DataFrame(peakData, columns=list(peakNames)).reset_index(drop=True)
+
+        #Add the meta data back in with the logged, scaled, or imputed data
+        datatable = pd.concat([meta, peakData], axis=1).reset_index(drop=True)
 
         statsData = pd.DataFrame()
 
@@ -146,6 +180,7 @@ class statistics:
             df_totalGrpMissing = pd.DataFrame()
             totalGrpMissingTitles = []
 
+            df_meanFold = pd.DataFrame()
             df_medianFold = pd.DataFrame()
             df_mannWhitney = pd.DataFrame()
             df_ttest = pd.DataFrame()
@@ -169,7 +204,7 @@ class statistics:
                         df_totalGrpMissing = self.__GroupMissing_Calc(group, groups, grpIdx, peakName, totalGrpMissingTitles, df_totalGrpMissing)
                         statsDataDict['GroupMissingValues'] = df_totalGrpMissing
 
-                    x = group[[str(peakName)]].values
+                    x = group[[peakName]].values
                     groupDict[groups[grpIdx]] = x[~np.isnan(x)]
 
             if control_group_name is not None:
@@ -194,82 +229,83 @@ class statistics:
 
                     if key != control_group_name and control_group_name is not None:
 
-                        groupList = list(zip(controlGroup, group))
+                        # Merge group and control, accounting for different array lengths by replacing with nan (indices need to be the same length for bootstrapping)
+                        groupPairDict = dict(controlGroup=controlGroup, caseGroup=group)
+                        groupPair = pd.DataFrame(dict([ (k,pd.Series(v)) for k,v in groupPairDict.items() ]))
+                        controlList = np.array(groupPair['controlGroup'].values)
+                        caseList = np.array(groupPair['caseGroup'].values)
+                        groupList = list(zip(controlList, caseList))
 
                         if parametric:
                             if ttest_twoGroup:
                                 # T-test statistic calculation for two samples (one always being the control)
                                 TTEST_twoGroup_statistic, TTEST_twoGroup_pvalue = self.__TTEST_twoGroup(groupList)
+
+                            if mean_fold_change:
+                                meanFoldChange = self.__mean_fold(groupList)
+
+                                # Boostrap for confidence intervals for the mean fold change
+                                if ((len(group) > 2) and (len(controlGroup) > 2)):
+                                    meanFold = lambda x: self.__mean_fold(x)
+                                    CIs = bootstrap.ci(data=groupList, statfunction=meanFold, n_samples=500, alpha=fold_change_alpha_CI)
+                                else:
+                                    CIs = [np.nan, np.nan]
                         else:
+                            if mann_whitney_u_test:
+                                # Mann-Whitney U statistic calculation for two samples (one always being the control)
+                                MannWhitney_statistic, MannWhitney_pvalue = self.__MANN_WHITNEY_U(groupList)
+
                             if median_fold_change:
                                 medianFoldChange = self.__median_fold(groupList)
 
                                 # Boostrap for confidence intervals for the median fold change
                                 if ((len(group) > 2) and (len(controlGroup) > 2)):
-                                    medianFold = lambda groupList: self.__median_fold(groupList)
-                                    CIs = bootstrap.ci(data=groupList, statfunction=medianFold, n_samples=10000, alpha=median_fold_change_alpha_CI)
+                                    medianFold = lambda x: self.__median_fold(x)
+                                    CIs = bootstrap.ci(data=groupList, statfunction=medianFold, n_samples=500, alpha=fold_change_alpha_CI)
                                 else:
                                     CIs = [np.nan, np.nan]
-
-                            if mann_whitney_u_test:
-                                # Mann-Whitney U statistic calculation for two samples (one always being the control)
-                                MannWhitney_statistic, MannWhitney_pvalue = self.__MANN_WHITNEY_U(groupList)
 
                         if levene_twoGroup:
                             # Levene statistic calculation for two samples (one always being the control)
                             LEVENE_twoGroup_statistic, LEVENE_twoGroup_pvalue = self.__LEVENE_twoGroup(groupList)
 
-                        if len(groupDict) > 2:
-                            if parametric:
-                                ttest_twoGroup_statistics_name = 'TTEST_' + str(key) + '_statistic'
-                                ttest_twoGroup_pvalue_name = 'TTEST_' + str(key) + '_pvalue'
+                        if parametric:
+                            ttest_twoGroup_statistics_name = 'TTEST-twoGroup_statistic_' + str(key)
+                            ttest_twoGroup_pvalue_name = 'TTEST-twoGroup_pvalue_' + str(key)
 
-                                ttestTitles.append(ttest_twoGroup_statistics_name)
-                                ttestTitles.append(ttest_twoGroup_pvalue_name)
-                            else:
-                                median_fold_change_name = 'MedianFoldChange_' + str(key)
-                                median_fold_change_name_CIlower = 'MedianFoldChange_' + str(key) + '_CI_lower'
-                                median_fold_change_name_CIupper = 'MedianFoldChange_' + str(key) + '_CI_upper'
-                                mannwhitney_statistic_name = 'MannWhitneyU_' + str(key) + '_statistic'
-                                mannwhitney_pvalue_name = 'MannWhitneyU_' + str(key) + '_pvalue'
+                            ttestTitles.append(ttest_twoGroup_statistics_name)
+                            ttestTitles.append(ttest_twoGroup_pvalue_name)
 
-                                mannWhitneyTitles.append(mannwhitney_statistic_name)
-                                mannWhitneyTitles.append(mannwhitney_pvalue_name)
-
-                            levene_twoGroup_statistics_name = 'LEVENE_twoGroup_' + str(key) + '_statistic'
-                            levene_twoGroup_pvalue_name = 'LEVENE_twoGroup_' + str(key) + '_pvalue'
+                            mean_fold_change_name = 'MeanFoldChange_' + str(key)
+                            mean_fold_change_name_CIlower = 'MeanFoldChange_CI_lower_' + str(key)
+                            mean_fold_change_name_CIupper = 'MeanFoldChange_CI_upper_' + str(key)
+                            mean_fold_change_name_sig = 'MeanFoldChange_sig_' + str(key)
 
                         else:
-                            if parametric:
-                                ttest_twoGroup_statistics_name = 'TTEST_twoGroup_statistic'
-                                ttest_twoGroup_pvalue_name = 'TTEST_twoGroup_pvalue'
+                            mannwhitney_statistic_name = 'MannWhitneyU_statistic_' + str(key)
+                            mannwhitney_pvalue_name = 'MannWhitneyU_pvalue_' + str(key)
 
-                                ttestTitles.append(ttest_twoGroup_statistics_name)
-                                ttestTitles.append(ttest_twoGroup_pvalue_name)
-                            else:
-                                median_fold_change_name = 'MedianFoldChange'
-                                median_fold_change_name_CIlower = 'MedianFoldChange_CI_lower'
-                                median_fold_change_name_CIupper = 'MedianFoldChange_CI_upper'
-                                mannwhitney_statistic_name = 'MannWhitneyU_statistic'
-                                mannwhitney_pvalue_name = 'MannWhitneyU_pvalue'
+                            mannWhitneyTitles.append(mannwhitney_statistic_name)
+                            mannWhitneyTitles.append(mannwhitney_pvalue_name)
 
-                                mannWhitneyTitles.append(mannwhitney_statistic_name)
-                                mannWhitneyTitles.append(mannwhitney_pvalue_name)
+                            median_fold_change_name = 'MedianFoldChange_' + str(key)
+                            median_fold_change_name_CIlower = 'MedianFoldChange_CI_lower_' + str(key)
+                            median_fold_change_name_CIupper = 'MedianFoldChange_CI_upper_' + str(key)
+                            median_fold_change_name_sig = 'MedianFoldChange_sig_' + str(key)
 
-                            levene_twoGroup_statistics_name = 'LEVENE_twoGroup_statistic'
-                            levene_twoGroup_pvalue_name = 'LEVENE_twoGroup_pvalue'
+                        levene_twoGroup_statistics_name = 'LEVENE-twoGroup_statistic_' + str(key)
+                        levene_twoGroup_pvalue_name = 'LEVENE-twoGroup_pvalue_' + str(key)
 
                         leveneTwoGroupTitles.append(levene_twoGroup_statistics_name)
                         leveneTwoGroupTitles.append(levene_twoGroup_pvalue_name)
 
-                        if median_fold_change and not parametric:
-                            if df_medianFold.empty:
-                                df_medianFold = pd.DataFrame(
-                                    {median_fold_change_name: [medianFoldChange], median_fold_change_name_CIlower: CIs[0], median_fold_change_name_CIupper: CIs[1]})
+                        if ttest_twoGroup and parametric:
+                            if df_ttest.empty:
+                                df_ttest = pd.DataFrame({ttest_twoGroup_statistics_name: [TTEST_twoGroup_statistic], ttest_twoGroup_pvalue_name: [TTEST_twoGroup_pvalue]})
                             else:
-                                df_medianFold = pd.concat([df_medianFold, pd.DataFrame({median_fold_change_name: [medianFoldChange], median_fold_change_name_CIlower: CIs[0], median_fold_change_name_CIupper: CIs[1]})], axis=1).reset_index(drop=True)
+                                df_ttest = pd.concat([df_ttest, pd.DataFrame({ttest_twoGroup_statistics_name: [TTEST_twoGroup_statistic], ttest_twoGroup_pvalue_name: [TTEST_twoGroup_pvalue]})], axis=1).reset_index(drop=True)
 
-                            statsDataDict['MedianFoldChange'] = df_medianFold
+                            statsDataDict['TTEST-twoGroup'] = df_ttest
 
                         if mann_whitney_u_test and not parametric:
                             if df_mannWhitney.empty:
@@ -279,13 +315,27 @@ class statistics:
 
                             statsDataDict['MannWhitneyU'] = df_mannWhitney
 
-                        if ttest_twoGroup and parametric:
-                            if df_ttest.empty:
-                                df_ttest = pd.DataFrame({ttest_twoGroup_statistics_name: [TTEST_twoGroup_statistic], ttest_twoGroup_pvalue_name: [TTEST_twoGroup_pvalue]})
-                            else:
-                                df_ttest = pd.concat([df_ttest, pd.DataFrame({ttest_twoGroup_statistics_name: [TTEST_twoGroup_statistic], ttest_twoGroup_pvalue_name: [TTEST_twoGroup_pvalue]})], axis=1).reset_index(drop=True)
+                        if mean_fold_change and parametric:
 
-                            statsDataDict['TTEST_twoGroup'] = df_ttest
+                            sigMeanFold = np.add(np.sign(np.multiply(CIs[0], CIs[1])), 1).astype(bool);
+
+                            if df_meanFold.empty:
+                                df_meanFold = pd.DataFrame({mean_fold_change_name: [meanFoldChange], mean_fold_change_name_CIlower: CIs[0], mean_fold_change_name_CIupper: CIs[1], mean_fold_change_name_sig: [sigMeanFold]})
+                            else:
+                                df_meanFold = pd.concat([df_meanFold, pd.DataFrame({mean_fold_change_name: [meanFoldChange], mean_fold_change_name_CIlower: CIs[0], mean_fold_change_name_CIupper: CIs[1], mean_fold_change_name_sig: [sigMeanFold]})], axis=1).reset_index(drop=True)
+
+                            statsDataDict['MeanFoldChange'] = df_meanFold
+
+                        if median_fold_change and not parametric:
+
+                            sigMedianFold = np.add(np.sign(np.multiply(CIs[0], CIs[1])), 1).astype(bool);
+
+                            if df_medianFold.empty:
+                                df_medianFold = pd.DataFrame({median_fold_change_name: [medianFoldChange], median_fold_change_name_CIlower: CIs[0], median_fold_change_name_CIupper: CIs[1], median_fold_change_name_sig: [sigMedianFold]})
+                            else:
+                                df_medianFold = pd.concat([df_medianFold, pd.DataFrame({median_fold_change_name: [medianFoldChange], median_fold_change_name_CIlower: CIs[0], median_fold_change_name_CIupper: CIs[1], median_fold_change_name_sig: [sigMedianFold]})], axis=1).reset_index(drop=True)
+
+                            statsDataDict['MedianFoldChange'] = df_medianFold
 
                         if levene_twoGroup:
                             if df_levene_twoGroup.empty:
@@ -293,11 +343,10 @@ class statistics:
                             else:
                                 df_levene_twoGroup = pd.concat([df_levene_twoGroup, pd.DataFrame({levene_twoGroup_statistics_name: [LEVENE_twoGroup_statistic], levene_twoGroup_pvalue_name: [LEVENE_twoGroup_pvalue]})], axis=1).reset_index(drop=True)
 
-                            statsDataDict['LEVENE_twoGroup'] = df_levene_twoGroup
+                            statsDataDict['LEVENE-twoGroup'] = df_levene_twoGroup
 
             # Filter dictionary for empty values
             groupDict_filt = {}
-
             for key, group in groupDict.items():
                 if (len(group) > 0):
                     groupDict_filt[key] = group
@@ -313,16 +362,16 @@ class statistics:
 
             if levene_allGroup and group_column_name is not None:
                 df_levene_allGroup = self.__LEVENE_allGroup(groupDict_filt)
-                statsDataDict['LEVENE_allGroup'] = df_levene_allGroup
+                statsDataDict['LEVENE-allGroup'] = df_levene_allGroup
 
-            pData = peakData[[str(peakName)]]
+            peak = datatable[[peakName]]
 
             if total_missing:
-                df_totalMissing = self.__TotalMissing_Calc(pData);
+                df_totalMissing = self.__TotalMissing_Calc(peak);
 
                 statsDataDict['TotalMissing'] = df_totalMissing
 
-            pList = pData.values
+            pList = peak.values
             pList = pList[~np.isnan(pList)]
 
             if normality_test:
@@ -331,7 +380,7 @@ class statistics:
 
             if ttest_oneGroup:
                 df_TTEST = self.__TTEST_oneGroup(pList)
-                statsDataDict['TTEST_oneGroup'] = df_TTEST
+                statsDataDict['TTEST-oneGroup'] = df_TTEST
 
             if statsData.empty:
                 if statsDataDict:
@@ -342,18 +391,16 @@ class statistics:
 
         if ttest_oneGroup and parametric:
             TTEST_qvalueData = pd.DataFrame()
-            pvals = statsData['TTEST_oneGroup_pvalue'].values.flatten()
+            pvals = statsData['TTEST-oneGroup_pvalue'].values.flatten()
             mask = np.isfinite(pvals)
             pval_masked = [x for x in compress(pvals, mask)]
 
-            TTEST_BHFDR_reject = np.empty(len(pvals))
-            TTEST_BHFDR_reject.fill(np.nan)
             TTEST_BHFDR_qval = np.empty(len(pvals))
             TTEST_BHFDR_qval.fill(np.nan)
 
-            TTEST_BHFDR_reject[mask], TTEST_BHFDR_qval[mask] = smt.multipletests(pval_masked, alpha=0.05, method='fdr_bh')[:2]
+            _, TTEST_BHFDR_qval[mask] = smt.multipletests(pval_masked, alpha=0.05, method='fdr_bh')[:2]
 
-            TTEST_qvalueData['TTEST_oneGroup_BHFDR_qvalue'] = pd.Series(TTEST_BHFDR_qval)
+            TTEST_qvalueData['TTEST-oneGroup_BHFDR_qvalue'] = pd.Series(TTEST_BHFDR_qval)
 
             statsData = pd.merge(statsData, TTEST_qvalueData, left_index=True, right_index=True)
 
@@ -373,7 +420,7 @@ class statistics:
 
                 _, Ttest_BHFDR_qval[mask] = smt.multipletests(pval_masked, alpha=0.05, method='fdr_bh')[:2]
 
-                val_BHFDR_qvalue = '_'.join(val.split('_')[:-1]) + '_BHFDR_qvalue'
+                val_BHFDR_qvalue = val.replace('pvalue', 'BHFDR_qvalue')
 
                 ttestQvalueNames.append(val_BHFDR_qvalue)
 
@@ -388,17 +435,13 @@ class statistics:
             mask = np.isfinite(pvals)
             pval_masked = [x for x in compress(pvals, mask)]
 
-            onewayANOVA_BHFDR_reject = np.empty(len(pvals))
-            onewayANOVA_BHFDR_reject.fill(np.nan)
             onewayANOVA_BHFDR_qval = np.empty(len(pvals))
             onewayANOVA_BHFDR_qval.fill(np.nan)
 
-            onewayANOVA_BYFDR_reject = np.empty(len(pvals))
-            onewayANOVA_BYFDR_reject.fill(np.nan)
             onewayANOVA_BYFDR_qval = np.empty(len(pvals))
             onewayANOVA_BYFDR_qval.fill(np.nan)
 
-            onewayANOVA_BHFDR_reject[mask], onewayANOVA_BHFDR_qval[mask] = smt.multipletests(pval_masked, alpha=0.05, method='fdr_bh')[:2]
+            _, onewayANOVA_BHFDR_qval[mask] = smt.multipletests(pval_masked, alpha=0.05, method='fdr_bh')[:2]
 
             onewayANOVA_qvalueData['onewayANOVA_BHFDR_qvalue'] = pd.Series(onewayANOVA_BHFDR_qval)
 
@@ -406,23 +449,19 @@ class statistics:
 
         if kruskal_wallis_test and not parametric and group_column_name is not None:
             KW_qvalueData = pd.DataFrame()
-            pvals = statsData['KW_pvalue'].values.flatten()
+            pvals = statsData['Kruskal–Wallis_pvalue'].values.flatten()
             mask = np.isfinite(pvals)
             pval_masked = [x for x in compress(pvals, mask)]
 
-            KW_BHFDR_reject = np.empty(len(pvals))
-            KW_BHFDR_reject.fill(np.nan)
             KW_BHFDR_qval = np.empty(len(pvals))
             KW_BHFDR_qval.fill(np.nan)
 
-            KW_BYFDR_reject = np.empty(len(pvals))
-            KW_BYFDR_reject.fill(np.nan)
             KW_BYFDR_qval = np.empty(len(pvals))
             KW_BYFDR_qval.fill(np.nan)
 
-            KW_BHFDR_reject[mask], KW_BHFDR_qval[mask] = smt.multipletests(pval_masked, alpha=0.05, method='fdr_bh')[:2]
+            _, KW_BHFDR_qval[mask] = smt.multipletests(pval_masked, alpha=0.05, method='fdr_bh')[:2]
 
-            KW_qvalueData['KW_BHFDR_qvalue'] = pd.Series(KW_BHFDR_qval)
+            KW_qvalueData['Kruskal-Wallis_BHFDR_qvalue'] = pd.Series(KW_BHFDR_qval)
 
             statsData = pd.merge(statsData, KW_qvalueData, left_index=True, right_index=True)
 
@@ -442,7 +481,7 @@ class statistics:
 
                 _, MannWhitney_BHFDR_qval[mask] = smt.multipletests(pval_masked, alpha=0.05, method='fdr_bh')[:2]
 
-                val_BHFDR_qvalue = '_'.join(val.split('_')[:-1]) + '_BHFDR_qvalue'
+                val_BHFDR_qvalue = val.replace('pvalue', 'BHFDR_qvalue')
 
                 mannWhitneyQvalueNames.append(val_BHFDR_qvalue)
 
@@ -452,22 +491,18 @@ class statistics:
 
 
         if pca_loadings:
+            peakData = datatable[peakNames].reset_index(drop=True)
             d_filled = imputeData(peakData, 3)
 
-            pca, pca_x, pca_loadings = self.__PCA_Calc(d_filled)
+            #pca, pca_x, pca_loadings = self.__PCA_Calc(d_filled)
+            pca, pca_loadings = self.__PCA_Calc(d_filled)
             df_pca_components = pd.DataFrame(pca_loadings, columns=['PC1', 'PC2'])
-
-            #Filter out instability warnings only for bootstrapped PCA CI (other statfunctions e.g. np.median across groups don't give warnings)
-            warnings.simplefilter("ignore")
 
             bootpc1 = lambda x: self.__boot_pca(x, pca.components_.T, 1)
             bootpc2 = lambda x: self.__boot_pca(x, pca.components_.T, 2)
 
-            PC1_CIs = bootstrap.ci(data=pca_x, statfunction=bootpc1, n_samples=10000, alpha=pca_alpha_CI)
-            PC2_CIs = bootstrap.ci(data=pca_x, statfunction=bootpc2, n_samples=10000, alpha=pca_alpha_CI)
-
-            #Reinstate warnings for other functions
-            warnings.simplefilter("default")
+            PC1_CIs = bootstrap.ci(data=d_filled, statfunction=bootpc1, n_samples=500, alpha=pca_alpha_CI)
+            PC2_CIs = bootstrap.ci(data=d_filled, statfunction=bootpc2, n_samples=500, alpha=pca_alpha_CI)
 
             pc1_lower = np.array(PC1_CIs[0, :]).flatten()
             pc1_upper = np.array(PC1_CIs[1, :]).flatten()
@@ -530,7 +565,7 @@ class statistics:
 
         return PeakTable
 
-    def __paramCheck(self, parametric, log_data, group_column_name, control_group_name, group_alpha_CI, median_fold_change_alpha_CI, pca_alpha_CI, total_missing, group_missing, pca_loadings, normality_test, group_normality_test, group_mean_CI, group_median_CI, median_fold_change, oneway_Anova_test, kruskal_wallis_test, levene_twoGroup, levene_allGroup, ttest_oneGroup, ttest_twoGroup, mann_whitney_u_test):
+    def __paramCheck(self, parametric, log_data, scale_data, impute_data, group_column_name, control_group_name, group_alpha_CI, fold_change_alpha_CI, pca_alpha_CI, total_missing, group_missing, pca_loadings, normality_test, group_normality_test, group_mean_CI, group_median_CI, mean_fold_change, median_fold_change, oneway_Anova_test, kruskal_wallis_test, levene_twoGroup, levene_allGroup, ttest_oneGroup, ttest_twoGroup, mann_whitney_u_test):
 
         peaks = self.__peaktable
         data = self.__datatable
@@ -547,9 +582,43 @@ class statistics:
             print("Error: Parametric not valid. Choose either \"True\" or \"False\".")
             sys.exit()
 
-        if not type(log_data) == bool:
-            print("Error: Log data not valid. Choose either \"True\" or \"False\".")
+        if not isinstance(log_data, tuple):
+            print("Error: Log data type if not a tuple. Please ensure the value is a tuple (e.g. (True, 2).")
             sys.exit()
+        else:
+            (log_bool, log_base) = log_data
+
+            if not type(log_bool) == bool:
+                print("Error: Log data first tuple item is not a boolean value. Choose either \"True\" or \"False\".")
+                sys.exit()
+
+            base_types = ['natural', 2, 10]
+
+            if isinstance(log_base, str):
+                log_base = log_base.lower()
+
+            if log_base not in base_types:
+                print("Error: Log data second tuple item is not valid. Choose one of {}.".format(', '.join(base_types)))
+                sys.exit()
+
+        if not type(scale_data) == bool:
+            print("Error: Scale data not valid. Choose either \"True\" or \"False\".")
+            sys.exit()
+
+        if not isinstance(impute_data, tuple):
+            print("Error: Impute data type if not a tuple. Please ensure the value is a tuple (e.g. (True, 3).")
+            sys.exit()
+        else:
+            (impute_bool, k) = impute_data
+
+            if not type(impute_bool) == bool:
+                print("Error: Impute data first tuple item is not a boolean value. Choose either \"True\" or \"False\".")
+                sys.exit()
+
+            if not isinstance(k, float):
+                if not isinstance(k, int):
+                    print("Error: Impute data second tuple item, the nearest neighbours k value, is not valid. Choose a float or integer value.")
+                    sys.exit()
 
         if group_column_name is not None:
             if not isinstance(group_column_name, str):
@@ -573,8 +642,8 @@ class statistics:
             print("Error: Group alpha confidence interval is not valid. Choose a float value.")
             sys.exit()
 
-        if not isinstance(median_fold_change_alpha_CI, float):
-            print("Error: Median fold change alpha confidence interval is not valid. Choose a float value.")
+        if not isinstance(fold_change_alpha_CI, float):
+            print("Error: Mean/Median fold change alpha confidence interval is not valid. Choose a float value.")
             sys.exit()
 
         if not isinstance(pca_alpha_CI, float):
@@ -609,6 +678,10 @@ class statistics:
             print("Error: Group median confidence interval is not valid. Choose either \"True\" or \"False\".")
             sys.exit()
 
+        if not type(mean_fold_change) == bool:
+            print("Error: Mean fold change is not valid. Choose either \"True\" or \"False\".")
+            sys.exit()
+
         if not type(median_fold_change) == bool:
             print("Error: Median fold change is not valid. Choose either \"True\" or \"False\".")
             sys.exit()
@@ -641,43 +714,49 @@ class statistics:
             print("Error: Mann–Whitney U test is not valid. Choose either \"True\" or \"False\".")
             sys.exit()
 
-        return parametric, log_data, group_column_name, control_group_name, group_alpha_CI, median_fold_change_alpha_CI, pca_alpha_CI, total_missing, group_missing, pca_loadings, normality_test, group_normality_test, group_mean_CI, group_median_CI, median_fold_change, oneway_Anova_test, kruskal_wallis_test, levene_twoGroup, levene_allGroup, ttest_oneGroup, ttest_twoGroup, mann_whitney_u_test
+        return parametric, log_data, scale_data, impute_data, group_column_name, control_group_name, group_alpha_CI, fold_change_alpha_CI, pca_alpha_CI, total_missing, group_missing, pca_loadings, normality_test, group_normality_test, group_mean_CI, group_median_CI, mean_fold_change, median_fold_change, oneway_Anova_test, kruskal_wallis_test, levene_twoGroup, levene_allGroup, ttest_oneGroup, ttest_twoGroup, mann_whitney_u_test
+
+    def __mean_fold(self, groupList):
+        (controlGroup, caseGroup) = zip(*groupList)
+
+        if ((len(list(caseGroup)) > 0) and (len(list(controlGroup)) > 0)):
+            meanFoldChange = np.nanmean(list(caseGroup)) / np.nanmean(list(controlGroup))
+        else:
+            meanFoldChange = np.nan
+
+        return meanFoldChange
 
     def __median_fold(self, groupList):
-        controlGroup, group = zip(*groupList)
+        (controlGroup, caseGroup) = zip(*groupList)
 
-        if ((len(group) > 0) and (len(controlGroup) > 0)):
-            medianFoldChange = (np.median(group) - np.median(controlGroup))/np.median(controlGroup)
+        if ((len(list(caseGroup)) > 0) and (len(list(controlGroup)) > 0)):
+            medianFoldChange = np.nanmedian(list(caseGroup)) / np.nanmedian(list(controlGroup))
         else:
             medianFoldChange = np.nan
 
         return medianFoldChange
 
-    def __PCA_Calc(self, d_filled):
-
-        pca_x = d_filled.values
-
-        pca_x = StandardScaler().fit_transform(pca_x)
+    def __PCA_Calc(self, data):
 
         pca = PCA(n_components=2)
-        pca.fit_transform(pca_x)
+        pca.fit_transform(data)
 
-        return pca, pca_x, pca.components_.T
+        return pca, pca.components_.T
 
-    def __TotalMissing_Calc(self, pData):
+    def __TotalMissing_Calc(self, peak):
 
-        missing = pData.isnull().sum()
-        totalMissing = np.divide(missing, pData.shape[0]).tolist()
-        df_totalMissing = pd.DataFrame({'Total_Missing': totalMissing})
+        missing = peak.isnull().sum()
+        totalMissing = np.multiply(np.divide(missing, peak.shape[0]).tolist(), 100)
+        df_totalMissing = pd.DataFrame({'Percent_Total_Missing': totalMissing})
 
         return df_totalMissing
 
     def __GroupMissing_Calc(self, group, groups, grpIdx, peakName, totalGrpMissingTitles, df_totalGrpMissing):
-        grpMissing = group[[str(peakName)]].isnull().sum()
+        grpMissing = group[[peakName]].isnull().sum()
 
-        totalGrpMissing = np.divide(grpMissing, group[[str(peakName)]].shape[0]).tolist()
+        totalGrpMissing = np.multiply(np.divide(grpMissing, group[[peakName]].shape[0]).tolist(), 100)
 
-        totalGrpMissingName = 'Group_'+ str(groups[grpIdx]) +'_Missing'
+        totalGrpMissingName = 'Percent_Group_'+ str(groups[grpIdx]) +'_Missing'
 
         totalGrpMissingTitles.append(totalGrpMissingName)
 
@@ -697,7 +776,7 @@ class statistics:
             Shapiro_pvalue_grp = np.nan
             Shapiro_statistic_grp = np.nan
 
-        grpStatName = 'Shapiro_statistic_'+ str(key)
+        grpStatName = 'Shapiro_statistic_' + str(key)
 
         grpPvalName = 'Shapiro_pvalue_' + str(key)
 
@@ -713,22 +792,25 @@ class statistics:
     def __GroupMeanCI(self, key, group, df_grpMCI, grpAlphaCI):
 
         #Calculate mean and CI of each group
-        grpMeanName = 'Group_'+ str(key) +'_mean'
-        grpMeanCIlowerName = 'Group_'+ str(key) +'_mean_CI_lower'
-        grpMeanCIupperName = 'Group_'+ str(key) +'_mean_CI_upper'
+        grpMeanName = 'Group_mean_' + str(key)
+        grpMeanCIlowerName = 'Group_mean_CI_lower_' + str(key)
+        grpMeanCIupperName = 'Group_mean_CI_upper_' + str(key)
+        grpMean_sig_name = 'Group_mean_sig_' + str(key)
 
         if len(group) > 2:
-            grpMean = np.mean(group)
-            grpMean_CI = bootstrap.ci(data=group, statfunction=np.mean, n_samples=10000, alpha=grpAlphaCI)
+            grpMean = np.nanmean(group)
+            grpMean_CI = bootstrap.ci(data=group, statfunction=np.nanmean, n_samples=500, alpha=grpAlphaCI)
         else:
             if len(group) > 0:
-                grpMean = np.mean(group)
+                grpMean = np.nanmean(group)
                 grpMean_CI = [np.nan,np.nan]
             else:
                 grpMean = np.nan
                 grpMean_CI = [np.nan, np.nan]
 
-        df_grp_dat = pd.DataFrame({grpMeanName: [grpMean], grpMeanCIlowerName: grpMean_CI[0], grpMeanCIupperName: grpMean_CI[1]})
+        sigMean = np.add(np.sign(np.multiply(grpMean_CI[0], grpMean_CI[1])), 1).astype(bool);
+
+        df_grp_dat = pd.DataFrame({grpMeanName: [grpMean], grpMeanCIlowerName: grpMean_CI[0], grpMeanCIupperName: grpMean_CI[1], grpMean_sig_name: [sigMean]})
 
         if df_grpMCI.empty:
             df_grpMCI = df_grp_dat
@@ -738,23 +820,27 @@ class statistics:
         return df_grpMCI
 
     def __GroupMedianCI(self, key, group, df_grpMCI, grpAlphaCI):
+
         # Calculate median and CI of each group
-        grpMedianName = 'Group_' + str(key) + '_median'
-        grpMedianCIlowerName = 'Group_' + str(key) + '_median_CI_lower'
-        grpMedianCIupperName = 'Group_' + str(key) + '_median_CI_upper'
+        grpMedianName = 'Group_median_' + str(key)
+        grpMedianCIlowerName = 'Group_median_CI_lower_' + str(key)
+        grpMedianCIupperName = 'Group_median_CI_upper_' + str(key)
+        grpMedian_sig_name = 'Group_median_sig_' + str(key)
 
         if len(group) > 2:
-            grpMedian = np.median(group)
-            grpMedian_CI = bootstrap.ci(data=group, statfunction=np.median, n_samples=10000, alpha=grpAlphaCI)
+            grpMedian = np.nanmedian(group)
+            grpMedian_CI = bootstrap.ci(data=group, statfunction=np.nanmedian, n_samples=500, alpha=grpAlphaCI)
         else:
             if len(group) > 0:
-                grpMedian = np.median(group)
+                grpMedian = np.nanmedian(group)
                 grpMedian_CI = [np.nan, np.nan]
             else:
                 grpMedian = np.nan
                 grpMedian_CI = [np.nan, np.nan]
 
-        df_grp_dat = pd.DataFrame({grpMedianName: [grpMedian], grpMedianCIlowerName: grpMedian_CI[0], grpMedianCIupperName: grpMedian_CI[1]})
+        sigMedian = np.add(np.sign(np.multiply(grpMedian_CI[0], grpMedian_CI[1])), 1).astype(bool);
+
+        df_grp_dat = pd.DataFrame({grpMedianName: [grpMedian], grpMedianCIlowerName: grpMedian_CI[0], grpMedianCIupperName: grpMedian_CI[1], grpMedian_sig_name: [sigMedian]})
 
         if df_grpMCI.empty:
             df_grpMCI = df_grp_dat
@@ -771,7 +857,7 @@ class statistics:
             KW_statistic = np.nan
             KW_pvalue = np.nan
 
-        df_KW = pd.DataFrame({'KW_statistic': [KW_statistic], 'KW_pvalue': [KW_pvalue]})
+        df_KW = pd.DataFrame({'Kruskal–Wallis_statistic': [KW_statistic], 'Kruskal–Wallis_pvalue': [KW_pvalue]})
 
         return df_KW
 
@@ -795,16 +881,15 @@ class statistics:
             TTEST_oneGroup_statistic = np.nan
             TTEST_oneGroup_pvalue = np.nan
 
-        df_TTEST_oneGroup = pd.DataFrame({'TTEST_oneGroup_statistic': [TTEST_oneGroup_statistic], 'TTEST_oneGroup_pvalue': [TTEST_oneGroup_pvalue]});
+        df_TTEST_oneGroup = pd.DataFrame({'TTEST-oneGroup_statistic': [TTEST_oneGroup_statistic], 'TTEST-oneGroup_pvalue': [TTEST_oneGroup_pvalue]});
 
         return df_TTEST_oneGroup
 
     def __TTEST_twoGroup(self, groupList):
+        (controlGroup, caseGroup) = zip(*groupList)
 
-        controlGroup, group = zip(*groupList)
-
-        if ((len(group) > 0) and (len(controlGroup) > 0)):
-            TTEST_twoGroup_statistic, TTEST_twoGroup_pvalue = stats.ttest_ind(controlGroup, group, nan_policy='omit')
+        if ((len(list(caseGroup)) > 0) and (len(list(controlGroup)) > 0)):
+            TTEST_twoGroup_statistic, TTEST_twoGroup_pvalue = stats.ttest_ind(list(controlGroup), list(caseGroup), nan_policy='omit')
         else:
             TTEST_twoGroup_statistic = np.nan
             TTEST_twoGroup_pvalue = np.nan
@@ -812,11 +897,10 @@ class statistics:
         return TTEST_twoGroup_statistic, TTEST_twoGroup_pvalue
 
     def __MANN_WHITNEY_U(self, groupList):
+        (controlGroup, caseGroup) = zip(*groupList)
 
-        controlGroup, group = zip(*groupList)
-
-        if ((len(group) > 0) and (len(controlGroup) > 0)):
-            MannWhitney_statistic, MannWhitney_pvalue = stats.mannwhitneyu(controlGroup, group, alternative="two-sided")
+        if ((len(list(caseGroup)) > 0) and (len(list(controlGroup)) > 0)):
+            MannWhitney_statistic, MannWhitney_pvalue = stats.mannwhitneyu(list(controlGroup), list(caseGroup), alternative="two-sided")
         else:
             MannWhitney_statistic = np.nan
             MannWhitney_pvalue = np.nan
@@ -824,11 +908,10 @@ class statistics:
         return MannWhitney_statistic, MannWhitney_pvalue
 
     def __LEVENE_twoGroup(self, groupList):
+        (controlGroup, caseGroup) = zip(*groupList)
 
-        controlGroup, group = zip(*groupList)
-
-        if ((len(group) > 0) and (len(controlGroup) > 0)):
-            LEVENE_twoGroup_statistic, LEVENE_twoGroup_pvalue = stats.levene(controlGroup, group)
+        if ((len(list(caseGroup)) > 0) and (len(list(controlGroup)) > 0)):
+            LEVENE_twoGroup_statistic, LEVENE_twoGroup_pvalue = stats.levene(list(controlGroup), list(caseGroup))
         else:
             LEVENE_twoGroup_statistic = np.nan
             LEVENE_twoGroup_pvalue = np.nan
@@ -843,7 +926,7 @@ class statistics:
             LEVENE_allGroup_statistic = np.nan
             LEVENE_allGroup_pvalue = np.nan
 
-        df_levene_allGroup = pd.DataFrame({'LEVENE_allGroup_statistic': [LEVENE_allGroup_statistic], 'LEVENE_allGroup_pvalue': [LEVENE_allGroup_pvalue]})
+        df_levene_allGroup = pd.DataFrame({'LEVENE-allGroup_statistic': [LEVENE_allGroup_statistic], 'LEVENE-allGroup_pvalue': [LEVENE_allGroup_pvalue]})
 
         return df_levene_allGroup
 

@@ -4,14 +4,9 @@ import matplotlib
 import matplotlib.pyplot as plt
 import seaborn as sns
 from collections import defaultdict
-from sklearn.preprocessing import StandardScaler
 from .utils import *
 import numpy as np
 import pandas as pd
-
-import warnings
-#added to supress the cmap warning (cmap dictonary since became private API)
-warnings.filterwarnings("ignore",category=matplotlib.mplDeprecation)
 
 class polarDendrogram:
     usage = """Produces a polar dendrogram given a cartesian dendrogram
@@ -29,23 +24,29 @@ class polarDendrogram:
                 gap: The gap size within the polar dendrogram (default: 0.1)
                 grid: Setting to 'True' will overlay a grid over the polar dendrogram (default: False)
                 style: Set the matplotlib style (see https://matplotlib.org/stable/tutorials/introductory/customizing.html) (default: 'seaborn-white')
+                transparent: Setting to 'True' will make the background of all plots transparent (default: False)
                 dpi: The number of Dots Per Inch (DPI) for the image (default: 200)
                 figSize: The figure size as a tuple (width,height) (default: (10,10))
                 fontSize: The font size for all text (default: 15)
                 PeakTable: The Peak Table Pandas dataframe (default: empty dataframe)
                 DataTable: The Data Table Pandas dataframe (default: empty dataframe)
+                group_column_name: The group column name used in the datatable (e.g. 'Class') (default: None)
                 textColorScale: The scale to use for colouring the text ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal", "reverse_ordinal") (default: 'linear')
                 text_color_column: The colour column to use from Peak Table (default: None sets to black)
                 label_column: The label column to use from Peak Table (default: use original Peak Table index from cartesian dendrogram)
                 text_cmap: The CMAP colour palette to use (default: 'brg')
 
-            getClusterPlots : Generates plots of mean peak area over the 'Class' variable for each cluster from the polar dendrogram
+            getClusterPlots : Generates plots of mean/median peak area over the group/class variable for each cluster from the polar dendrogram
+                plot_type: The type of plot to plot. Either mean peak area or median peak area (default: 'mean')
                 column_numbers: The number of columns to display in the plots (default: 4)
-                log: Setting to 'True' will log the data (default: True)
-                autoscale:  Setting to 'True' will scale the data to unit variance (Default: True)
+                log_data: Perform a log ('natural', base 2 or base 10) on all data (default: (True, 2))
+                scale_data: Scale the data to unit variance (default: True)
+                impute_data: Impute any missing values using KNN impute with a set number of nearest neighbours (default: (True, 3))
                 figSize: The figure size as a tuple (width,height) (default: (15,10))
+                x_axis_rotation: Rotate the x axis labels this number of degrees (default: 0)
+                ci: The bootstrapped confidence interval. Can also be standard deviation ("sd") (default: 95)
                 saveImage: Setting to 'True' will save the image to file (default: True)
-                imageFileName: The image file name to save to (default: 'clusterPlots.png')
+                imageFileName: The image file name to save to (default: 'clusterPlots.png')                
                 dpi: The number of Dots Per Inch (DPI) for the image (default: 200)
             
             help : Print this help text
@@ -62,9 +63,9 @@ class polarDendrogram:
     def help(self):
         print(polarDendrogram.usage)
 
-    def set_params(self, imageFileName='polarDendrogram.png', saveImage=True, branch_scale='linear', gap=0.1, grid=False, style='seaborn-white', dpi=200, figSize=(10,10), fontSize=15, PeakTable=pd.DataFrame(), DataTable=pd.DataFrame(), textColorScale='linear', text_color_column='none', label_column='none', text_cmap='brg'):
+    def set_params(self, imageFileName='polarDendrogram.png', saveImage=True, branch_scale='linear', gap=0.1, grid=False, style='seaborn-white', transparent=False, dpi=200, figSize=(10,10), fontSize=15, PeakTable=pd.DataFrame(), DataTable=pd.DataFrame(), group_column_name=None, textColorScale='linear', text_color_column='none', label_column='none', text_cmap='brg'):
 
-        imageFileName, saveImage, branch_scale, gap, grid, style, dpi, figSize, fontSize, PeakTable, DataTable, textColorScale, text_color_column, label_column, text_cmap = self.__paramCheck(imageFileName, saveImage, branch_scale, gap, grid, style, dpi, figSize, fontSize, PeakTable, DataTable, textColorScale, text_color_column, label_column, text_cmap)
+        imageFileName, saveImage, branch_scale, gap, grid, style, transparent, dpi, figSize, fontSize, PeakTable, DataTable, group_column_name, textColorScale, text_color_column, label_column, text_cmap = self.__paramCheck(imageFileName, saveImage, branch_scale, gap, grid, style, transparent, dpi, figSize, fontSize, PeakTable, DataTable, group_column_name, textColorScale, text_color_column, label_column, text_cmap)
 
         self.__imageFileName = imageFileName;
         self.__saveImage = saveImage;
@@ -72,11 +73,13 @@ class polarDendrogram:
         self.__gap = gap;
         self.__grid = grid;
         self.__style = style;
+        self.__transparent = transparent;
         self.__dpi = dpi;
         self.__figSize = figSize;
         self.__fontSize = fontSize;
         self.__peaktable = PeakTable;
         self.__datatable = DataTable;
+        self.__group_column_name = group_column_name;
         self.__textColorScale = textColorScale;
         self.__text_color_column = text_color_column;
         self.__label_column = label_column;
@@ -145,6 +148,7 @@ class polarDendrogram:
         grid = self.__grid
         fontSize = self.__fontSize
         style = self.__style
+        transparent = self.__transparent
         dpi = self.__dpi
         figSize = self.__figSize
 
@@ -240,30 +244,61 @@ class polarDendrogram:
             ax.patch.set_alpha(1.0)
 
             if saveImage:
-                plt.savefig(imageFileName, dpi=dpi, transparent=True);
+                plt.savefig(imageFileName, dpi=dpi, transparent=transparent);
 
             plt.show()
 
-    def getClusterPlots(self, column_numbers=4, log=True, autoscale=True, figSize=(15, 10), saveImage=True, imageFileName='clusterPlots.png', dpi=200):
-
-        scaler = StandardScaler()
+    def getClusterPlots(self, plot_type='mean', column_numbers=4, log_data=(True, 2), scale_data=True, impute_data=(True, 3), figSize=(15, 10), x_axis_rotation=0, ci=95, saveImage=True, imageFileName='clusterPlots.png', dpi=200):
 
         dendrogram = self.__dn
         peaktable = self.__peaktable
         datatable = self.__datatable
+        group_column_name = self.__group_column_name
         style = self.__style
+        transparent = self.__transparent
+
+        plot_types = ['mean', 'median']
+
+        if plot_type.lower() not in plot_types:
+            print("Error: The chosen plot type is invalid. Choose one of \"{}\".".format('\" or \"'.join(plot_types)))
+            sys.exit()
+
+        if isinstance(ci, str):
+            if ci != 'sd':
+                print("Error: The string value for ci is invalid. Choose a float, integer or 'sd' value for standard deviation.")
+                sys.exit()
+        else:
+            if not isinstance(ci, float):
+                if not isinstance(ci, int):
+                    print("Error: The value for 'ci' is not valid. Choose a float, integer or 'sd' value for standard deviation.")
+                    sys.exit()
 
         peaklist = peaktable['Name']
         X = datatable[peaklist]
 
-        if log:
-            X = np.log10(X)
+        (log_bool, log_base) = log_data;
 
-        if autoscale:
-            X = scaler.fit_transform(X)
+        if log_bool:
+            if isinstance(log_base, str) and log_base.lower() == 'natural':
+                X = X.applymap(np.log);
+            elif log_base == 2:
+                X = X.applymap(np.log2);
+            elif log_base == 10:
+                X = X.applymap(np.log10);
+            else:
+                print("Error: The chosen log type is invalid.")
+                sys.exit()
+
+        if scale_data:
+            X = scaler(X, "standard")
+
+        (impute_bool, k) = impute_data;
+
+        if impute_bool:
+            X = imputeData(X, k=k)
 
         if not isinstance(X, pd.DataFrame):
-            X_data = pd.DataFrame(X, columns=peaklist)
+            X = pd.DataFrame(X, columns=peaklist)
 
         if peaktable.empty or datatable.empty:
             print("Error: Peak Table and/or Data Table is empty. Can not produce cluster plots. Please provide a populated Data and Peak Table.")
@@ -279,13 +314,13 @@ class polarDendrogram:
 
             with plt.style.context(style):
 
-                fig, axes = plt.subplots(nrows=int(len(clusters)/column_numbers), ncols=column_numbers, sharey=True, figsize=figSize)
+                fig, axes = plt.subplots(nrows=int(np.ceil(float(len(clusters)/column_numbers))), ncols=column_numbers, sharey=True, figsize=figSize)
 
                 for cluster_index, cluster in enumerate(clusters):
 
                     peak_cluster = peaktable[peaktable.index.isin(cluster)]
 
-                    x = X_data[peak_cluster['Name']]
+                    x = X[peak_cluster['Name']]
 
                     df_merged = pd.DataFrame()
 
@@ -298,27 +333,53 @@ class polarDendrogram:
                         peak_count = peak_count + 1;
 
                         if df_merged.empty:
-                            df_merged = pd.merge(
-                                datatable.T[~datatable.T.index.isin(peaktable['Name'])].T.reset_index(drop=True),
-                                pd.Series(x.values[:, index], name='Peak').reset_index(drop=True), left_index=True,
-                                right_index=True)
+                            df_merged = pd.merge(datatable.T[~datatable.T.index.isin(peaktable['Name'])].T.reset_index(drop=True), pd.Series(x.values[:, index], name='Peak').reset_index(drop=True), left_index=True, right_index=True)
                         else:
-                            df_dat = pd.merge(
-                                datatable.T[~datatable.T.index.isin(peaktable['Name'])].T.reset_index(drop=True),
-                                pd.Series(x.values[:, index], name='Peak').reset_index(drop=True), left_index=True,
-                                right_index=True)
+                            df_dat = pd.merge(datatable.T[~datatable.T.index.isin(peaktable['Name'])].T.reset_index(drop=True), pd.Series(x.values[:, index], name='Peak').reset_index(drop=True), left_index=True, right_index=True)
                             df_merged = pd.concat([df_merged, df_dat], axis=0, sort=False).reset_index(drop=True)
 
-                    ax = sns.pointplot(data=df_merged, x='Class', y='Peak', x_estimator=np.mean, capsize=0.1, ci=95,
-                                       ax=axes.flat[cluster_index])
+                    if plot_type == 'mean':
+                        ax = sns.pointplot(data=df_merged, x=group_column_name, y='Peak', x_estimator=np.nanmean, capsize=0.1, ci=ci, ax=axes.flat[cluster_index])
+                    elif plot_type == 'median':
+                        ax = sns.pointplot(data=df_merged, x=group_column_name, y='Peak', x_estimator=np.nanmedian, capsize=0.1, ci=ci, ax=axes.flat[cluster_index])
+                    else:
+                        print("Error: Invalid plot type.")
+                        sys.exit()
 
-                    ax.set(xlabel='', ylabel='Scaled Peak Area',
-                           title='Cluster {} (N={})'.format(cluster_names[cluster_index], peak_count))
+                    ax.tick_params(labelrotation=x_axis_rotation)
+
+                    if log_bool:
+                        if scale_data:
+                            if isinstance(ci, str):
+                                if ci == 'sd':
+                                    ax.set(xlabel='', ylabel='Log({}) scaled (unit variance) Peak Area within SD'.format(log_base), title='Cluster {} (N={}) within SD'.format(cluster_names[cluster_index], peak_count))
+                            else:
+                                ax.set(xlabel='', ylabel='Log({}) scaled (unit variance) Peak Area & {}% CI'.format(log_base, ci), title='Cluster {} (N={}) with {}% CI'.format(cluster_names[cluster_index], peak_count, ci))
+                        else:
+                            if isinstance(ci, str):
+                                if ci == 'sd':
+                                    ax.set(xlabel='', ylabel='Log({}) Peak Area within SD'.format(log_base), title='Cluster {} (N={}) within SD'.format(cluster_names[cluster_index], peak_count))
+                            else:
+                                ax.set(xlabel='', ylabel='Log({}) Peak Area & {}% CI'.format(log_base, ci), title='Cluster {} (N={}) with {}% CI'.format(cluster_names[cluster_index], peak_count, ci))
+                    else:
+                        if scale_data:
+                            if isinstance(ci, str):
+                                if ci == 'sd':
+                                    ax.set(xlabel='', ylabel='Scaled (unit variance) Peak Area within SD', title='Cluster {} (N={}) within SD'.format(cluster_names[cluster_index], peak_count))
+                            else:
+                                ax.set(xlabel='', ylabel='Scaled (unit variance) Peak Area & {}% CI'.format(ci), title='Cluster {} (N={}) with {}% CI'.format(cluster_names[cluster_index], peak_count, ci))
+                        else:
+                            if isinstance(ci, str):
+                                if ci == 'sd':
+                                    ax.set(xlabel='', ylabel='Peak Area within SD', title='Cluster {} (N={}) within SD'.format(cluster_names[cluster_index], peak_count))
+                            else:
+                                ax.set(xlabel='', ylabel='Peak Area & {}% CI'.format(ci), title='Cluster {} (N={}) with {}% CI'.format(cluster_names[cluster_index], peak_count, ci))
+
 
                 fig.tight_layout(h_pad=5, w_pad=2)
 
                 if saveImage:
-                    plt.savefig(imageFileName, dpi=dpi, transparent=False)
+                    plt.savefig(imageFileName, dpi=dpi, transparent=transparent)
 
                 plt.show()
 
@@ -330,7 +391,11 @@ class polarDendrogram:
 
         return dn
 
-    def __paramCheck(self, imageFileName, saveImage, branch_scale, gap, grid, style, dpi, figSize, fontSize, PeakTable, DataTable, textColorScale, text_color_column, label_column, text_cmap):
+    def __paramCheck(self, imageFileName, saveImage, branch_scale, gap, grid, style, transparent, dpi, figSize, fontSize, PeakTable, DataTable, group_column_name, textColorScale, text_color_column, label_column, text_cmap):
+
+        cmap_list = list(matplotlib.cm.cmaps_listed) + list(matplotlib.cm.datad)
+        cmap_list_r = [cmap + '_r' for cmap in cmap_list]
+        cmap_list = cmap_list + cmap_list_r
 
         if not isinstance(imageFileName, str):
             print("Error: Image file name is not valid. Choose a string value.")
@@ -363,6 +428,10 @@ class polarDendrogram:
                 print("Error: Chosen style is not valid. Choose one of the following: {}.".format(', '.join(styleList)))
                 sys.exit()
 
+        if not type(transparent) == bool:
+            print("Error: The transparent value is not valid. Choose either \"True\" or \"False\".")
+            sys.exit()
+
         if not isinstance(dpi, float):
             if not isinstance(dpi, int):
                 print("Error: Dpi is not valid. Choose a float or integer value.")
@@ -386,10 +455,20 @@ class polarDendrogram:
         if not isinstance(PeakTable, pd.DataFrame):
             print("Error: Provided Peak Table is not valid. Choose a Pandas dataframe.")
             sys.exit()
+        else:
+            if not PeakTable.empty:
+                if "Name" not in PeakTable.columns:
+                    print("Peak Table does not contain the required 'Name' column")
+                    sys.exit()
 
         if not isinstance(DataTable, pd.DataFrame):
             print("Error: Provided Data Table is not valid. Choose a Pandas dataframe.")
             sys.exit()
+        else:
+            if not DataTable.empty:
+                if group_column_name not in DataTable.columns:
+                    print("Error: Data Table does not contain the specified group column name {}. Please check your data.".format(''.join(group_column_name)))
+                    sys.exit()
 
         if textColorScale.lower() not in ["linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal", "reverse_ordinal"]:
             print("Error: Node color scale type not valid. Choose either \"linear\", \"reverse_linear\", \"log\", \"reverse_log\", \"square\", \"reverse_square\", \"area\", \"reverse_area\", \"volume\", \"reverse_volume\", \"ordinal\", \"reverse_ordinal\".")
@@ -420,13 +499,11 @@ class polarDendrogram:
             print("Error: Text CMAP is not valid. Choose a string value.")
             sys.exit()
         else:
-            cmap_list = matplotlib.cm.cmap_d.keys()
-
             if text_cmap not in cmap_list:
                 print("Error: Text CMAP is not valid. Choose one of the following: {}.".format(', '.join(cmap_list)))
                 sys.exit()
 
-        return imageFileName, saveImage, branch_scale, gap, grid, style, dpi, figSize, fontSize, PeakTable, DataTable, textColorScale, text_color_column, label_column, text_cmap
+        return imageFileName, saveImage, branch_scale, gap, grid, style, transparent, dpi, figSize, fontSize, PeakTable, DataTable, group_column_name, textColorScale, text_color_column, label_column, text_cmap
 
     def __smoothsegment(self, seg, Nsmooth=100):
         return np.concatenate([[seg[0]], np.linspace(seg[1], seg[2], Nsmooth), [seg[3]]])

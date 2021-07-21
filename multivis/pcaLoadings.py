@@ -5,9 +5,8 @@ import matplotlib.pyplot as plt
 import scikits.bootstrap as bootstrap
 from sklearn.decomposition import PCA
 from collections import Counter
-import warnings
 
-def pcaLoadings(data, peak_label, imageFileName='PCA_loadings.png', saveImage=True, dpi=200, pc_num=1, bootnum=10000, alpha=0.05, fontSize=30, markerSize=100, figSize=(40,40), transparent=False):
+def pcaLoadings(data, peak_label, imageFileName='PCA_loadings.png', saveImage=True, dpi=200, pc_num=1, bootnum=500, alpha=0.05, fontSize=30, markerSize=100, figSize=(40,40), transparent=False):
     """Creates a PCA Loadings lollipop plot.
 
         Parameters
@@ -18,7 +17,7 @@ def pcaLoadings(data, peak_label, imageFileName='PCA_loadings.png', saveImage=Tr
         saveImage: Setting to 'True' will save the image to file (default: True)
         dpi: The number of Dots Per Inch (DPI) for the image (default: 200)
         pc_num: The principal component to plot (default: 1)
-        boot_num: The number of bootstrap samples to use to calculate confidence internals (default: 10000)
+        boot_num: The number of bootstrap samples to use to calculate confidence internals (default: 500)
         alpha: The alpha value for the bootstrapped confidence intervals (default: 0.05)
         fontSize: The font size for all text (default: 30)
         markerSize: The size of each marker (default: 100)
@@ -37,13 +36,7 @@ def pcaLoadings(data, peak_label, imageFileName='PCA_loadings.png', saveImage=Tr
 
     bootpca = lambda x: __boot_pca(x, pca.components_.T, pc_num)
 
-    # Filter out instability warnings only for bootstrapped PCA CI (other statfunctions e.g. np.median across groups don't give warnings)
-    warnings.simplefilter("ignore")
-
     PCA_CIs = bootstrap.ci(data=data, statfunction=bootpca, n_samples=bootnum, alpha=alpha)
-
-    # Reinstate warnings for other functions
-    warnings.simplefilter("default")
 
     fig, ax = plt.subplots(figsize=figSize)
 

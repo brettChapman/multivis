@@ -4,12 +4,10 @@ from string import Template
 import numpy as np
 import pandas as pd
 import copy
-#import socket
 import webbrowser as wb
 import matplotlib
 import matplotlib.pyplot as plt
 from .utils import *
-import json
 
 class edgeBundle:
     usage = """Produces an interactive hierarchical edge bundle in D3.js, from nodes and edges.
@@ -258,7 +256,10 @@ class edgeBundle:
 
         nodes = self.__nodes
         col_list = list(nodes.columns) + ['none']
-        cmap_list = matplotlib.cm.cmap_d.keys()
+
+        cmap_list = list(matplotlib.cm.cmaps_listed) + list(matplotlib.cm.datad)
+        cmap_list_r = [cmap + '_r' for cmap in cmap_list]
+        cmap_list = cmap_list + cmap_list_r
 
         if not isinstance(html_file, str):
             print("Error: Html file is not valid. Choose a string value.")
@@ -1405,8 +1406,8 @@ class edgeBundle:
                                             currValues['max_abs_score'] = absScoreMaxValue;
                                             
                                             //Filter all links out and update links
-                                            var FlareData = filterData(99999999999, 99999999999, 'score_abs');
-                                                        
+                                            var FlareData = filterData(Number(d3.max(abs_scores))*10, Number(d3.max(abs_scores))*10, 'score_abs');                                             
+                                            
                                             var linkLine = updateBundle(FlareData);
           
                                             var line = linkLine.line;
@@ -1453,7 +1454,7 @@ class edgeBundle:
                                             currValues['max_p_score'] = pScoreMaxValue;
                                             
                                             //Filter all links out and update links
-                                            var FlareData = filterData(99999999999, 99999999999, 'score_pos');
+                                            var FlareData = filterData(Number(d3.max(p_scores))*10, Number(d3.max(p_scores))*10, 'score_pos');
                                                                 
                                             var linkLine = updateBundle(FlareData);
           
@@ -1502,7 +1503,7 @@ class edgeBundle:
                                             currValues['max_n_score'] = nScoreMaxValue;
                                             
                                             //Filter all links out and update links
-                                            var FlareData = filterData(-99999999999, -99999999999, 'score_neg');
+                                            var FlareData = filterData(Number(d3.min(n_scores))*10, Number(d3.min(n_scores))*10, 'score_neg');
                                                                 
                                             var linkLine = updateBundle(FlareData);
           
@@ -1695,7 +1696,7 @@ class edgeBundle:
                     
                     if (form_val_score == "PosScoreRadio") {
                         //Filter out all links prior to updating with the score threshold
-                        var FlareData = filterData(99999999999, 99999999999, 'score_pos');    
+                        var FlareData = filterData(Number(d3.max(p_scores))*10, Number(d3.max(p_scores))*10, 'score_pos');    
                         var linkLine = updateBundle(FlareData);
                         
                         //Filter with the new score threshold
@@ -1703,7 +1704,7 @@ class edgeBundle:
                         var linkLine = updateBundle(FlareData);
                     } else if (form_val_score == "NegScoreRadio") {   
                         //Filter out all links prior to updating with the score threshold
-                        var FlareData = filterData(-99999999999, -99999999999, 'score_neg');    
+                        var FlareData = filterData(Number(d3.min(n_scores))*10, Number(d3.min(n_scores))*10, 'score_neg');    
                         var linkLine = updateBundle(FlareData);
                                         
                         //Filter with the new score threshold
@@ -1711,7 +1712,7 @@ class edgeBundle:
                         var linkLine = updateBundle(FlareData);       
                     } else if (form_val_score == "AbsScoreRadio") {
                         //Filter out all links prior to updating with the score threshold
-                        var FlareData = filterData(99999999999, 99999999999, 'score_abs');    
+                        var FlareData = filterData(Number(d3.max(abs_scores))*10, Number(d3.max(abs_scores))*10, 'score_abs');    
                         var linkLine = updateBundle(FlareData);
                                         
                         //Filter with the new score threshold
@@ -1724,7 +1725,7 @@ class edgeBundle:
                             d3.select('#scoreSelect').style("display", 'none');
                             
                             //Filter out all links prior to updating with the pvalue threshold
-                            var FlareData = filterData(-99999999999, -99999999999, 'pvalue');    
+                            var FlareData = filterData(Number(d3.min(pvalues))/10, Number(d3.min(pvalues))/10, 'pvalue');    
                             var linkLine = updateBundle(FlareData);
                             
                             //Filter with the new pvalue threshold                    
@@ -1758,21 +1759,21 @@ class edgeBundle:
                 
                 if (form_val == "PosScoreRadio") {
                     //Filter out all links prior to updating with the score threshold
-                    var FlareData = filterData(99999999999, 99999999999, 'score_pos');
+                    var FlareData = filterData(Number(d3.max(p_scores))*10, Number(d3.max(p_scores))*10, 'score_pos');
                     var linkLine = updateBundle(FlareData);
                     
                     var FlareData = filterData(currValues.min_p_score, currValues.max_p_score, 'score_pos');        
                     var linkLine = updateBundle(FlareData);
                 } else if (form_val == "NegScoreRadio") {                    
                     //Filter out all links prior to updating with the score threshold
-                    var FlareData = filterData(-99999999999, -99999999999, 'score_neg');
+                    var FlareData = filterData(Number(d3.min(n_scores))*10, Number(d3.min(n_scores))*10, 'score_neg');
                     var linkLine = updateBundle(FlareData);              
                     
                     var FlareData = filterData(currValues.min_n_score, currValues.max_n_score, 'score_neg');  
                     var linkLine = updateBundle(FlareData);        
                 } else if (form_val == "AbsScoreRadio") {
                     //Filter out all links prior to updating with the score threshold
-                    var FlareData = filterData(99999999999, 99999999999, 'score_abs');
+                    var FlareData = filterData(Number(d3.max(abs_scores))*10, Number(d3.max(abs_scores))*10, 'score_abs');
                     var linkLine = updateBundle(FlareData);
                     
                     var FlareData = filterData(currValues.min_abs_score, currValues.max_abs_score, 'score_abs');
@@ -2401,7 +2402,7 @@ class edgeBundle:
                                             currValues['max_abs_score'] = absScoreMaxValue;
                                             
                                             //Filter all links out and update links
-                                            var FlareData = filterData(99999999999, 99999999999, 'score_abs');
+                                            var FlareData = filterData(Number(d3.max(abs_scores))*10, Number(d3.max(abs_scores))*10, 'score_abs');
                                                         
                                             var linkLine = updateBundle(FlareData);
           
@@ -2449,7 +2450,7 @@ class edgeBundle:
                                             currValues['max_p_score'] = pScoreMaxValue;
                                             
                                             //Filter all links out and update links
-                                            var FlareData = filterData(99999999999, 99999999999, 'score_pos');
+                                            var FlareData = filterData(Number(d3.max(p_scores))*10, Number(d3.max(p_scores))*10, 'score_pos');
                                                                 
                                             var linkLine = updateBundle(FlareData);
           
@@ -2498,7 +2499,7 @@ class edgeBundle:
                                             currValues['max_n_score'] = nScoreMaxValue;
                                             
                                             //Filter all links out and update links
-                                            var FlareData = filterData(-99999999999, -99999999999, 'score_neg');
+                                            var FlareData = filterData(Number(d3.min(n_scores))*10, Number(d3.min(n_scores))*10, 'score_neg');
                                                                 
                                             var linkLine = updateBundle(FlareData);
           
@@ -2691,14 +2692,14 @@ class edgeBundle:
           
                     if (form_val_score == "PosScoreRadio") {                        
                         //Filter out all links prior to updating with the score threshold
-                        var FlareData = filterData(99999999999, 99999999999, 'score_pos');
+                        var FlareData = filterData(Number(d3.max(p_scores))*10, Number(d3.max(p_scores))*10, 'score_pos');
                         var linkLine = updateBundle(FlareData);
                 
                         var FlareData = filterData(currValues.min_p_score, currValues.max_p_score, 'score_pos');        
                         var linkLine = updateBundle(FlareData);
                     } else if (form_val_score == "NegScoreRadio") {
                         //Filter out all links prior to updating with the score threshold
-                        var FlareData = filterData(-99999999999, -99999999999, 'score_neg');   
+                        var FlareData = filterData(Number(d3.min(n_scores))*10, Number(d3.min(n_scores))*10, 'score_neg');   
                         var linkLine = updateBundle(FlareData);
                         
                         //Filter with the new score threshold
@@ -2706,7 +2707,7 @@ class edgeBundle:
                         var linkLine = updateBundle(FlareData);       
                     } else if (form_val_score == "AbsScoreRadio") {                        
                         //Filter out all links prior to updating with the score threshold
-                        var FlareData = filterData(99999999999, 99999999999, 'score_abs');
+                        var FlareData = filterData(Number(d3.max(abs_scores))*10, Number(d3.max(abs_scores))*10, 'score_abs');
                         var linkLine = updateBundle(FlareData);
                         
                         var FlareData = filterData(currValues.min_abs_score, currValues.max_abs_score, 'score_abs');
@@ -2718,7 +2719,7 @@ class edgeBundle:
                             d3.select('#scoreSelect').style("display", 'none');
                             
                             //Filter out all links prior to updating with the pvalue threshold
-                            var FlareData = filterData(-99999999999, -99999999999, 'pvalue');
+                            var FlareData = filterData(Number(d3.min(pvalues))/10, Number(d3.min(pvalues))/10, 'pvalue');
                             var linkLine = updateBundle(FlareData);
                             
                             var FlareData = filterData(currValues.min_pvalue, currValues.max_pvalue, 'pvalue');
@@ -2751,21 +2752,21 @@ class edgeBundle:
                 
                 if (form_val == "PosScoreRadio") {
                     //Filter out all links prior to updating with the score threshold
-                    var FlareData = filterData(99999999999, 99999999999, 'score_pos');
+                    var FlareData = filterData(Number(d3.max(p_scores))*10, Number(d3.max(p_scores))*10, 'score_pos');
                     var linkLine = updateBundle(FlareData);
                     
                     var FlareData = filterData(currValues.min_p_score, currValues.max_p_score, 'score_pos');    
                     var linkLine = updateBundle(FlareData);
                 } else if (form_val == "NegScoreRadio") {
                     //Filter out all links prior to updating with the score threshold
-                    var FlareData = filterData(-99999999999, -99999999999, 'score_neg'); 
+                    var FlareData = filterData(Number(d3.min(n_scores))*10, Number(d3.min(n_scores))*10, 'score_neg'); 
                     var linkLine = updateBundle(FlareData);
                     
                     var FlareData = filterData(currValues.min_n_score, currValues.max_n_score, 'score_neg');
                     var linkLine = updateBundle(FlareData);        
                 } else if (form_val == "AbsScoreRadio") {
                     //Filter out all links prior to updating with the score threshold
-                    var FlareData = filterData(99999999999, 99999999999, 'score_abs');
+                    var FlareData = filterData(Number(d3.max(abs_scores))*10, Number(d3.max(abs_scores))*10, 'score_abs');
                     var linkLine = updateBundle(FlareData);
                     
                     var FlareData = filterData(currValues.min_abs_score, currValues.max_abs_score, 'score_abs');

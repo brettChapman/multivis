@@ -1,7 +1,9 @@
 import sys
+from os import path
 import pandas as pd
 import numpy as np
-from os import path
+import warnings
+warnings.simplefilter("ignore") #remove consistant warnings about openpyxl and unknown extensions
 
 def loadData(filename, DataSheet, PeakSheet):
     """Loads and validates the DataFile and PeakFile from an excel file.
@@ -27,11 +29,11 @@ def loadData(filename, DataSheet, PeakSheet):
         sys.exit()
 
     # LOAD PEAK DATA
-    print("Loading sheet: {}".format(PeakSheet))
+    print("Loading table: {}".format(PeakSheet))
     PeakTable = pd.read_excel(filename, sheet_name=PeakSheet)
 
     # LOAD DATA TABLE
-    print("Loading sheet: {}".format(DataSheet))
+    print("Loading table: {}".format(DataSheet))
     DataTable = pd.read_excel(filename, sheet_name=DataSheet)
 
     # Replace with nans
@@ -113,4 +115,3 @@ def __checkData(DataTable, PeakTable):
         sys.exit()
 
     return DataTable, PeakTable
-

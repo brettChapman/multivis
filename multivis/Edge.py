@@ -1,11 +1,6 @@
 import sys
 import pandas as pd
 import numpy as np
-import matplotlib
-import matplotlib.pyplot as plt
-import networkx as nx
-from .utils import *
-
 
 class Edge:
     usage = """Builds nodes and edges and is the base class for the Network class.

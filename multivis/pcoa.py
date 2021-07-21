@@ -53,12 +53,16 @@ def pcoa(similarities, imageFileName='PCOA.png', saveImage=True, dpi=200, n_comp
     else:
         ax.grid(False)
 
-    if list(peak_label) != None:
+    if peak_label is not None:
         for i, txt in enumerate(list(peak_label)):
             ax.annotate(txt, (x_score[i]+.001, y_score[i]), fontsize=fontSize)
 
-    pcoa_plot = sns.scatterplot(x=x_score, y=y_score, hue=group_label, s=markerSize, style=group_label, palette=cmap, alpha=0.7)
-    pcoa_plot.legend(fontsize=fontSize)
+    if group_label is not None:
+        pcoa_plot = sns.scatterplot(x=x_score, y=y_score, hue=list(group_label), s=markerSize, style=list(group_label), palette=cmap, alpha=0.7)
+        pcoa_plot.legend(fontsize=fontSize)
+    else:
+        sns.scatterplot(x=x_score, y=y_score, s=markerSize, palette=cmap, alpha=0.7)
+
 
     ax.set_title('PCoA Plot')
 

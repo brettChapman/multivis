@@ -6,7 +6,6 @@ import matplotlib
 import matplotlib.pyplot as plt
 import copy
 from .utils import *
-import warnings
 
 class plotNetwork:
     usage = """Produces a static spring-embedded network from a NetworkX graph.
@@ -22,6 +21,7 @@ class plotNetwork:
             edgeLabels: Setting to 'True' labels all edges with the similarity score (default: True)
             saveImage: Setting to 'True' will save the image to file (default: True)
             layout: Set the NetworkX layout type ('circular', 'kamada_kawai', 'random', 'spring', 'spectral') (default: 'spring')
+            transparent: Setting to 'True' will make the background transparent (default: False)
             dpi: The number of Dots Per Inch (DPI) for the image (default: 200)
             figSize: The figure size as a tuple (width,height) (default: (30,20))
             node_cmap: The CMAP colour palette to use for nodes (default: 'brg')
@@ -53,14 +53,15 @@ class plotNetwork:
     def help(self):
         print(plotNetwork.usage)
 
-    def set_params(self, imageFileName='networkPlot.jpg', edgeLabels=True, saveImage=True, layout='spring', dpi=200, figSize=(30,20), node_cmap='brg', colorScale='linear', node_color_column='none', sizeScale='reverse_linear', size_range=(150,2000), sizing_column='none', alpha=0.5, nodeLabels=True, fontSize=15, keepSingletons=True, column='none', threshold=0.01, operator='>', sign='pos'):
+    def set_params(self, imageFileName='networkPlot.jpg', edgeLabels=True, saveImage=True, layout='spring', transparent=False, dpi=200, figSize=(30,20), node_cmap='brg', colorScale='linear', node_color_column='none', sizeScale='reverse_linear', size_range=(150,2000), sizing_column='none', alpha=0.5, nodeLabels=True, fontSize=15, keepSingletons=True, filter_column='none', threshold=0.01, operator='>', sign='pos'):
 
-        imageFileName, edgeLabels, saveImage, layout, dpi, figSize, node_cmap, colorScale, node_color_column, sizeScale, size_range, sizing_column, alpha, nodeLabels, fontSize, keepSingletons, column, threshold, operator, sign = self.__paramCheck(imageFileName, edgeLabels, saveImage, layout, dpi, figSize, node_cmap, colorScale, node_color_column, sizeScale, size_range, sizing_column, alpha, nodeLabels, fontSize, keepSingletons, column, threshold, operator, sign)
+        imageFileName, edgeLabels, saveImage, layout, transparent, dpi, figSize, node_cmap, colorScale, node_color_column, sizeScale, size_range, sizing_column, alpha, nodeLabels, fontSize, keepSingletons, filter_column, threshold, operator, sign = self.__paramCheck(imageFileName, edgeLabels, saveImage, layout, transparent, dpi, figSize, node_cmap, colorScale, node_color_column, sizeScale, size_range, sizing_column, alpha, nodeLabels, fontSize, keepSingletons, filter_column, threshold, operator, sign)
 
         self.__imageFileName = imageFileName;
         self.__edgeLabels = edgeLabels;
         self.__saveImage = saveImage;
         self.__layout = layout;
+        self.__transparent = transparent;
         self.__dpi = dpi
         self.__figSize = figSize;
         self.__node_cmap = node_cmap;
@@ -73,14 +74,12 @@ class plotNetwork:
         self.__nodeLabels = nodeLabels
         self.__fontSize = fontSize;
         self.__keepSingletons = keepSingletons;
-        self.__filter_column = column;
+        self.__filter_column = filter_column;
         self.__filter_threshold = threshold;
         self.__operator = operator;
         self.__sign = sign;
 
     def build(self):
-
-        warnings.filterwarnings("ignore")
 
         g = self.__g
 
@@ -216,7 +215,7 @@ class plotNetwork:
             nx.draw_networkx_edge_labels(g, pos=pos, edge_labels=edge_labels)
 
         if self.__saveImage:
-            plt.savefig(self.__imageFileName, dpi=self.__dpi)
+            plt.savefig(self.__imageFileName, dpi=self.__dpi, transparent=self.__transparent)
 
         plt.show()
 
@@ -228,10 +227,14 @@ class plotNetwork:
 
         return g
 
-    def __paramCheck(self, imageFileName, edgeLabels, saveImage, layout, dpi, figSize, node_cmap, colorScale, node_color_column, sizeScale, size_range, sizing_column, alpha, nodeLabels, fontSize, keepSingletons, filter_column, filter_threshold, operator, sign):
+    def __paramCheck(self, imageFileName, edgeLabels, saveImage, layout, transparent, dpi, figSize, node_cmap, colorScale, node_color_column, sizeScale, size_range, sizing_column, alpha, nodeLabels, fontSize, keepSingletons, filter_column, filter_threshold, operator, sign):
 
         g = self.__g
         col_list = list(g.nodes[list(g.nodes.keys())[0]].keys()) + ['none']
+
+        cmap_list = list(matplotlib.cm.cmaps_listed) + list(matplotlib.cm.datad)
+        cmap_list_r = [cmap + '_r' for cmap in cmap_list]
+        cmap_list = cmap_list + cmap_list_r
 
         if not isinstance(imageFileName, str):
             print("Error: Image file name is not valid. Choose a string value.")
@@ -247,6 +250,10 @@ class plotNetwork:
 
         if layout not in ["circular", "kamada_kawai", "random", "spring", "spectral"]:
             print("Error: Layout program not valid. Choose either \"circular\", \"kamada_kawai\", \"random\", \"spring\", \"spectral\".")
+            sys.exit()
+
+        if not type(transparent) == bool:
+            print("Error: The transparent value is not valid. Choose either \"True\" or \"False\".")
             sys.exit()
 
         if not isinstance(dpi, float):
@@ -268,8 +275,6 @@ class plotNetwork:
             print("Error: Node CMAP is not valid. Choose a string value.")
             sys.exit()
         else:
-            cmap_list = matplotlib.cm.cmap_d.keys()
-
             if node_cmap not in cmap_list:
                 print("Error: Node CMAP is not valid. Choose one of the following: {}.".format(', '.join(cmap_list)))
                 sys.exit()
@@ -371,7 +376,7 @@ class plotNetwork:
             print("Error: Sign not valid. Choose either \"pos\", \"neg\", or \"both\".")
             sys.exit()
 
-        return imageFileName, edgeLabels, saveImage, layout, dpi, figSize, node_cmap, colorScale, node_color_column, sizeScale, size_range, sizing_column, alpha, nodeLabels, fontSize, keepSingletons, filter_column, filter_threshold, operator, sign
+        return imageFileName, edgeLabels, saveImage, layout, transparent, dpi, figSize, node_cmap, colorScale, node_color_column, sizeScale, size_range, sizing_column, alpha, nodeLabels, fontSize, keepSingletons, filter_column, filter_threshold, operator, sign
 
     def __get_colors(self, x, cmap):
 

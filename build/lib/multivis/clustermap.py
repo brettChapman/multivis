@@ -1,11 +1,12 @@
 import sys
 import seaborn as sns
-import scipy.spatial as sp, scipy.cluster.hierarchy as hc
+import scipy.cluster.hierarchy as hc
 from scipy.cluster.hierarchy import dendrogram
 from collections import defaultdict
 import matplotlib
 import matplotlib.pyplot as plt
-from matplotlib import gridspec
+from collections import Counter
+from matplotlib.ticker import FixedLocator, FixedFormatter
 import numpy as np
 import pandas as pd
 import copy
@@ -50,7 +51,7 @@ class clustermap:
 
         scores, row_linkage, col_linkage = self.__checkData(scores, row_linkage, col_linkage)
 
-        self.__scores = copy.deepcopy(scores);
+        self.__original_scores = copy.deepcopy(scores);
         self.__row_linkage = row_linkage;
         self.__col_linkage = col_linkage;
 
@@ -63,14 +64,34 @@ class clustermap:
 
         imageFileName, saveImage, dpi, figSize, dendrogram_ratio_shift, dendrogram_line_width, background_colour, transparent, fontSize, heatmap_annotation, xLabels, yLabels, heatmap_cmap, cluster_cmap, rowColorCluster, colColorCluster, row_color_threshold, col_color_threshold = self.__paramCheck(imageFileName, saveImage, dpi, figSize, dendrogram_ratio_shift, dendrogram_line_width, background_colour, transparent, fontSize, heatmap_annotation, xLabels, yLabels, heatmap_cmap, cluster_cmap, rowColorCluster, colColorCluster, row_color_threshold, col_color_threshold)
 
-        scores = self.__scores
+        scores = self.__original_scores
+        xLabels = list(xLabels)
+        yLabels = list(yLabels)
+        xLabels_c = copy.deepcopy(xLabels)
+        yLabels_c = copy.deepcopy(yLabels)
 
-        col_label_dict = dict(zip(list(scores.columns), xLabels))
-        row_label_dict = dict(zip(list(scores.index), yLabels))
+        # Search for duplicate labels and amend with a suffix (for colouring dendrogram)
+        xLabel_counts = {k: v for k, v in Counter(list(xLabels_c)).items() if v > 1}
+        yLabel_counts = {k: v for k, v in Counter(list(yLabels_c)).items() if v > 1}
+
+        for i in reversed(range(len(list(xLabels_c)))):
+            item = str(list(xLabels_c)[i])
+            if item in xLabel_counts and xLabel_counts[item]:
+                xLabels_c[i] += "_" + str(xLabel_counts[item])
+                xLabel_counts[item] -= 1
+
+        for i in reversed(range(len(list(yLabels_c)))):
+            item = str(list(yLabels_c)[i])
+            if item in yLabel_counts and yLabel_counts[item]:
+                yLabels_c[i] += "_" + str(yLabel_counts[item])
+                yLabel_counts[item] -= 1
+
+        col_label_dict = dict(zip(list(scores.columns), xLabels_c))
+        row_label_dict = dict(zip(list(scores.index), yLabels_c))
 
         scores.rename(columns=col_label_dict, index=row_label_dict, inplace=True)
 
-        self.__scores = scores;
+        self.__scores = copy.deepcopy(scores);
         self.__imageFileName = imageFileName;
         self.__saveImage = saveImage;
         self.__dpi = dpi;
@@ -128,7 +149,11 @@ class clustermap:
 
                 hc.set_link_color_palette(clusterColors)
 
-                dn = dendrogram(col_linkage, labels=scores.columns, no_plot=True, color_threshold=col_color_threshold)
+                try:
+                    dn = dendrogram(col_linkage, labels=scores.columns, no_plot=True, color_threshold=col_color_threshold)
+                except IndexError:
+                    print("Error: Column colour threshold too high. Try a lower value.")
+                    sys.exit()
 
                 col_colors = self.__get_cluster_classes(dn, scores.columns)
                 col_palette = dict(zip(scores.columns.unique(), col_colors))
@@ -137,7 +162,11 @@ class clustermap:
                     clusterColors = [x for x in clusterColors if x not in col_colors]
                     hc.set_link_color_palette(clusterColors)
 
-                dn = dendrogram(row_linkage, labels=scores.index, no_plot=True, color_threshold=row_color_threshold)
+                try:
+                    dn = dendrogram(row_linkage, labels=scores.index, no_plot=True, color_threshold=row_color_threshold)
+                except IndexError:
+                    print("Error: Row colour threshold too high. Try a lower value.")
+                    sys.exit()
 
                 row_colors = self.__get_cluster_classes(dn, scores.index)
                 row_palette = dict(zip(scores.index.unique(), row_colors))
@@ -222,7 +251,11 @@ class clustermap:
 
                 hc.set_link_color_palette(clusterColors)
 
-                dn = dendrogram(row_linkage, labels=scores.index, no_plot=True, color_threshold=row_color_threshold)
+                try:
+                    dn = dendrogram(row_linkage, labels=scores.index, no_plot=True, color_threshold=row_color_threshold)
+                except IndexError:
+                    print("Error: Row colour threshold too high. Try a lower value.")
+                    sys.exit()
 
                 row_colors = self.__get_cluster_classes(dn, scores.index)
                 row_palette = dict(zip(scores.index.unique(), row_colors))
@@ -289,7 +322,11 @@ class clustermap:
 
                 hc.set_link_color_palette(clusterColors)
 
-                dn = dendrogram(col_linkage, labels=scores.columns, no_plot=True, color_threshold=col_color_threshold)
+                try:
+                    dn = dendrogram(col_linkage, labels=scores.columns, no_plot=True, color_threshold=col_color_threshold)
+                except IndexError:
+                    print("Error: Column colour threshold too high. Try a lower value.")
+                    sys.exit()
 
                 col_colors = self.__get_cluster_classes(dn, scores.columns)
                 col_palette = dict(zip(scores.columns.unique(), col_colors))
@@ -424,6 +461,10 @@ class clustermap:
 
     def __paramCheck(self, imageFileName, saveImage, dpi, figSize, dendrogram_ratio_shift, dendrogram_line_width, background_colour, transparent, fontSize, heatmap_annotation, xLabels, yLabels, heatmap_cmap, cluster_cmap, rowColorCluster, colColorCluster, row_color_threshold, col_color_threshold):
 
+        cmap_list = list(matplotlib.cm.cmaps_listed) + list(matplotlib.cm.datad)
+        cmap_list_r = [cmap + '_r' for cmap in cmap_list]
+        cmap_list = cmap_list + cmap_list_r
+
         if not isinstance(imageFileName, str):
             print("Error: Image file name is not valid. Choose a string value.")
             sys.exit()
@@ -473,7 +514,7 @@ class clustermap:
             print("Error: The heatmap annotation value is not valid. Choose either \"True\" or \"False\".")
             sys.exit()
 
-        scores = self.__scores
+        scores = self.__original_scores
 
         scores_row, scores_col = scores.shape
 
@@ -496,8 +537,6 @@ class clustermap:
             print("Error: Heatmap CMAP choice is not valid. Choose a string value.")
             sys.exit()
         else:
-            cmap_list = matplotlib.cm.cmap_d.keys()
-
             if heatmap_cmap not in cmap_list:
                 print("Error: Heatmap CMAP is not valid. Choose one of the following: {}.".format(', '.join(cmap_list)))
                 sys.exit()
@@ -506,8 +545,6 @@ class clustermap:
             print("Error: Cluster CMAP choice is not valid. Choose a string value.")
             sys.exit()
         else:
-            cmap_list = matplotlib.cm.cmap_d.keys()
-
             if cluster_cmap not in cmap_list:
                 print("Error: Cluster CMAP is not valid. Choose one of the following: {}.".format(', '.join(cmap_list)))
                 sys.exit()

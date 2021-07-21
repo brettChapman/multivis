@@ -1,9 +1,6 @@
 import sys
-import pandas as pd
-import numpy as np
 import networkx as nx
 from .Edge import Edge
-from .utils import *
 
 class Network(Edge):
     usage = """Builds nodes and edges, with added NetworkX functionality. Inherits from Edge.
