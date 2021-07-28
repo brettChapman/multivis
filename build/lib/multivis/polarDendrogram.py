@@ -248,7 +248,7 @@ class polarDendrogram:
 
             plt.show()
 
-    def getClusterPlots(self, plot_type='mean', column_numbers=4, log_data=(True, 2), scale_data=True, impute_data=(True, 3), figSize=(15, 10), x_axis_rotation=0, ci=95, saveImage=True, imageFileName='clusterPlots.png', dpi=200):
+    def getClusterPlots(self, plot_type='mean', column_numbers=4, log_data=(True, 2), scale_data=True, impute_data=(True, 3), figSize=(15, 10), y_axis_label=None, x_axis_rotation=0, ci=95, saveImage=True, imageFileName='clusterPlots.png', dpi=200):
 
         dendrogram = self.__dn
         peaktable = self.__peaktable
@@ -272,6 +272,11 @@ class polarDendrogram:
                 if not isinstance(ci, int):
                     print("Error: The value for 'ci' is not valid. Choose a float, integer or 'sd' value for standard deviation.")
                     sys.exit()
+
+        if y_axis_label is not None:
+            if not isinstance(y_axis_label, str):
+                print("Error: The y axis label is not valid. Use a string value or set to None.")
+                sys.exit()
 
         peaklist = peaktable['Name']
         X = datatable[peaklist]
@@ -304,13 +309,11 @@ class polarDendrogram:
             print("Error: Peak Table and/or Data Table is empty. Can not produce cluster plots. Please provide a populated Data and Peak Table.")
             sys.exit()
         else:
-            col_colors = self.__get_cluster_classes(dendrogram, peaktable.index)
-
-            col_palette = dict(zip(peaktable.index.unique(), col_colors))
+            cluster_palette = self.__get_cluster_palette(dendrogram, peaktable.index)
 
             ordered_list = dendrogram['ivl']
 
-            clusters = self.__getClusters(ordered_list, col_palette)
+            clusters = self.__getClusters(ordered_list, cluster_palette)
 
             with plt.style.context(style):
 
@@ -324,8 +327,7 @@ class polarDendrogram:
 
                     df_merged = pd.DataFrame()
 
-                    cluster_names = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
-                                     'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
+                    cluster_names = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'AA', 'BB', 'CC', 'DD', 'EE', 'FF', 'GG', 'HH', 'II', 'JJ', 'KK', 'LL', 'MM', 'NN', 'OO', 'PP','QQ', 'RR', 'SS', 'TT', 'UU', 'VV', 'WW', 'XX', 'YY', 'ZZ']
 
                     peak_count = 0;
                     for index, peak in enumerate(x.columns):
@@ -352,29 +354,52 @@ class polarDendrogram:
                         if scale_data:
                             if isinstance(ci, str):
                                 if ci == 'sd':
-                                    ax.set(xlabel='', ylabel='Log({}) scaled (unit variance) Peak Area within SD'.format(log_base), title='Cluster {} (N={}) within SD'.format(cluster_names[cluster_index], peak_count))
+                                    if y_axis_label is None:
+                                        ax.set(xlabel='', ylabel='Log({}) UV scaled Peak Area within SD'.format(log_base), title='Cluster {} (N={}) within SD'.format(cluster_names[cluster_index], peak_count))
+                                    else:
+                                        ax.set(xlabel='', ylabel=y_axis_label, title='Cluster {} (N={}) within SD'.format(cluster_names[cluster_index], peak_count))
                             else:
-                                ax.set(xlabel='', ylabel='Log({}) scaled (unit variance) Peak Area & {}% CI'.format(log_base, ci), title='Cluster {} (N={}) with {}% CI'.format(cluster_names[cluster_index], peak_count, ci))
+                                if y_axis_label is None:
+                                    ax.set(xlabel='', ylabel='Log({}) UV scaled Peak Area & {}% CI'.format(log_base, ci), title='Cluster {} (N={}) with {}% CI'.format(cluster_names[cluster_index], peak_count, ci))
+                                else:
+                                    ax.set(xlabel='', ylabel=y_axis_label, title='Cluster {} (N={}) with {}% CI'.format(cluster_names[cluster_index], peak_count, ci))
                         else:
                             if isinstance(ci, str):
                                 if ci == 'sd':
-                                    ax.set(xlabel='', ylabel='Log({}) Peak Area within SD'.format(log_base), title='Cluster {} (N={}) within SD'.format(cluster_names[cluster_index], peak_count))
+                                    if y_axis_label is None:
+                                        ax.set(xlabel='', ylabel='Log({}) Peak Area within SD'.format(log_base), title='Cluster {} (N={}) within SD'.format(cluster_names[cluster_index], peak_count))
+                                    else:
+                                        ax.set(xlabel='', ylabel=y_axis_label, title='Cluster {} (N={}) within SD'.format(cluster_names[cluster_index], peak_count))
                             else:
-                                ax.set(xlabel='', ylabel='Log({}) Peak Area & {}% CI'.format(log_base, ci), title='Cluster {} (N={}) with {}% CI'.format(cluster_names[cluster_index], peak_count, ci))
+                                if y_axis_label is None:
+                                    ax.set(xlabel='', ylabel='Log({}) Peak Area & {}% CI'.format(log_base, ci), title='Cluster {} (N={}) with {}% CI'.format(cluster_names[cluster_index], peak_count, ci))
+                                else:
+                                    ax.set(xlabel='', ylabel=y_axis_label, title='Cluster {} (N={}) with {}% CI'.format(cluster_names[cluster_index], peak_count, ci))
                     else:
                         if scale_data:
                             if isinstance(ci, str):
                                 if ci == 'sd':
-                                    ax.set(xlabel='', ylabel='Scaled (unit variance) Peak Area within SD', title='Cluster {} (N={}) within SD'.format(cluster_names[cluster_index], peak_count))
+                                    if y_axis_label is None:
+                                        ax.set(xlabel='', ylabel='UV scaled Peak Area within SD', title='Cluster {} (N={}) within SD'.format(cluster_names[cluster_index], peak_count))
+                                    else:
+                                        ax.set(xlabel='', ylabel=y_axis_label, title='Cluster {} (N={}) within SD'.format(cluster_names[cluster_index], peak_count))
                             else:
-                                ax.set(xlabel='', ylabel='Scaled (unit variance) Peak Area & {}% CI'.format(ci), title='Cluster {} (N={}) with {}% CI'.format(cluster_names[cluster_index], peak_count, ci))
+                                if y_axis_label is None:
+                                    ax.set(xlabel='', ylabel='UV scaled Peak Area & {}% CI'.format(ci), title='Cluster {} (N={}) with {}% CI'.format(cluster_names[cluster_index], peak_count, ci))
+                                else:
+                                    ax.set(xlabel='', ylabel=y_axis_label, title='Cluster {} (N={}) with {}% CI'.format(cluster_names[cluster_index], peak_count, ci))
                         else:
                             if isinstance(ci, str):
                                 if ci == 'sd':
-                                    ax.set(xlabel='', ylabel='Peak Area within SD', title='Cluster {} (N={}) within SD'.format(cluster_names[cluster_index], peak_count))
+                                    if y_axis_label is None:
+                                        ax.set(xlabel='', ylabel='Peak Area within SD', title='Cluster {} (N={}) within SD'.format(cluster_names[cluster_index], peak_count))
+                                    else:
+                                        ax.set(xlabel='', ylabel=y_axis_label, title='Cluster {} (N={}) within SD'.format(cluster_names[cluster_index], peak_count))
                             else:
-                                ax.set(xlabel='', ylabel='Peak Area & {}% CI'.format(ci), title='Cluster {} (N={}) with {}% CI'.format(cluster_names[cluster_index], peak_count, ci))
-
+                                if y_axis_label is None:
+                                    ax.set(xlabel='', ylabel='Peak Area & {}% CI'.format(ci), title='Cluster {} (N={}) with {}% CI'.format(cluster_names[cluster_index], peak_count, ci))
+                                else:
+                                    ax.set(xlabel='', ylabel=y_axis_label, title='Cluster {} (N={}) with {}% CI'.format(cluster_names[cluster_index], peak_count, ci))
 
                 fig.tight_layout(h_pad=5, w_pad=2)
 
@@ -387,6 +412,27 @@ class polarDendrogram:
 
         if not isinstance(dn, dict):
             print("Error: A dendrogram dictionary was not entered. Please check your data.")
+            sys.exit()
+
+        cluster_color_list = []
+        color_list = np.array(list(dn['color_list']))
+        for x in color_list:
+            if x != 'C0':
+                cluster_color_list.append(x)
+
+        first_color = cluster_color_list[0]
+        change = False
+        for x in cluster_color_list:
+            if first_color == x:
+                if change:
+                    color_cycled = True
+                else:
+                    color_cycled = False
+            else:
+                change = True
+
+        if color_cycled:
+            print("Error: The set colour palette for the dendrogram repeats. This will introduce errors with peak area plots further in the workflow, so please ensure a broad enough colour palette to cover each cluster or adjust the colour threshold when generating the cartesian dendrogram.")
             sys.exit()
 
         return dn
@@ -513,50 +559,46 @@ class polarDendrogram:
 
         return cmap(scaled_colors)
 
-    def __get_cluster_classes(self, dn, labels, label='ivl'):
+    def __get_cluster_palette(self, dn, labels, label='ivl'):
         cluster_idxs = defaultdict(list)
         for c, pi in zip(dn['color_list'], dn['icoord']):
             for leg in pi[1:3]:
                 i = (leg - 5.0) / 10.0
-                if abs(i - int(i)) < 1e-5:
+                #Keep clusters if below a certain icoord value and remove any non-clusters (i.e. assigned C0 colour)
+                if ((abs(i - int(i)) < 1e-5) and (c != 'C0')):
                     cluster_idxs[c].append(int(i))
 
-        cluster_classes = {}
+        cluster_classes = dict({})
         for c, l in cluster_idxs.items():
             i_l = [dn[label][i] for i in l]
             cluster_classes[c] = i_l
 
-        cluster = []
-        for i in labels:
-            included = False
+        cluster_palette = dict({})
+        for i in list(labels):
             for j in cluster_classes.keys():
                 if i in cluster_classes[j]:
-                    cluster.append(j)
-                    included = True
-            if not included:
-                cluster.append(None)
+                    cluster_palette[i] = j
 
-        return cluster
+        return cluster_palette
 
     def __getClusters(self, ordered_list, col_palette):
 
-        clusters = []
-        sub_cluster = []
-        prev_color = col_palette[ordered_list[0]]
-
-        for index, i in enumerate(ordered_list):
-            color = col_palette[i]
-
-            if color == prev_color:
-                sub_cluster.append(i)
+        cluster_dict = {}
+        for idx, (key, value) in enumerate(col_palette.items()):
+            if value in cluster_dict:
+                cluster_dict[value].append(key)
             else:
-                clusters.append(sub_cluster)
-                sub_cluster = []
-                sub_cluster.append(i)
+                cluster_dict[value] = [key]
 
-            if index == len(ordered_list) - 1:
-                clusters.append(sub_cluster)
+        clusters = list(cluster_dict.values())
 
-            prev_color = color
+        ordered_clusters = []
+        cluster_order = []
+        for cluster_value in ordered_list:
+            for idx, sub_cluster in enumerate(clusters):
+                if cluster_value in sub_cluster:
+                    if idx not in cluster_order:
+                        ordered_clusters.append(sub_cluster)
+                        cluster_order.append(idx)
 
-        return clusters
+        return ordered_clusters

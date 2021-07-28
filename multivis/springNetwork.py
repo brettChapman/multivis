@@ -2645,11 +2645,11 @@ class springNetwork:
                         
                         <rzslider id="slider" class="slider" rz-slider-model="slider.minValue" rz-slider-high="slider.maxValue" rz-slider-options="slider.options"></rzslider>
                         
-                        <div id="nodeSizeDropdown" class="row">Size nodes by 
+                        <div id="nodeSizeDropdown" class="row">Size nodes by  
                             <select ng-options="o for o in node_size_options" data-ng-model="selectedNodeSizeOption" ng-change="updateNodeSize()"></select>
                         </div>
                        
-                        <div id="nodeColorDropdown" class="row">Colour nodes by 
+                        <div id="nodeColorDropdown" class="row">Colour nodes by  
                             <select ng-options="o for o in node_coloring_options" data-ng-model="selectedNodeColorOption" ng-change="updateNodeColor()"></select> using
                             <select ng-options="o for o in color_options" data-ng-model="selectedColorOption" ng-change="updateNodeColor()"></select> colour palette
                         </div>
@@ -2734,13 +2734,13 @@ class springNetwork:
                                             <rzslider id="slider" class="slider" rz-slider-model="slider.minValue" rz-slider-high="slider.maxValue" rz-slider-options="slider.options"></rzslider>
                                         </div>
                                         
-                                        <div id="nodeSizeDropdown" class="row">Size nodes by 
+                                        <div id="nodeSizeDropdown" class="row">Size nodes by &nbsp; 
                                             <select ng-options="o for o in node_size_options" data-ng-model="selectedNodeSizeOption" ng-change="updateNodeSize()"></select>
                                         </div>
                        
-                                        <div id="nodeColorDropdown" class="row">Colour nodes by 
-                                            <select ng-options="o for o in node_coloring_options" data-ng-model="selectedNodeColorOption" ng-change="updateNodeColor()"></select> using
-                                            <select ng-options="o for o in color_options" data-ng-model="selectedColorOption" ng-change="updateNodeColor()"></select> colour palette
+                                        <div id="nodeColorDropdown" class="row">Colour nodes by&nbsp;
+                                            <select ng-options="o for o in node_coloring_options" data-ng-model="selectedNodeColorOption" ng-change="updateNodeColor()"></select>&nbsp;using&nbsp;
+                                            <select ng-options="o for o in color_options" data-ng-model="selectedColorOption" ng-change="updateNodeColor()"></select>&nbsp;colour palette
                                         </div>
               
                                         <div id="save" class="row">

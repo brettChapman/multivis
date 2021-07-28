@@ -25,6 +25,9 @@ def pcaLoadings(data, peak_label, imageFileName='PCA_loadings.png', saveImage=Tr
         transparent: Setting to 'True' will make the background transparent (default: False)
     """
 
+    plt.rcParams['font.family'] = 'serif'
+    plt.rcParams['font.serif'] = ['Times New Roman'] + plt.rcParams['font.serif']
+
     font = {'family': 'Times New Roman', 'size': fontSize}
 
     matplotlib.rc('font', **font)

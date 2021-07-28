@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: multivis
-Version: 0.5.4
+Version: 0.5.5
 Summary: MultiVis is a data visualisation package that produces both static and interactive visualisations targeted towards the Omics community.
 Home-page: https://github.com/brettChapman/multivis
 Author: Brett Chapman
@@ -20,6 +20,7 @@ The MultiVis package contains the necessary tools for visualisation of multivari
 multivis requires:
 - Python (>=3.5)
 - NumPy (==1.20.2)
+- OpenPyXL (==2.6.1)
 - Pandas (==1.2.5)
 - Matplotlib (==3.4.2)
 - Seaborn (==0.11.1)

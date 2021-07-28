@@ -25,6 +25,9 @@ def cluster(matrix, transpose_non_similarity, is_similarity, distance_metric, li
 
     matrix, transpose_non_similarity, is_similarity, distance_metric, linkage_method = __checkData(matrix, transpose_non_similarity, is_similarity, distance_metric, linkage_method)
 
+    #Replace any Nan values with 0
+    matrix = matrix.fillna(0)
+
     if is_similarity:
 
         Z = (matrix.values + matrix.values.T) / 2
