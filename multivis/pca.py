@@ -4,7 +4,7 @@ from sklearn.decomposition import PCA
 import seaborn as sns
 
 def pca(data, imageFileName='PCA.png', saveImage=True, dpi=200, pcx=1, pcy=2, group_label=None, sample_label=None, peak_label=None, markerSize=100, fontSize=12, figSize=(20,10), background_colour='white', grid=True, transparent=False, cmap='Set1'):
-    """Creates a Principal Component Analysis (PCA) scores and loadings biplot.
+    """Creates a Principal Component Analysis (PCA) scores and loadings plot.
 
     Parameters
     -------------------
@@ -68,7 +68,7 @@ def pca(data, imageFileName='PCA.png', saveImage=True, dpi=200, pcx=1, pcy=2, gr
     score_plot.legend(fontsize=fontSize)
 
     # Loadings plot
-    ax2.set_title("PCA Loadings Biplot", fontsize=fontSize)
+    ax2.set_title("PCA Loadings Plot", fontsize=fontSize)
 
     ax2.set_xlabel("PC{} ({:0.1f}%)".format(pcx, x_expvariance), fontsize=fontSize)
     ax2.set_ylabel("PC{} ({:0.1f}%)".format(pcy, y_expvariance), fontsize=fontSize)

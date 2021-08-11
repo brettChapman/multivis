@@ -153,7 +153,7 @@ class plotNetwork:
                 df_size_attr = pd.Series(size_attr, dtype=np.float);
                 size_attr = np.array(list(df_size_attr.fillna(0).values))
 
-        node_size = scaleData(size_attr, self.__sizeScale, self.__size_range[0], self.__size_range[1])
+        node_size = transform(size_attr, self.__sizeScale, self.__size_range[0], self.__size_range[1])
 
         if self.__layout == "circular":
             pos = nx.circular_layout(g)
@@ -166,7 +166,6 @@ class plotNetwork:
         elif self.__layout == "spectral":
             pos = nx.spectral_layout(g)
 
-        node_color = []
         nodeCmap = plt.cm.get_cmap(self.__node_cmap)   # Sets the color palette for the nodes
 
         if self.__node_color_column == 'none':
@@ -240,11 +239,11 @@ class plotNetwork:
             print("Error: Image file name is not valid. Choose a string value.")
             sys.exit()
 
-        if not type(edgeLabels) == bool:
+        if not isinstance(edgeLabels, bool):
             print("Error: Edge labels is not valid. Choose either \"True\" or \"False\".")
             sys.exit()
 
-        if not type(saveImage) == bool:
+        if not isinstance(saveImage, bool):
             print("Error: Save image is not valid. Choose either \"True\" or \"False\".")
             sys.exit()
 
@@ -252,7 +251,7 @@ class plotNetwork:
             print("Error: Layout program not valid. Choose either \"circular\", \"kamada_kawai\", \"random\", \"spring\", \"spectral\".")
             sys.exit()
 
-        if not type(transparent) == bool:
+        if not isinstance(transparent, bool):
             print("Error: The transparent value is not valid. Choose either \"True\" or \"False\".")
             sys.exit()
 
@@ -331,7 +330,7 @@ class plotNetwork:
                 print("Error: Alpha value is not valid. Choose a float between 0 and 1.")
                 sys.exit()
 
-        if not type(nodeLabels) == bool:
+        if not isinstance(nodeLabels, bool):
             print("Error: Add labels is not valid. Choose either \"True\" or \"False\".")
             sys.exit()
 
@@ -340,7 +339,7 @@ class plotNetwork:
                 print("Error: Font size is not valid. Choose a float or integer value.")
                 sys.exit()
 
-        if not type(keepSingletons) == bool:
+        if not isinstance(keepSingletons, bool):
             print("Error: Keep singletons is not valid. Choose either \"True\" or \"False\".")
             sys.exit()
 
@@ -380,6 +379,6 @@ class plotNetwork:
 
     def __get_colors(self, x, cmap):
 
-        scaled_colors = scaleData(x, self.__colorScale, 0, 1)
+        scaled_colors = transform(x, self.__colorScale, 0, 1)
 
         return cmap(scaled_colors)

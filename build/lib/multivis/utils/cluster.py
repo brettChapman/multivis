@@ -63,11 +63,11 @@ def __checkData(matrix, transpose_non_similarity, is_similarity, distance_metric
         print("Error: A dataframe was not entered. Please check your data.")
         sys.exit()
 
-    if not type(transpose_non_similarity) == bool:
+    if not isinstance(transpose_non_similarity, bool):
         print("Error: transpose_non_correlated is not valid. Choose either \"True\" or \"False\".")
         sys.exit()
 
-    if not type(is_similarity) == bool:
+    if not isinstance(is_similarity, bool):
         print("Error: is_correlated is not valid. Choose either \"True\" or \"False\".")
         sys.exit()
 

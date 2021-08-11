@@ -21,7 +21,7 @@ class statistics:
             set_params : Set parameters -
                 parametric: Perform parametric statistical analysis, assuming the data is normally distributed (default: True)
                 log_data: Perform a log ('natural', base 2 or base 10) on all data prior to statistical analysis (default: (False, 2))
-                scale_data: Scale the data to unit variance (default: False)
+                scale_data: Scale the data ('standard' (centers to the mean and scales to unit variance), 'minmax' (scales between 0 and 1), 'maxabs' (scales to the absolute maximum value), 'robust' (centers to the median and scales to between 25th and 75th quantile range) (default: (True, 'standard'))
                 impute_data: Impute any missing values using KNN impute with a set number of nearest neighbours (default: (False, 3))
                 group_column_name: The group column name used in the datatable (default: None)
                 control_group_name: The control group name in the datatable, if available (default: None)
@@ -68,7 +68,7 @@ class statistics:
     def help(self):
         print(statistics.usage)
 
-    def set_params(self, parametric=True, log_data=(False,2), scale_data=False, impute_data=(False, 3), group_column_name=None, control_group_name=None, group_alpha_CI=0.05, fold_change_alpha_CI=0.05, pca_alpha_CI=0.05, total_missing=False, group_missing=False, pca_loadings=True, normality_test=True, group_normality_test=True, group_mean_CI=True, group_median_CI=True, mean_fold_change=False, median_fold_change=False, kruskal_wallis_test=False, levene_twoGroup=False, levene_allGroup=False, oneway_Anova_test=False, ttest_oneGroup=False, ttest_twoGroup=False, mann_whitney_u_test=False):
+    def set_params(self, parametric=True, log_data=(False,2), scale_data=(False, 'standard'), impute_data=(False, 3), group_column_name=None, control_group_name=None, group_alpha_CI=0.05, fold_change_alpha_CI=0.05, pca_alpha_CI=0.05, total_missing=False, group_missing=False, pca_loadings=True, normality_test=True, group_normality_test=True, group_mean_CI=True, group_median_CI=True, mean_fold_change=False, median_fold_change=False, kruskal_wallis_test=False, levene_twoGroup=False, levene_allGroup=False, oneway_Anova_test=False, ttest_oneGroup=False, ttest_twoGroup=False, mann_whitney_u_test=False):
 
         parametric, log_data, scale_data, impute_data, group_column_name, control_group_name, group_alpha_CI, fold_change_alpha_CI, pca_alpha_CI, total_missing, group_missing, pca_loadings, normality_test, group_normality_test, group_mean_CI, group_median_CI, mean_fold_change, median_fold_change, oneway_Anova_test, kruskal_wallis_test, levene_twoGroup, levene_allGroup, ttest_oneGroup, ttest_twoGroup, mann_whitney_u_test = self.__paramCheck(parametric, log_data, scale_data, impute_data, group_column_name, control_group_name, group_alpha_CI, fold_change_alpha_CI, pca_alpha_CI, total_missing, group_missing, pca_loadings, normality_test, group_normality_test, group_mean_CI, group_median_CI, mean_fold_change, median_fold_change, oneway_Anova_test, kruskal_wallis_test, levene_twoGroup, levene_allGroup, ttest_oneGroup, ttest_twoGroup, mann_whitney_u_test)
 
@@ -147,8 +147,20 @@ class statistics:
                 print("Error: The chosen log type is invalid.")
                 sys.exit()
 
-        if scale_data:
-            peakData = scaler(peakData, "standard").reset_index(drop=True)
+        (scale_bool, scale_type) = scale_data
+
+        if scale_bool:
+            if isinstance(scale_type, str) and scale_type.lower() == 'standard':
+                peakData = scaler(peakData, type=scale_type.lower()).reset_index(drop=True)
+            elif isinstance(scale_type, str) and scale_type.lower() == 'minmax':
+                peakData = scaler(peakData, type=scale_type.lower()).reset_index(drop=True)
+            elif isinstance(scale_type, str) and scale_type.lower() == 'maxabs':
+                peakData = scaler(peakData, type=scale_type.lower()).reset_index(drop=True)
+            elif isinstance(scale_type, str) and scale_type.lower() == 'robust':
+                peakData = scaler(peakData, type=scale_type.lower()).reset_index(drop=True)
+            else:
+                print("Error: The chosen scale type is invalid.")
+                sys.exit()
 
         (impute_bool, k) = impute_data;
 
@@ -578,7 +590,7 @@ class statistics:
         else:
             group_names = []
 
-        if not type(parametric) == bool:
+        if not isinstance(parametric, bool):
             print("Error: Parametric not valid. Choose either \"True\" or \"False\".")
             sys.exit()
 
@@ -588,7 +600,7 @@ class statistics:
         else:
             (log_bool, log_base) = log_data
 
-            if not type(log_bool) == bool:
+            if not isinstance(log_bool, bool):
                 print("Error: Log data first tuple item is not a boolean value. Choose either \"True\" or \"False\".")
                 sys.exit()
 
@@ -601,9 +613,25 @@ class statistics:
                 print("Error: Log data second tuple item is not valid. Choose one of {}.".format(', '.join(base_types)))
                 sys.exit()
 
-        if not type(scale_data) == bool:
-            print("Error: Scale data not valid. Choose either \"True\" or \"False\".")
+        if not isinstance(scale_data, tuple):
+            print("Error: Scale data type if not a tuple. Please ensure the value is a tuple (e.g. (True, 'standard').")
             sys.exit()
+        else:
+            (scale_bool, scale_type) = scale_data
+
+            if not isinstance(scale_bool, bool):
+                print("Error: Scale data first tuple item is not a boolean value. Choose either \"True\" or \"False\".")
+                sys.exit()
+
+            scale_types = ['standard', 'minmax', 'maxabs', 'robust']
+
+            if isinstance(scale_type, str):
+                scale_type = scale_type.lower()
+
+            if scale_type not in scale_types:
+                print("Error: Scale data second tuple item is not valid. Choose one of {}.".format(
+                    ', '.join(scale_types)))
+                sys.exit()
 
         if not isinstance(impute_data, tuple):
             print("Error: Impute data type if not a tuple. Please ensure the value is a tuple (e.g. (True, 3).")
@@ -611,7 +639,7 @@ class statistics:
         else:
             (impute_bool, k) = impute_data
 
-            if not type(impute_bool) == bool:
+            if not isinstance(impute_bool, bool):
                 print("Error: Impute data first tuple item is not a boolean value. Choose either \"True\" or \"False\".")
                 sys.exit()
 
@@ -650,67 +678,67 @@ class statistics:
             print("Error: PCA alpha confidence interval is not valid. Choose a float value.")
             sys.exit()
 
-        if not type(total_missing) == bool:
+        if not isinstance(total_missing, bool):
             print("Error: Total missing is not valid. Choose either \"True\" or \"False\".")
             sys.exit()
 
-        if not type(group_missing) == bool:
+        if not isinstance(group_missing, bool):
             print("Error: Group missing is not valid. Choose either \"True\" or \"False\".")
             sys.exit()
 
-        if not type(pca_loadings) == bool:
+        if not isinstance(pca_loadings, bool):
             print("Error: PCA loadings is not valid. Choose either \"True\" or \"False\".")
             sys.exit()
 
-        if not type(normality_test) == bool:
+        if not isinstance(normality_test, bool):
             print("Error: Normality test is not valid. Choose either \"True\" or \"False\".")
             sys.exit()
 
-        if not type(group_normality_test) == bool:
+        if not isinstance(group_normality_test, bool):
             print("Error: Group normality test is not valid. Choose either \"True\" or \"False\".")
             sys.exit()
 
-        if not type(group_mean_CI) == bool:
+        if not isinstance(group_mean_CI, bool):
             print("Error: Group mean confidence interval is not valid. Choose either \"True\" or \"False\".")
             sys.exit()
 
-        if not type(group_median_CI) == bool:
+        if not isinstance(group_median_CI, bool):
             print("Error: Group median confidence interval is not valid. Choose either \"True\" or \"False\".")
             sys.exit()
 
-        if not type(mean_fold_change) == bool:
+        if not isinstance(mean_fold_change, bool):
             print("Error: Mean fold change is not valid. Choose either \"True\" or \"False\".")
             sys.exit()
 
-        if not type(median_fold_change) == bool:
+        if not isinstance(median_fold_change, bool):
             print("Error: Median fold change is not valid. Choose either \"True\" or \"False\".")
             sys.exit()
 
-        if not type(oneway_Anova_test) == bool:
+        if not isinstance(oneway_Anova_test, bool):
             print("Error: One-way Anova test is not valid. Choose either \"True\" or \"False\".")
             sys.exit()
 
-        if not type(kruskal_wallis_test) == bool:
+        if not isinstance(kruskal_wallis_test, bool):
             print("Error: Kruskal–Wallis test is not valid. Choose either \"True\" or \"False\".")
             sys.exit()
 
-        if not type(levene_twoGroup) == bool:
+        if not isinstance(levene_twoGroup, bool):
             print("Error: Levene two group is not valid. Choose either \"True\" or \"False\".")
             sys.exit()
 
-        if not type(levene_allGroup) == bool:
+        if not isinstance(levene_allGroup, bool):
             print("Error: Levene all group is not valid. Choose either \"True\" or \"False\".")
             sys.exit()
 
-        if not type(ttest_oneGroup) == bool:
+        if not isinstance(ttest_oneGroup, bool):
             print("Error: T-test one group is not valid. Choose either \"True\" or \"False\".")
             sys.exit()
 
-        if not type(ttest_twoGroup) == bool:
+        if not isinstance(ttest_twoGroup, bool):
             print("Error: T-test two group is not valid. Choose either \"True\" or \"False\".")
             sys.exit()
 
-        if not type(mann_whitney_u_test) == bool:
+        if not isinstance(mann_whitney_u_test, bool):
             print("Error: Mann–Whitney U test is not valid. Choose either \"True\" or \"False\".")
             sys.exit()
 

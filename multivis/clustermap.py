@@ -6,7 +6,6 @@ from collections import defaultdict
 import matplotlib
 import matplotlib.pyplot as plt
 from collections import Counter
-from matplotlib.ticker import FixedLocator, FixedFormatter
 import numpy as np
 import pandas as pd
 import copy
@@ -39,8 +38,8 @@ class clustermap:
             cluster_cmap: The CMAP colour palette to use for the branch separation of clusters in the dendrogram (default: 'Set1')
             rowColorCluster: Setting to 'True' will display a colour bar for the clustered rows (default: False)
             colColorCluster: Setting to 'True' will display a colour bar for the clustered columns (default: False)
-            row_color_threshold: The colouring threshold for the row dendrogram (default: 10)
-            col_color_threshold: The colouring threshold for the column dendrogram (default: 10)
+            row_color_threshold: The colouring threshold for the row dendrogram (default: 1)
+            col_color_threshold: The colouring threshold for the column dendrogram (default: 1)
         
         help : Print this help text
 
@@ -469,7 +468,7 @@ class clustermap:
             print("Error: Image file name is not valid. Choose a string value.")
             sys.exit()
 
-        if not type(saveImage) == bool:
+        if not isinstance(saveImage, bool):
             print("Error: Save image is not valid. Choose either \"True\" or \"False\".")
 
         if not isinstance(dpi, float):
@@ -501,7 +500,7 @@ class clustermap:
             print("Error: The background colour value is not valid. Choose a valid colour as a HTML/CSS name, hex code, or (R,G,B) tuple.")
             sys.exit()
 
-        if not type(transparent) == bool:
+        if not isinstance(transparent, bool):
             print("Error: The transparent value is not valid. Choose either \"True\" or \"False\".")
             sys.exit()
 
@@ -510,7 +509,7 @@ class clustermap:
                 print("Error: Font size is not valid. Choose a float or integer value.")
                 sys.exit()
 
-        if not type(heatmap_annotation) == bool:
+        if not isinstance(heatmap_annotation, bool):
             print("Error: The heatmap annotation value is not valid. Choose either \"True\" or \"False\".")
             sys.exit()
 
@@ -549,11 +548,11 @@ class clustermap:
                 print("Error: Cluster CMAP is not valid. Choose one of the following: {}.".format(', '.join(cmap_list)))
                 sys.exit()
 
-        if not type(rowColorCluster) == bool:
+        if not isinstance(rowColorCluster, bool):
             print("Error: Row colour cluster is not valid. Choose either \"True\" or \"False\".")
             sys.exit()
 
-        if not type(colColorCluster) == bool:
+        if not isinstance(colColorCluster, bool):
             print("Error: Column colour cluster is not valid. Choose either \"True\" or \"False\".")
             sys.exit()
 

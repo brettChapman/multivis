@@ -261,7 +261,7 @@ class Edge:
                 print("Error: Hard threshold is not valid. Choose a float or integer value.")
                 sys.exit()
 
-        if not type(withinBlocks) == bool:
+        if not isinstance(withinBlocks, bool):
             print("Error: Within blocks not valid. Choose either \"True\" or \"False\".")
             sys.exit()
 

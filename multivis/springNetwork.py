@@ -287,7 +287,7 @@ class springNetwork:
                 print("Error: Charge strength is not valid. Choose a float or integer value.")
                 sys.exit()
 
-        if not type(groupByBlock) == bool:
+        if not isinstance(groupByBlock, bool):
             print("Error: Group by block is not valid. Choose either \"True\" or \"False\".")
             sys.exit()
 
@@ -310,11 +310,11 @@ class springNetwork:
                 print("Error: Node text size is not valid. Choose a float or integer value.")
                 sys.exit()
 
-        if not type(fix_nodes) == bool:
+        if not isinstance(fix_nodes, bool):
             print("Error: Fix nodes is not valid. Choose either \"True\" or \"False\".")
             sys.exit()
 
-        if not type(displayLabel) == bool:
+        if not isinstance(displayLabel, bool):
             print("Error: Display label is not valid. Choose either \"True\" or \"False\".")
             sys.exit()
 

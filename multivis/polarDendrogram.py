@@ -1,5 +1,6 @@
 import sys
 import copy
+import string
 import matplotlib
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -9,7 +10,7 @@ import numpy as np
 import pandas as pd
 
 class polarDendrogram:
-    usage = """Produces a polar dendrogram given a cartesian dendrogram
+    usage = """Produces a polar dendrogram given a cartesian dendrogram and generates feature plots of each cluster
 
             Initial_Parameters
             ----------
@@ -36,17 +37,24 @@ class polarDendrogram:
                 label_column: The label column to use from Peak Table (default: use original Peak Table index from cartesian dendrogram)
                 text_cmap: The CMAP colour palette to use (default: 'brg')
 
-            getClusterPlots : Generates plots of mean/median peak area over the group/class variable for each cluster from the polar dendrogram
-                plot_type: The type of plot to plot. Either mean peak area or median peak area (default: 'mean')
+            plotClusters : Aggregates peaks from each cluster of the polar dendrogram and generates different feature plots across the group/class variables.
+                plot_type: The type of plot. Either "point", "violin", "box", "swarm", "violin-swarm" or "box-swarm" (default: 'point')
                 column_numbers: The number of columns to display in the plots (default: 4)
                 log_data: Perform a log ('natural', base 2 or base 10) on all data (default: (True, 2))
-                scale_data: Scale the data to unit variance (default: True)
+                scale_data: Scale the data ('standard' (centers and scales to unit variance), 'minmax' (scales between 0 and 1), 'maxabs' (scales to the absolute maximum value), 'robust' (centers and scales to between 25th and 75th quantile range) (default: (True, 'minmax'))
                 impute_data: Impute any missing values using KNN impute with a set number of nearest neighbours (default: (True, 3))
                 figSize: The figure size as a tuple (width,height) (default: (15,10))
+                fontSize: The font size for all text (default: 12)
+                colour_palette: The colour palette to use for the plot (default: None)
+                y_axis_label: The label to customise the y axis (default: None)
                 x_axis_rotation: Rotate the x axis labels this number of degrees (default: 0)
-                ci: The bootstrapped confidence interval. Can also be standard deviation ("sd") (default: 95)
+                point_estimator: The statistical function to use for the point plot. Either "mean" or "median" (default: 'mean')
+                point_ci: The bootstrapped confidence interval for the point plot. Can also be standard deviation ("sd") (default: 95)
+                violin_distribution_type: The representation of the distribution of data points within the violin plot. Either "quartile", "box", "point", "stick" or None (default: 'quartile')
+                violin_width_scale: The method used to scale the width of the violin plot. Either "area", "count" or "width" (default: "width")
+                box_iqr: The proportion past the low and upper quartiles to extend the plot whiskers for the box plot. Points outside this range will be identified as outliers (default: 1.5)
                 saveImage: Setting to 'True' will save the image to file (default: True)
-                imageFileName: The image file name to save to (default: 'clusterPlots.png')                
+                imageFileName: The image file name to save to (default: [plot_type]_clusters.png')                
                 dpi: The number of Dots Per Inch (DPI) for the image (default: 200)
             
             help : Print this help text
@@ -248,7 +256,11 @@ class polarDendrogram:
 
             plt.show()
 
-    def getClusterPlots(self, plot_type='mean', column_numbers=4, log_data=(True, 2), scale_data=True, impute_data=(True, 3), figSize=(15, 10), y_axis_label=None, x_axis_rotation=0, ci=95, saveImage=True, imageFileName='clusterPlots.png', dpi=200):
+    def plotClusters(self, plot_type='point', column_numbers=4, log_data=(True, 2), scale_data=(True, 'minmax'), impute_data=(True, 3), figSize=(15, 10), fontSize=12, colour_palette=None, y_axis_label=None, x_axis_rotation=0, point_estimator='mean', point_ci=95, violin_distribution_type='box', violin_width_scale='width', box_iqr=1.5, saveImage=True, imageFileName='_clusters.png', dpi=200):
+
+        cmap_list = list(matplotlib.cm.cmaps_listed) + list(matplotlib.cm.datad)
+        cmap_list_r = [cmap + '_r' for cmap in cmap_list]
+        cmap_list = cmap_list + cmap_list_r
 
         dendrogram = self.__dn
         peaktable = self.__peaktable
@@ -257,26 +269,110 @@ class polarDendrogram:
         style = self.__style
         transparent = self.__transparent
 
-        plot_types = ['mean', 'median']
+        plot_types = ["point", "violin", "box", "swarm", "violin-swarm", "box-swarm"]
+        estimator_types = ['mean', 'median']
 
         if plot_type.lower() not in plot_types:
             print("Error: The chosen plot type is invalid. Choose one of \"{}\".".format('\" or \"'.join(plot_types)))
             sys.exit()
 
-        if isinstance(ci, str):
-            if ci != 'sd':
-                print("Error: The string value for ci is invalid. Choose a float, integer or 'sd' value for standard deviation.")
+        if point_estimator.lower() not in estimator_types:
+            print("Error: The chosen point plot estimator is invalid. Choose one of \"{}\".".format('\" or \"'.join(estimator_types)))
+            sys.exit()
+
+        if isinstance(point_ci, str):
+            if point_ci != 'sd':
+                print("Error: The string value for point plot ci is invalid. Choose a float, integer or 'sd' value for standard deviation.")
                 sys.exit()
         else:
-            if not isinstance(ci, float):
-                if not isinstance(ci, int):
-                    print("Error: The value for 'ci' is not valid. Choose a float, integer or 'sd' value for standard deviation.")
+            if not isinstance(point_ci, float):
+                if not isinstance(point_ci, int):
+                    print("Error: The value for point plot ci is invalid. Choose a float, integer or 'sd' value for standard deviation.")
                     sys.exit()
 
         if y_axis_label is not None:
             if not isinstance(y_axis_label, str):
                 print("Error: The y axis label is not valid. Use a string value or set to None.")
                 sys.exit()
+
+        if colour_palette is not None:
+            if not isinstance(colour_palette, str):
+                print("Error: Colour palette choice is not valid. Choose a string value.")
+                sys.exit()
+            else:
+                if colour_palette not in cmap_list:
+                    print("Error: Colour palette is not valid. Choose one of the following: {}.".format(', '.join(cmap_list)))
+                    sys.exit()
+
+        if not isinstance(log_data, tuple):
+            print("Error: Log data type if not a tuple. Please ensure the value is a tuple (e.g. (True, 2).")
+            sys.exit()
+        else:
+            (log_bool, log_base) = log_data
+
+            if not isinstance(log_bool, bool):
+                print("Error: Log data first tuple item is not a boolean value. Choose either \"True\" or \"False\".")
+                sys.exit()
+
+            base_types = ['natural', 2, 10]
+
+            if isinstance(log_base, str):
+                log_base = log_base.lower()
+
+            if log_base not in base_types:
+                print("Error: Log data second tuple item is not valid. Choose one of {}.".format(', '.join(base_types)))
+                sys.exit()
+
+        if not isinstance(scale_data, tuple):
+            print("Error: Scale data type if not a tuple. Please ensure the value is a tuple (e.g. (True, 'standard').")
+            sys.exit()
+        else:
+            (scale_bool, scale_type) = scale_data
+
+            if not isinstance(scale_bool, bool):
+                print("Error: Scale data first tuple item is not a boolean value. Choose either \"True\" or \"False\".")
+                sys.exit()
+
+            scale_types = ['standard', 'minmax', 'maxabs', 'robust']
+
+            if isinstance(scale_type, str):
+                scale_type = scale_type.lower()
+
+            if scale_type not in scale_types:
+                print("Error: Log data second tuple item is not valid. Choose one of {}.".format(', '.join(scale_types)))
+                sys.exit()
+
+        if not isinstance(impute_data, tuple):
+            print("Error: Impute data type if not a tuple. Please ensure the value is a tuple (e.g. (True, 3).")
+            sys.exit()
+        else:
+            (impute_bool, k) = impute_data
+
+            if not isinstance(impute_bool, bool):
+                print("Error: Impute data first tuple item is not a boolean value. Choose either \"True\" or \"False\".")
+                sys.exit()
+
+            if not isinstance(k, float):
+                if not isinstance(k, int):
+                    print("Error: Impute data second tuple item, the nearest neighbours k value, is not valid. Choose a float or integer value.")
+                    sys.exit()
+
+        violin_distribution_types = ['quartile', 'box', 'point', 'stick', None]
+        violin_width_scale_types = ['area', 'count', 'width']
+        if plot_type.lower() == "violin":
+            if violin_distribution_type not in violin_distribution_types:
+                print("Error: Violin distribution type not valid. Choose one of the following: {}.".format(', '.join(violin_distribution_types)))
+                sys.exit()
+
+            if violin_width_scale not in violin_width_scale_types:
+                print("Error: Violin width scale type not valid. Choose one of the following: {}.".format(', '.join(violin_width_scale_types)))
+                sys.exit()
+
+        if plot_type.lower == "box":
+            if not isinstance(box_iqr, float):
+                if not isinstance(box_iqr, int):
+                    print("Error: The box plot interquartile range extension beyond whiskers is not valid. Choose a float or integer value.")
+                    sys.exit()
 
         peaklist = peaktable['Name']
         X = datatable[peaklist]
@@ -294,13 +390,25 @@ class polarDendrogram:
                 print("Error: The chosen log type is invalid.")
                 sys.exit()
 
-        if scale_data:
-            X = scaler(X, "standard")
+        (scale_bool, scale_type) = scale_data
+
+        if scale_bool:
+            if isinstance(scale_type, str) and scale_type.lower() == 'standard':
+                X = scaler(X, type=scale_type.lower()).reset_index(drop=True)
+            elif isinstance(scale_type, str) and scale_type.lower() == 'minmax':
+                X = scaler(X, type=scale_type.lower()).reset_index(drop=True)
+            elif isinstance(scale_type, str) and scale_type.lower() == 'maxabs':
+                X = scaler(X, type=scale_type.lower()).reset_index(drop=True)
+            elif isinstance(scale_type, str) and scale_type.lower() == 'robust':
+                X = scaler(X, type=scale_type.lower()).reset_index(drop=True)
+            else:
+                print("Error: The chosen scale type is invalid.")
+                sys.exit()
 
         (impute_bool, k) = impute_data;
 
         if impute_bool:
-            X = imputeData(X, k=k)
+            X = imputeData(X, k=k).reset_index(drop=True)
 
         if not isinstance(X, pd.DataFrame):
             X = pd.DataFrame(X, columns=peaklist)
@@ -327,7 +435,7 @@ class polarDendrogram:
 
                     df_merged = pd.DataFrame()
 
-                    cluster_names = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'AA', 'BB', 'CC', 'DD', 'EE', 'FF', 'GG', 'HH', 'II', 'JJ', 'KK', 'LL', 'MM', 'NN', 'OO', 'PP','QQ', 'RR', 'SS', 'TT', 'UU', 'VV', 'WW', 'XX', 'YY', 'ZZ']
+                    cluster_names = list(string.ascii_uppercase)
 
                     peak_count = 0;
                     for index, peak in enumerate(x.columns):
@@ -335,76 +443,252 @@ class polarDendrogram:
                         peak_count = peak_count + 1;
 
                         if df_merged.empty:
-                            df_merged = pd.merge(datatable.T[~datatable.T.index.isin(peaktable['Name'])].T.reset_index(drop=True), pd.Series(x.values[:, index], name='Peak').reset_index(drop=True), left_index=True, right_index=True)
+                            df_merged = pd.merge(datatable.T[~datatable.T.index.isin(peaktable['Name'])].T.reset_index(drop=True), pd.Series(x.values[:, index], name='Aggregated Peaks').reset_index(drop=True), left_index=True, right_index=True)
                         else:
-                            df_dat = pd.merge(datatable.T[~datatable.T.index.isin(peaktable['Name'])].T.reset_index(drop=True), pd.Series(x.values[:, index], name='Peak').reset_index(drop=True), left_index=True, right_index=True)
+                            df_dat = pd.merge(datatable.T[~datatable.T.index.isin(peaktable['Name'])].T.reset_index(drop=True), pd.Series(x.values[:, index], name='Aggregated Peaks').reset_index(drop=True), left_index=True, right_index=True)
                             df_merged = pd.concat([df_merged, df_dat], axis=0, sort=False).reset_index(drop=True)
 
-                    if plot_type == 'mean':
-                        ax = sns.pointplot(data=df_merged, x=group_column_name, y='Peak', x_estimator=np.nanmean, capsize=0.1, ci=ci, ax=axes.flat[cluster_index])
-                    elif plot_type == 'median':
-                        ax = sns.pointplot(data=df_merged, x=group_column_name, y='Peak', x_estimator=np.nanmedian, capsize=0.1, ci=ci, ax=axes.flat[cluster_index])
-                    else:
-                        print("Error: Invalid plot type.")
-                        sys.exit()
-
-                    ax.tick_params(labelrotation=x_axis_rotation)
-
-                    if log_bool:
-                        if scale_data:
-                            if isinstance(ci, str):
-                                if ci == 'sd':
-                                    if y_axis_label is None:
-                                        ax.set(xlabel='', ylabel='Log({}) UV scaled Peak Area within SD'.format(log_base), title='Cluster {} (N={}) within SD'.format(cluster_names[cluster_index], peak_count))
-                                    else:
-                                        ax.set(xlabel='', ylabel=y_axis_label, title='Cluster {} (N={}) within SD'.format(cluster_names[cluster_index], peak_count))
-                            else:
-                                if y_axis_label is None:
-                                    ax.set(xlabel='', ylabel='Log({}) UV scaled Peak Area & {}% CI'.format(log_base, ci), title='Cluster {} (N={}) with {}% CI'.format(cluster_names[cluster_index], peak_count, ci))
-                                else:
-                                    ax.set(xlabel='', ylabel=y_axis_label, title='Cluster {} (N={}) with {}% CI'.format(cluster_names[cluster_index], peak_count, ci))
+                    if plot_type.lower() == 'point':
+                        if point_estimator.lower() == 'mean':
+                            point_estimator = 'Mean'
+                            ax = sns.pointplot(data=df_merged, x=group_column_name, y='Aggregated Peaks', estimator=np.nanmean, capsize=0.1, ci=point_ci, palette=colour_palette, ax=axes.flat[cluster_index])
+                        elif point_estimator.lower() == 'median':
+                            point_estimator = 'Median'
+                            ax = sns.pointplot(data=df_merged, x=group_column_name, y='Aggregated Peaks', estimator=np.nanmedian, capsize=0.1, ci=point_ci, palette=colour_palette, ax=axes.flat[cluster_index])
                         else:
-                            if isinstance(ci, str):
-                                if ci == 'sd':
-                                    if y_axis_label is None:
-                                        ax.set(xlabel='', ylabel='Log({}) Peak Area within SD'.format(log_base), title='Cluster {} (N={}) within SD'.format(cluster_names[cluster_index], peak_count))
-                                    else:
-                                        ax.set(xlabel='', ylabel=y_axis_label, title='Cluster {} (N={}) within SD'.format(cluster_names[cluster_index], peak_count))
-                            else:
-                                if y_axis_label is None:
-                                    ax.set(xlabel='', ylabel='Log({}) Peak Area & {}% CI'.format(log_base, ci), title='Cluster {} (N={}) with {}% CI'.format(cluster_names[cluster_index], peak_count, ci))
+                            print("Error: Invalid point plot estimator type.")
+                            sys.exit()
+
+                        ax.tick_params(labelrotation=x_axis_rotation, labelsize=fontSize)
+
+                        if log_bool:
+                            if scale_data:
+                                if isinstance(point_ci, str):
+                                    if point_ci == 'sd':
+                                        ax.set_title('Cluster {} (N={}) within SD'.format(cluster_names[cluster_index], peak_count), fontsize=fontSize)
+                                        ax.set_xlabel('')
+                                        if y_axis_label is None:
+                                            ax.set_ylabel('Log({}) scaled ({}) {} Peak Area within SD'.format(log_base, scale_type, point_estimator), fontsize=fontSize)
+                                        else:
+                                            ax.set_ylabel(y_axis_label, fontsize=fontSize)
                                 else:
-                                    ax.set(xlabel='', ylabel=y_axis_label, title='Cluster {} (N={}) with {}% CI'.format(cluster_names[cluster_index], peak_count, ci))
-                    else:
-                        if scale_data:
-                            if isinstance(ci, str):
-                                if ci == 'sd':
+                                    ax.set_title('Cluster {} (N={}) with {}% CI'.format(cluster_names[cluster_index], peak_count, point_ci), fontsize=fontSize)
+                                    ax.set_xlabel('')
                                     if y_axis_label is None:
-                                        ax.set(xlabel='', ylabel='UV scaled Peak Area within SD', title='Cluster {} (N={}) within SD'.format(cluster_names[cluster_index], peak_count))
+                                        ax.set_ylabel('Log({}) scaled ({}) {} Peak Area & {}% CI'.format(log_base, scale_type, point_estimator, point_ci), fontsize=fontSize)
                                     else:
-                                        ax.set(xlabel='', ylabel=y_axis_label, title='Cluster {} (N={}) within SD'.format(cluster_names[cluster_index], peak_count))
+                                        ax.set_ylabel(y_axis_label, fontsize=fontSize)
                             else:
-                                if y_axis_label is None:
-                                    ax.set(xlabel='', ylabel='UV scaled Peak Area & {}% CI'.format(ci), title='Cluster {} (N={}) with {}% CI'.format(cluster_names[cluster_index], peak_count, ci))
+                                if isinstance(ci, str):
+                                    if ci == 'sd':
+                                        ax.set_title('Cluster {} (N={}) within SD'.format(cluster_names[cluster_index], peak_count), fontsize=fontSize)
+                                        ax.set_xlabel('')
+                                        if y_axis_label is None:
+                                            ax.set_ylabel('Log({}) {} Peak Area within SD'.format(log_base, point_estimator), fontsize=fontSize)
+                                        else:
+                                            ax.set_ylabel(y_axis_label, fontsize=fontSize)
                                 else:
-                                    ax.set(xlabel='', ylabel=y_axis_label, title='Cluster {} (N={}) with {}% CI'.format(cluster_names[cluster_index], peak_count, ci))
+                                    ax.set_title('Cluster {} (N={}) with {}% CI'.format(cluster_names[cluster_index], peak_count, point_ci), fontsize=fontSize)
+                                    ax.set_xlabel('')
+                                    if y_axis_label is None:
+                                        ax.set_ylabel('Log({}) {} Peak Area & {}% CI'.format(log_base, point_estimator, point_ci), fontsize=fontSize)
+                                    else:
+                                        ax.set_ylabel(y_axis_label, fontsize=fontSize)
                         else:
-                            if isinstance(ci, str):
-                                if ci == 'sd':
+                            if scale_data:
+                                if isinstance(point_ci, str):
+                                    if point_ci == 'sd':
+                                        ax.set_title('Cluster {} (N={}) within SD'.format(cluster_names[cluster_index], peak_count), fontsize=fontSize)
+                                        ax.set_xlabel('')
+                                        if y_axis_label is None:
+                                            ax.set_ylabel('Scaled ({}) {} Peak Area within SD'.format(scale_type, point_estimator), fontsize=fontSize)
+                                        else:
+                                            ax.set_ylabel(y_axis_label, fontsize=fontSize)
+                                else:
+                                    ax.set_title('Cluster {} (N={}) with {}% CI'.format(cluster_names[cluster_index], peak_count, point_ci), fontsize=fontSize)
+                                    ax.set_xlabel('')
                                     if y_axis_label is None:
-                                        ax.set(xlabel='', ylabel='Peak Area within SD', title='Cluster {} (N={}) within SD'.format(cluster_names[cluster_index], peak_count))
+                                        ax.set_ylabel('Scaled ({}) {} Peak Area & {}% CI'.format(scale_type, point_estimator, point_ci), fontsize=fontSize)
                                     else:
-                                        ax.set(xlabel='', ylabel=y_axis_label, title='Cluster {} (N={}) within SD'.format(cluster_names[cluster_index], peak_count))
+                                        ax.set_ylabel(y_axis_label, fontsize=fontSize)
+                            else:
+                                if isinstance(ci, str):
+                                    if ci == 'sd':
+                                        ax.set_title('Cluster {} (N={}) within SD'.format(cluster_names[cluster_index], peak_count), fontsize=fontSize)
+                                        ax.set_xlabel('')
+                                        if y_axis_label is None:
+                                            ax.set_ylabel('{} Peak Area within SD'.format(point_estimator), fontsize=fontSize)
+                                        else:
+                                            ax.set_ylabel(y_axis_label, fontsize=fontSize)
+                                else:
+                                    ax.set_title('Cluster {} (N={}) with {}% CI'.format(cluster_names[cluster_index], peak_count, ci), fontsize=fontSize)
+                                    ax.set_xlabel('')
+                                    if y_axis_label is None:
+                                        ax.set_ylabel('{} Peak Area & {}% CI'.format(point_estimator, point_ci), fontsize=fontSize)
+                                    else:
+                                        ax.set_ylabel(y_axis_label, fontsize=fontSize)
+
+                    elif plot_type.lower() == 'violin':
+                        ax = sns.violinplot(data=df_merged, x=group_column_name, y='Aggregated Peaks', linewidth=1, inner=violin_distribution_type, scale=violin_width_scale, palette=colour_palette, ax=axes.flat[cluster_index])
+
+                        ax.tick_params(labelrotation=x_axis_rotation, labelsize=fontSize)
+
+                        ax.set_title('Cluster {} (N={})'.format(cluster_names[cluster_index], peak_count), fontsize=fontSize)
+                        ax.set_xlabel('')
+
+                        if log_bool:
+                            if scale_data:
+                                if y_axis_label is None:
+                                    ax.set_ylabel('Log({}) scaled ({}) Peak Area'.format(log_base, scale_type), fontsize=fontSize)
+                                else:
+                                    ax.set_ylabel(y_axis_label, fontsize=fontSize)
                             else:
                                 if y_axis_label is None:
-                                    ax.set(xlabel='', ylabel='Peak Area & {}% CI'.format(ci), title='Cluster {} (N={}) with {}% CI'.format(cluster_names[cluster_index], peak_count, ci))
+                                    ax.set_ylabel('Log({}) Peak Area'.format(log_base), fontsize=fontSize)
                                 else:
-                                    ax.set(xlabel='', ylabel=y_axis_label, title='Cluster {} (N={}) with {}% CI'.format(cluster_names[cluster_index], peak_count, ci))
+                                    ax.set_ylabel(y_axis_label, fontsize=fontSize)
+                        else:
+                            if scale_data:
+                                if y_axis_label is None:
+                                    ax.set_ylabel('Scaled ({}) Peak Area'.format(scale_type), fontsize=fontSize)
+                                else:
+                                    ax.set_ylabel(y_axis_label, fontsize=fontSize)
+                            else:
+                                if y_axis_label is None:
+                                    ax.set_ylabel('Peak Area', fontsize=fontSize)
+                                else:
+                                    ax.set_ylabel(y_axis_label, fontsize=fontSize)
+
+                    elif plot_type.lower() == 'box':
+                        ax = sns.boxplot(data=df_merged, x=group_column_name, y='Aggregated Peaks', palette=colour_palette, whis=box_iqr, ax=axes.flat[cluster_index])
+
+                        ax.tick_params(labelrotation=x_axis_rotation, labelsize=fontSize)
+
+                        ax.set_title('Cluster {} (N={})'.format(cluster_names[cluster_index], peak_count), fontsize=fontSize)
+                        ax.set_xlabel('')
+
+                        if log_bool:
+                            if scale_data:
+                                if y_axis_label is None:
+                                    ax.set_ylabel('Log({}) scaled ({}) Peak Area'.format(log_base, scale_type), fontsize=fontSize)
+                                else:
+                                    ax.set_ylabel(y_axis_label, fontsize=fontSize)
+                            else:
+                                if y_axis_label is None:
+                                    ax.set_ylabel('Log({}) Peak Area'.format(log_base), fontsize=fontSize)
+                                else:
+                                    ax.set_ylabel(y_axis_label, fontsize=fontSize)
+                        else:
+                            if scale_data:
+                                if y_axis_label is None:
+                                    ax.set_ylabel('Scaled ({}) Peak Area'.format(scale_type), fontsize=fontSize)
+                                else:
+                                    ax.set_ylabel(y_axis_label, fontsize=fontSize)
+                            else:
+                                if y_axis_label is None:
+                                    ax.set_ylabel('Peak Area', fontsize=fontSize)
+                                else:
+                                    ax.set_ylabel(y_axis_label, fontsize=fontSize)
+
+                    elif plot_type.lower() == 'swarm':
+                        ax = sns.swarmplot(data=df_merged, x=group_column_name, y='Aggregated Peaks', size=10, palette=colour_palette, ax=axes.flat[cluster_index])
+
+                        ax.tick_params(labelrotation=x_axis_rotation, labelsize=fontSize)
+
+                        ax.set_title('Cluster {} (N={})'.format(cluster_names[cluster_index], peak_count), fontsize=fontSize)
+                        ax.set_xlabel('')
+
+                        if log_bool:
+                            if scale_data:
+                                if y_axis_label is None:
+                                    ax.set_ylabel('Log({}) scaled ({}) Peak Area'.format(log_base, scale_type), fontsize=fontSize)
+                                else:
+                                    ax.set_ylabel(y_axis_label, fontsize=fontSize)
+                            else:
+                                if y_axis_label is None:
+                                    ax.set_ylabel('Log({}) Peak Area'.format(log_base), fontsize=fontSize)
+                                else:
+                                    ax.set_ylabel(y_axis_label, fontsize=fontSize)
+                        else:
+                            if scale_data:
+                                if y_axis_label is None:
+                                    ax.set_ylabel('Scaled ({}) Peak Area'.format(scale_type), fontsize=fontSize)
+                                else:
+                                    ax.set_ylabel(y_axis_label, fontsize=fontSize)
+                            else:
+                                if y_axis_label is None:
+                                    ax.set_ylabel('Peak Area', fontsize=fontSize)
+                                else:
+                                    ax.set_ylabel(y_axis_label, fontsize=fontSize)
+
+                    elif plot_type.lower() == 'violin-swarm':
+                        ax = sns.violinplot(data=df_merged, x=group_column_name, y='Aggregated Peaks', linewidth=1, inner=None, scale=violin_width_scale, palette=colour_palette, ax=axes.flat[cluster_index])
+                        ax = sns.swarmplot(data=df_merged, x=group_column_name, y='Aggregated Peaks', color="white", edgecolor="gray", ax=axes.flat[cluster_index])
+
+                        ax.tick_params(labelrotation=x_axis_rotation, labelsize=fontSize)
+
+                        ax.set_title('Cluster {} (N={})'.format(cluster_names[cluster_index], peak_count), fontsize=fontSize)
+                        ax.set_xlabel('')
+
+                        if log_bool:
+                            if scale_data:
+                                if y_axis_label is None:
+                                    ax.set_ylabel('Log({}) scaled ({}) Peak Area'.format(log_base, scale_type), fontsize=fontSize)
+                                else:
+                                    ax.set_ylabel(y_axis_label, fontsize=fontSize)
+                            else:
+                                if y_axis_label is None:
+                                    ax.set_ylabel('Log({}) Peak Area'.format(log_base), fontsize=fontSize)
+                                else:
+                                    ax.set_ylabel(y_axis_label, fontsize=fontSize)
+                        else:
+                            if scale_data:
+                                if y_axis_label is None:
+                                    ax.set_ylabel('Scaled ({}) Peak Area'.format(scale_type), fontsize=fontSize)
+                                else:
+                                    ax.set_ylabel(y_axis_label, fontsize=fontSize)
+                            else:
+                                if y_axis_label is None:
+                                    ax.set_ylabel('Peak Area', fontsize=fontSize)
+                                else:
+                                    ax.set_ylabel(y_axis_label, fontsize=fontSize)
+
+                    elif plot_type.lower() == 'box-swarm':
+                        ax = sns.boxplot(data=df_merged, x=group_column_name, y='Aggregated Peaks', palette=colour_palette, whis=np.inf, ax=axes.flat[cluster_index])
+                        ax = sns.swarmplot(data=df_merged, x=group_column_name, y='Aggregated Peaks', color="0.2", ax=axes.flat[cluster_index])
+
+                        ax.tick_params(labelrotation=x_axis_rotation, labelsize=fontSize)
+
+                        ax.set_title('Cluster {} (N={})'.format(cluster_names[cluster_index], peak_count),fontsize=fontSize)
+                        ax.set_xlabel('')
+
+                        if log_bool:
+                            if scale_data:
+                                if y_axis_label is None:
+                                    ax.set_ylabel('Log({}) scaled ({}) Peak Area'.format(log_base, scale_type), fontsize=fontSize)
+                                else:
+                                    ax.set_ylabel(y_axis_label, fontsize=fontSize)
+                            else:
+                                if y_axis_label is None:
+                                    ax.set_ylabel('Log({}) Peak Area'.format(log_base), fontsize=fontSize)
+                                else:
+                                    ax.set_ylabel(y_axis_label, fontsize=fontSize)
+                        else:
+                            if scale_data:
+                                if y_axis_label is None:
+                                    ax.set_ylabel('Scaled ({}) Peak Area'.format(scale_type), fontsize=fontSize)
+                                else:
+                                    ax.set_ylabel(y_axis_label, fontsize=fontSize)
+                            else:
+                                if y_axis_label is None:
+                                    ax.set_ylabel('Peak Area', fontsize=fontSize)
+                                else:
+                                    ax.set_ylabel(y_axis_label, fontsize=fontSize)
 
                 fig.tight_layout(h_pad=5, w_pad=2)
 
                 if saveImage:
-                    plt.savefig(imageFileName, dpi=dpi, transparent=transparent)
+                    plt.savefig(plot_type + 'Plot' + imageFileName, dpi=dpi, transparent=transparent)
 
                 plt.show()
 
@@ -447,7 +731,7 @@ class polarDendrogram:
             print("Error: Image file name is not valid. Choose a string value.")
             sys.exit()
 
-        if not type(saveImage) == bool:
+        if not isinstance(saveImage, bool):
             print("Error: Save image is not valid. Choose either \"True\" or \"False\".")
             sys.exit()
 
@@ -460,7 +744,7 @@ class polarDendrogram:
                 print("Error: Gap is not valid. Choose a float or integer value.")
                 sys.exit()
 
-        if not type(grid) == bool:
+        if not isinstance(grid, bool):
             print("Error: Grid is not valid. Choose either \"True\" or \"False\".")
             sys.exit()
 
@@ -474,7 +758,7 @@ class polarDendrogram:
                 print("Error: Chosen style is not valid. Choose one of the following: {}.".format(', '.join(styleList)))
                 sys.exit()
 
-        if not type(transparent) == bool:
+        if not isinstance(transparent, bool):
             print("Error: The transparent value is not valid. Choose either \"True\" or \"False\".")
             sys.exit()
 
@@ -555,7 +839,7 @@ class polarDendrogram:
         return np.concatenate([[seg[0]], np.linspace(seg[1], seg[2], Nsmooth), [seg[3]]])
 
     def __get_colors(self, x, cmap):
-        scaled_colors = scaleData(x, self.__textColorScale, 0, 1)
+        scaled_colors = transform(x, self.__textColorScale, 0, 1)
 
         return cmap(scaled_colors)
 

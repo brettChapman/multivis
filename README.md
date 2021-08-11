@@ -189,17 +189,50 @@ For further detail on the usage refer to the docstring.
 			- [cluster_cmap] : The CMAP colour palette to use for the branch separation of clusters in the dendrogram (default: 'Set1')
 			- [rowColorCluster] : Setting to 'True' will display a colour bar for the clustered rows (default: False)
 			- [colColorCluster] : Setting to 'True' will display a colour bar for the clustered columns (default: False)
-			- [row_color_threshold] : The colouring threshold for the row dendrogram (default: 10)
-			- [col_color_threshold] : The colouring threshold for the column dendrogram (default: 10)
+			- [row_color_threshold] : The colouring threshold for the row dendrogram (default: 1)
+			- [col_color_threshold] : The colouring threshold for the column dendrogram (default: 1)
 		
 		- [help] : Print this help text
 
 		- [build] : Generates and displays the Hierarchical Clustered Heatmap (HCH).
 
+
+- [plotFeatures](https://github.com/brettChapman/multivis/blob/master/multivis/plotFeatures.py): Produces different types of feature plots
+	- [init_parameters](https://github.com/brettChapman/multivis/blob/master/multivis/plotFeatures.py#L49-L88)
+		- [peaktable] : Pandas dataframe containing peak data. Must contain 'Name' and 'Label'.
+		- [datatable] : Pandas dataframe containing matrix of values to plot (N samples x N features). Columns/features must be same as 'Name' from Peak Table.
+	- [methods](https://github.com/brettChapman/multivis/blob/master/multivis/plotFeatures.py#82-L421)
+		- set_params : Set parameters
+			- [plot_type] : The type of plot. Either "point", "violin", "box", "swarm", "violin-swarm" or "box-swarm" (default: 'point')
+                	- [column_numbers] : The number of columns to display in the plots (default: 4)                
+                	- [log_data] : Perform a log ('natural', base 2 or base 10) on all data (default: (True, 2))
+               		- [scale_data] : Scale the data ('standard' (centers to the mean and scales to unit variance), 'minmax' (scales between 0 and 1), 'maxabs' (scales to the absolute maximum value), 'robust' (centers to the median and scales to between 25th and 75th quantile range) (default: (True, 'minmax'))
+                	- [impute_data] : Impute any missing values using KNN impute with a set number of nearest neighbours (default: (True, 3))
+                	- [style] : Set the matplotlib style (see https://matplotlib.org/stable/tutorials/introductory/customizing.html) (default: 'seaborn-white')
+                	- [transparent] : Setting to 'True' will make the background transparent (default: False)                
+                	- [figSize] : The figure size as a tuple (width,height) (default: (15,10))
+                	- [fontSize] : The font size for all text (default: 12)
+               		- [colour_palette] : The colour palette to use for the plot (default: None)
+                	- [y_axis_label] : The label to customise the y axis (default: None)
+                	- [x_axis_rotation] : Rotate the x axis labels this number of degrees (default: 0)
+                	- [group_column_name] : The group column name used in the datatable (e.g. 'Class') (default: None)                
+                	- [point_estimator] : The statistical function to use for the point plot. Either "mean" or "median" (default: 'mean')
+                	- [point_ci] : The bootstrapped confidence interval for the point plot. Can also be standard deviation ("sd") (default: 95)
+                	- [violin_distribution_type] : The representation of the distribution of data points within the violin plot. Either "quartile", "box", "point", "stick" or None (default: 'box')
+                	- [violin_width_scale] : The method used to scale the width of the violin plot. Either "area", "count" or "width" (default: "width")
+                	- [box_iqr] : The proportion past the low and upper quartiles to extend the plot whiskers for the box plot. Points outside this range will be identified as outliers (default: 1.5)
+                	- [saveImage] : Setting to 'True' will save the image to file (default: True)
+                	- [imageFileName] : The image file name to save to (default: [plot_type]_features.png')                
+                	- [dpi] : The number of Dots Per Inch (DPI) for the image (default: 200)
+
+		- [help] : Print this help text
+
+		- [plot] : Generates feature plots.
+
 - [polarDendrogram](https://github.com/brettChapman/multivis/blob/master/multivis/polarDendrogram.py): Polar dendrogram
-	- [init_parameters](https://github.com/brettChapman/multivis/blob/master/multivis/polarDendrogram.py#L55-L59)
+	- [init_parameters](https://github.com/brettChapman/multivis/blob/master/multivis/polarDendrogram.py#L59-L63)
 		- [dn] : Dendrogram dictionary labelled by Peak Table index
-	- [methods](https://github.com/brettChapman/multivis/blob/master/multivis/polarDendrogram.py#61-L322)
+	- [methods](https://github.com/brettChapman/multivis/blob/master/multivis/polarDendrogram.py#68-L578)
 		- set_params : Set parameters
 			- [imageFileName] : The image file name to save to (default: 'polarDendrogram.png')
 			- [saveImage] : Setting to 'True' will save the image to file (default: True)
@@ -219,17 +252,24 @@ For further detail on the usage refer to the docstring.
 			- [label_column] : The label column to use from Peak Table (default: use original Peak Table index from cartesian dendrogram)
 			- [text_cmap] : The CMAP colour palette to use (default: 'brg')
 
-		- [getClusterPlots] : Generates plots of mean/median peak area over the group/class variable for each cluster from the polar dendrogram
-			- [plot_type] : The type of plot to plot. Either mean peak area or median peak area (default: 'mean')
+		- [plotClusters] : Aggregates peaks from each cluster of the polar dendrogram and generates different feature plots across the group/class variables.
+			- [plot_type] : The type of plot. Either "point", "violin", "box", "swarm", "violin-swarm" or "box-swarm" (default: 'point')
 			- [column_numbers] : The number of columns to display in the plots (default: 4)
                 	- [log_data] : Perform a log ('natural', base 2 or base 10) on all data (default: (True, 2))
-                	- [scale_data] : Scale the data to unit variance (default: True)
+                	- [scale_data] : Scale the data ('standard' (centers to the mean and scales to unit variance), 'minmax' (scales between 0 and 1), 'maxabs' (scales to the absolute maximum value), 'robust' (centres to the median and scales to between 25th and 75th quantile range) (default: (True, 'minmax'))			
                 	- [impute_data] : Impute any missing values using KNN impute with a set number of nearest neighbours (default: (True, 3))
                 	- [figSize] : The figure size as a tuple (width,height) (default: (15,10))
-                	- [x_axis_rotation] : Rotate the x axis labels this number of degrees (default: 0)
-                	- [ci] : The bootstrapped confidence interval. Can also be standard deviation ("sd") (default: 95)
-                	- [saveImage] : Setting to 'True' will save the image to file (default: True)
-                	- [imageFileName] : The image file name to save to (default: 'clusterPlots.png')
+                	- [fontSize] : The font size for all text (default: 12)
+			- [colour_palette] : The colour palette to use for the plot (default: None)
+			- [y_axis_label] : The label to customise the y axis (default: None)
+			- [x_axis_rotation] : Rotate the x axis labels this number of degrees (default: 0)
+                	- [point_estimator] : The statistical function to use for the point plot. Either "mean" or "median" (default: 'mean')
+			- [point_ci] : The bootstrapped confidence interval for the point plot. Can also be standard deviation ("sd") (default: 95)
+                	- [violin_distribution_type] : The representation of the distribution of data points within the violin plot. Either "quartile", "box", "point", "stick" or None (default: 'box')
+                	- [violin_width_scale] : The method used to scale the width of the violin plot. Either "area", "count" or "width" (default: "width")
+                	- [box_iqr] : The proportion past the low and upper quartiles to extend the plot whiskers for the box plot. Points outside this range will be identified as outliers (default: 1.5)
+			- [saveImage] : Setting to 'True' will save the image to file (default: True)
+                	- [imageFileName] : The image file name to save to (default: '[plot_type]_clusterPlots.png')
                 	- [dpi] : The number of Dots Per Inch (DPI) for the image (default: 200)
 
 		- [help] : Print this help text
@@ -319,22 +359,30 @@ For further detail on the usage refer to the docstring.
 		- [DataTable] : Merged Pandas dataFrame
 		- [PeakTable] : Merged Pandas dataFrame (with any statistical results generated by multivis.utils.statistics consolidated into each block)
 
-- [scaleData](https://github.com/brettChapman/multivis/blob/master/multivis/utils/scaleData.py): Scales data in forward or reverse order based on different scaling options.
-	- [parameters](https://github.com/brettChapman/multivis/blob/master/multivis/utils/scaleData.py#L6)
+- [transform](https://github.com/brettChapman/multivis/blob/master/multivis/utils/transform.py): Scales and transforms data in forward or reverse order based on different transform options.
+	- [parameters](https://github.com/brettChapman/multivis/blob/master/multivis/utils/transform.py#L6)
 		- [data] : A 1D numpy array of values
-		- [scale] : The scaling option chosen to apply to the data ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal", "reverse_ordinal")
+		- [transform_type] : The transform type to apply to the data ("linear", "reverse_linear", "log", "reverse_log", "square", "reverse_square", "area", "reverse_area", "volume", "reverse_volume", "ordinal", "reverse_ordinal")
 		- [min] : The minimum value for scaling
 		- [max] : The maximum value for scaling
-	- [Returns](https://github.com/brettChapman/multivis/blob/master/multivis/utils/scaler.py#L81)
-		- [scaled_data] : A scaled 1D numpy array
+	- [Returns](https://github.com/brettChapman/multivis/blob/master/multivis/utils/transform.py#L81)
+		- [transformed_data] : A scaled and transformed 1D numpy array
 
 - [scaler](https://github.com/brettChapman/multivis/blob/master/multivis/utils/scaler.py): Scales a series of values in a 1D numpy array or pandas dataframe matrix based on different scaling functions
 	- [parameters](https://github.com/brettChapman/multivis/blob/master/multivis/utils/scaler.py#L9)
 		- [data] : A pandas dataframe matrix or 1D numpy array of numerical values
 		- [type] : The scaler type to apply based on sklearn preprocessing functions (default: "standard")
-		- [newMin] : The minimum value for scaling (default: 1)
-		- [newMax] : The maximum value for scaling (default: 10)
-	- [Returns](https://github.com/brettChapman/multivis/blob/master/multivis/utils/scaler.py#L39)
+		- [stdScaler_with_mean] : Using "standard" scaler, center the data to the mean before scaling (default: True)
+        	- [stdScaler_with_std] : Using "standard" scaler, scale the data to unit variance (default: True)
+        	- [robust_with_centering] : Using "robust" scaler, center the data to the median before scaling (default: True)
+        	- [robust_with_scaling] : Using "robust" scaler, scale the data to within the quantile range (default: True)
+        	- [robust_unit_variance] : Using "robust" scaler, scale the data so that normally distributed features have a variance of 1 (default: False)
+        	- [minimum] : Using "minmax" scaler, set the minimum value for scaling (default: 0)
+        	- [maximum] : Using "minmax" scaler, set the maximum value for scaling (default: 1)
+        	- [lower_iqr] : Using "robust" scaler, set the lower quantile range (default: 25.0)
+        	- [upper_iqr] : Using "robust" scaler, set the upper quantile range (default: 75.0)
+
+	- [Returns](https://github.com/brettChapman/multivis/blob/master/multivis/utils/scaler.py#L53)
 		- [scaled_data] : A scaled pandas dataframe matrix or 1D numpy array of numerical values
 
 - [imputeData](https://github.com/brettChapman/multivis/blob/master/multivis/utils/imputeData.py): Imputes data given a pandas dataframe of values
@@ -352,7 +400,7 @@ For further detail on the usage refer to the docstring.
 		- [set_params] : Set parameters
 			- [parametric] : Perform parametric statistical analysis, assuming the data is normally distributed (default: True)
                 	- [log_data] : Perform a log ('natural', base 2 or base 10) on all data prior to statistical analysis (default: (False, 2))
-                	- [scale_data] : Scale the data to unit variance (default: False)
+                	- [scale_data] : Scale the data ('standard' (centers to the mean and scales to unit variance), 'minmax' (scales between 0 and 1), 'maxabs' (scales to the absolute maximum value), 'robust' (centers to the median and scales to between 25th and 75th quantile range) (default: (True, 'standard'))
                 	- [impute_data] : Impute any missing values using KNN impute with a set number of nearest neighbours (default: (False, 3))
 			- [group_column_name] : The group column name used in the datatable (default: None)
                 	- [control_group_name] : The control group name in the datatable, if available (default: None)

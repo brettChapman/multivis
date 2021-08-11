@@ -10,6 +10,7 @@ multivis/edgeBundle.py
 multivis/pca.py
 multivis/pcaLoadings.py
 multivis/pcoa.py
+multivis/plotFeatures.py
 multivis/plotNetwork.py
 multivis/polarDendrogram.py
 multivis/springNetwork.py
@@ -25,6 +26,6 @@ multivis/utils/groups2blocks.py
 multivis/utils/imputeData.py
 multivis/utils/loadData.py
 multivis/utils/mergeBlocks.py
-multivis/utils/scaleData.py
 multivis/utils/scaler.py
 multivis/utils/statistics.py
+multivis/utils/transform.py

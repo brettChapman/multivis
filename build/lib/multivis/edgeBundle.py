@@ -286,7 +286,7 @@ class edgeBundle:
                 print("Error: Link fade opacity is not valid. Choose a float or integer value.")
                 sys.exit()
 
-        if not type(mouseOver) == bool:
+        if not isinstance(mouseOver, bool):
             print("Error: Mouse over is not valid. Choose either \"True\" or \"False\".")
             sys.exit()
 
@@ -363,7 +363,7 @@ class edgeBundle:
                 print("Error: Edge CMAP is not valid. Choose one of the following: {}.".format(', '.join(cmap_list)))
                 sys.exit()
 
-        if not type(addArcs) == bool:
+        if not isinstance(addArcs, bool):
             print("Error: Add arcs is not valid. Choose either \"True\" or \"False\".")
             sys.exit()
 
@@ -645,7 +645,7 @@ class edgeBundle:
         return bundleJsonArray;
 
     def __get_colors(self, colorScale, x, cmap):
-        scaled_colors = scaleData(x, colorScale, 0, 1)
+        scaled_colors = transform(x, colorScale, 0, 1)
 
         return cmap(scaled_colors)
 
