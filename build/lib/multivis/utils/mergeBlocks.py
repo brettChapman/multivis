@@ -1,5 +1,6 @@
 import sys
 import copy
+import numpy as np
 import pandas as pd
 
 def mergeBlocks(peak_blocks, data_blocks, mergeType):
@@ -139,7 +140,7 @@ def __merge_statistic(MergedPeakTable, stat_name):
                     if bool_type:
                         tmp_stats = [False] * merged_peak_stats[merged_peak_stats['Block'] == block].shape[0]
                     else:
-                        tmp_stats = [0] * merged_peak_stats[merged_peak_stats['Block'] == block].shape[0]
+                        tmp_stats = [np.nan] * merged_peak_stats[merged_peak_stats['Block'] == block].shape[0]
                     stats.extend(list(tmp_stats))
 
             merged_peak_stats[column] = stats
