@@ -6,7 +6,7 @@ The MultiVis package contains the necessary tools for visualisation of multivari
 ### Dependencies
 multivis requires:
 - Python (>=3.5)
-- NumPy (==1.20.2)
+- NumPy (==1.21.0)
 - OpenPyXL (==2.6.1)
 - Pandas (==1.2.5)
 - Matplotlib (==3.4.2)

@@ -6,7 +6,7 @@ def readme():
 
 setup(
     name="multivis",
-    version="0.5.9",
+    version="0.5.10",
     description="MultiVis is a data visualisation package that produces both static and interactive visualisations targeted towards the Omics community.",
     long_description=readme(),
     long_description_content_type='text/markdown',
@@ -14,7 +14,7 @@ setup(
     url="https://github.com/brettChapman/multivis",
     packages=["multivis", "multivis.utils"],
     python_requires=">=3.5",
-    install_requires=["numpy==1.20.2",
+    install_requires=["numpy==1.21.0",
                       "openpyxl==2.6.1",
                       "pandas==1.2.5",
                       "matplotlib==3.4.2",

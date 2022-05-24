@@ -1,12 +1,11 @@
 Metadata-Version: 2.1
 Name: multivis
-Version: 0.5.9
+Version: 0.5.10
 Summary: MultiVis is a data visualisation package that produces both static and interactive visualisations targeted towards the Omics community.
 Home-page: https://github.com/brettChapman/multivis
 Author: Brett Chapman
 Author-email: brett.chapman@murdoch.edu.au, brett.chapman78@gmail.com
 License: MIT License
-Platform: UNKNOWN
 Requires-Python: >=3.5
 Description-Content-Type: text/markdown
 License-File: LICENSE.txt
@@ -19,7 +18,7 @@ The MultiVis package contains the necessary tools for visualisation of multivari
 ### Dependencies
 multivis requires:
 - Python (>=3.5)
-- NumPy (==1.20.2)
+- NumPy (==1.21.0)
 - OpenPyXL (==2.6.1)
 - Pandas (==1.2.5)
 - Matplotlib (==3.4.2)
@@ -474,5 +473,3 @@ E-mail: brett.chapman@murdoch.edu.au, brett.chapman78@gmail.com
 
 ### Citation
 If you would like to cite MultiVis in a scientific publication, please cite this GitHub page until a citation to a publication becomes available.
-
-
