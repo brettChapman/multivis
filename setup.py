@@ -14,7 +14,7 @@ setup(
     url="https://github.com/brettChapman/multivis",
     packages=["multivis", "multivis.utils"],
     python_requires=">=3.5",
-    install_requires=["numpy==1.21.0",
+    install_requires=["numpy==1.22.0",
                       "openpyxl==2.6.1",
                       "pandas==1.2.5",
                       "matplotlib==3.4.2",
