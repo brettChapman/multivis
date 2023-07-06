@@ -22,7 +22,7 @@ setup(
                       "networkx==2.4.0",
                       "statsmodels==0.12.2",
                       "scikits-bootstrap==1.0.1",
-                      "scipy==1.6.3",
+                      "scipy==1.10.0",
                       "scikit-learn==0.24.2",
                       "tqdm==4.36.1",
                       "xlrd==1.2.0"],
