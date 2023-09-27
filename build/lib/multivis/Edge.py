@@ -116,7 +116,6 @@ class Edge:
                                                                                                pvalBlocks_index,
                                                                                                column_blocks,
                                                                                                column_block);
-
                         if edges.empty:
                             edges = self.__buildEdges(nodes, scoreBlocks_column, pvalBlocks_column, index_block,
                                                       column_block, filter_type, hard_threshold, sign)

@@ -30,11 +30,11 @@ def loadData(filename, DataSheet, PeakSheet):
 
     # LOAD PEAK DATA
     print("Loading table: {}".format(PeakSheet))
-    PeakTable = pd.read_excel(filename, sheet_name=PeakSheet)
+    PeakTable = pd.read_excel(open(filename, 'rb'), sheet_name=PeakSheet)
 
     # LOAD DATA TABLE
     print("Loading table: {}".format(DataSheet))
-    DataTable = pd.read_excel(filename, sheet_name=DataSheet)
+    DataTable = pd.read_excel(open(filename, 'rb'), sheet_name=DataSheet)
 
     # Replace with nans
     DataTable = DataTable.replace(-99, np.nan)

@@ -24,7 +24,7 @@ class polarDendrogram:
                 branch_scale: The branch distance scale to apply ('linear', 'log', 'square') (default: 'linear')
                 gap: The gap size within the polar dendrogram (default: 0.1)
                 grid: Setting to 'True' will overlay a grid over the polar dendrogram (default: False)
-                style: Set the matplotlib style (see https://matplotlib.org/stable/tutorials/introductory/customizing.html) (default: 'seaborn-white')
+                style: Set the seaborn style (default: 'seaborn-v0_8-white')
                 transparent: Setting to 'True' will make the background of all plots transparent (default: False)
                 dpi: The number of Dots Per Inch (DPI) for the image (default: 200)
                 figSize: The figure size as a tuple (width,height) (default: (10,10))
@@ -71,7 +71,7 @@ class polarDendrogram:
     def help(self):
         print(polarDendrogram.usage)
 
-    def set_params(self, imageFileName='polarDendrogram.png', saveImage=True, branch_scale='linear', gap=0.1, grid=False, style='seaborn-white', transparent=False, dpi=200, figSize=(10,10), fontSize=15, PeakTable=pd.DataFrame(), DataTable=pd.DataFrame(), group_column_name=None, textColorScale='linear', text_color_column='none', label_column='none', text_cmap='brg'):
+    def set_params(self, imageFileName='polarDendrogram.png', saveImage=True, branch_scale='linear', gap=0.1, grid=False, style='seaborn-v0_8-white', transparent=False, dpi=200, figSize=(10,10), fontSize=15, PeakTable=pd.DataFrame(), DataTable=pd.DataFrame(), group_column_name=None, textColorScale='linear', text_color_column='none', label_column='none', text_cmap='brg'):
 
         imageFileName, saveImage, branch_scale, gap, grid, style, transparent, dpi, figSize, fontSize, PeakTable, DataTable, group_column_name, textColorScale, text_color_column, label_column, text_cmap = self.__paramCheck(imageFileName, saveImage, branch_scale, gap, grid, style, transparent, dpi, figSize, fontSize, PeakTable, DataTable, group_column_name, textColorScale, text_color_column, label_column, text_cmap)
 

@@ -246,7 +246,7 @@ class statistics:
                         groupPair = pd.DataFrame(dict([ (k,pd.Series(v)) for k,v in groupPairDict.items() ]))
                         controlList = np.array(groupPair['controlGroup'].values)
                         caseList = np.array(groupPair['caseGroup'].values)
-                        groupList = list(zip(controlList, caseList))
+                        groupList = list(zip(caseList, controlList))
 
                         if parametric:
                             if ttest_twoGroup:
@@ -745,7 +745,7 @@ class statistics:
         return parametric, log_data, scale_data, impute_data, group_column_name, control_group_name, group_alpha_CI, fold_change_alpha_CI, pca_alpha_CI, total_missing, group_missing, pca_loadings, normality_test, group_normality_test, group_mean_CI, group_median_CI, mean_fold_change, median_fold_change, oneway_Anova_test, kruskal_wallis_test, levene_twoGroup, levene_allGroup, ttest_oneGroup, ttest_twoGroup, mann_whitney_u_test
 
     def __mean_fold(self, groupList):
-        (controlGroup, caseGroup) = zip(*groupList)
+        (caseGroup, controlGroup) = zip(*groupList)
 
         if ((len(list(caseGroup)) > 0) and (len(list(controlGroup)) > 0)):
             meanFoldChange = np.nanmean(list(caseGroup)) / np.nanmean(list(controlGroup))
@@ -755,7 +755,7 @@ class statistics:
         return meanFoldChange
 
     def __median_fold(self, groupList):
-        (controlGroup, caseGroup) = zip(*groupList)
+        (caseGroup, controlGroup) = zip(*groupList)
 
         if ((len(list(caseGroup)) > 0) and (len(list(controlGroup)) > 0)):
             medianFoldChange = np.nanmedian(list(caseGroup)) / np.nanmedian(list(controlGroup))
@@ -914,7 +914,7 @@ class statistics:
         return df_TTEST_oneGroup
 
     def __TTEST_twoGroup(self, groupList):
-        (controlGroup, caseGroup) = zip(*groupList)
+        (caseGroup, controlGroup) = zip(*groupList)
 
         if ((len(list(caseGroup)) > 0) and (len(list(controlGroup)) > 0)):
             TTEST_twoGroup_statistic, TTEST_twoGroup_pvalue = stats.ttest_ind(list(controlGroup), list(caseGroup), nan_policy='omit')
@@ -925,7 +925,7 @@ class statistics:
         return TTEST_twoGroup_statistic, TTEST_twoGroup_pvalue
 
     def __MANN_WHITNEY_U(self, groupList):
-        (controlGroup, caseGroup) = zip(*groupList)
+        (caseGroup, controlGroup) = zip(*groupList)
 
         if ((len(list(caseGroup)) > 0) and (len(list(controlGroup)) > 0)):
             MannWhitney_statistic, MannWhitney_pvalue = stats.mannwhitneyu(list(controlGroup), list(caseGroup), alternative="two-sided")
@@ -936,7 +936,7 @@ class statistics:
         return MannWhitney_statistic, MannWhitney_pvalue
 
     def __LEVENE_twoGroup(self, groupList):
-        (controlGroup, caseGroup) = zip(*groupList)
+        (caseGroup, controlGroup) = zip(*groupList)
 
         if ((len(list(caseGroup)) > 0) and (len(list(controlGroup)) > 0)):
             LEVENE_twoGroup_statistic, LEVENE_twoGroup_pvalue = stats.levene(list(controlGroup), list(caseGroup))

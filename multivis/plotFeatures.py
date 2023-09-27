@@ -24,7 +24,7 @@ class plotFeatures:
                 log_data: Perform a log ('natural', base 2 or base 10) on all data (default: (True, 2))
                 scale_data: Scale the data ('standard' (centers to the mean and scales to unit variance), 'minmax' (scales between 0 and 1), 'maxabs' (scales to the absolute maximum value), 'robust' (centers to the median and scales to between 25th and 75th quantile range) (default: (True, 'minmax'))
                 impute_data: Impute any missing values using KNN impute with a set number of nearest neighbours (default: (True, 3))
-                style: Set the matplotlib style (see https://matplotlib.org/stable/tutorials/introductory/customizing.html) (default: 'seaborn-white')
+                style: Set the seaborn style (default: 'seaborn-v0_8-white')
                 transparent: Setting to 'True' will make the background transparent (default: False)                
                 figSize: The figure size as a tuple (width,height) (default: (15,10))
                 fontSize: The font size for all text (default: 12)
@@ -82,7 +82,7 @@ class plotFeatures:
     def help(self):
         print(plotFeatures.usage)
 
-    def set_params(self, plot_type='point', column_numbers=4, log_data=(True, 2), scale_data=(True, 'minmax'), impute_data=(True, 3), style='seaborn-white', transparent=False, figSize = (15, 10), fontSize = 12, colour_palette=None, y_axis_label=None, x_axis_rotation=0, group_column_name=None, point_estimator='mean', point_ci=95, violin_distribution_type='box', violin_width_scale='width', box_iqr=1.5, saveImage=True, imageFileName='_features.png', dpi = 200):
+    def set_params(self, plot_type='point', column_numbers=4, log_data=(True, 2), scale_data=(True, 'minmax'), impute_data=(True, 3), style='seaborn-v0_8-white', transparent=False, figSize = (15, 10), fontSize = 12, colour_palette=None, y_axis_label=None, x_axis_rotation=0, group_column_name=None, point_estimator='mean', point_ci=95, violin_distribution_type='box', violin_width_scale='width', box_iqr=1.5, saveImage=True, imageFileName='_features.png', dpi = 200):
 
         plot_type, column_numbers, log_data, scale_data, impute_data, style, transparent, figSize, fontSize, colour_palette, y_axis_label, x_axis_rotation, group_column_name, point_estimator, point_ci, violin_distribution_type, violin_width_scale, box_iqr, saveImage, imageFileName, dpi = self.__paramCheck(plot_type, column_numbers, log_data, scale_data, impute_data, style, transparent, figSize, fontSize, colour_palette, y_axis_label, x_axis_rotation, group_column_name, point_estimator, point_ci, violin_distribution_type, violin_width_scale, box_iqr, saveImage, imageFileName, dpi)
 

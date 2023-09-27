@@ -479,14 +479,16 @@ class statistics:
 
         if mann_whitney_u_test and not parametric and group_column_name is not None:
             MannWhitney_qvalueData = pd.DataFrame()
+
             mannWhitneyTitles_pvalues = mannWhitneyTitles[1:len(mannWhitneyTitles):2]
 
             mannWhitneyQvalueNames = []
 
             for val in mannWhitneyTitles_pvalues:
                 pvals = statsData[val].values.flatten()
-                mask = np.isfinite(pvals)
-                pval_masked = [x for x in compress(pvals, mask)]
+
+                mask = np.isfinite(np.array(pvals, dtype=float)).flatten()
+                pval_masked = np.array([x for x in compress(pvals, mask)]).flatten()
 
                 MannWhitney_BHFDR_qval = np.empty(len(pvals))
                 MannWhitney_BHFDR_qval.fill(np.nan)
@@ -500,7 +502,6 @@ class statistics:
                 MannWhitney_qvalueData[val_BHFDR_qvalue] = pd.Series(MannWhitney_BHFDR_qval)
 
             statsData = pd.merge(statsData, MannWhitney_qvalueData, left_index=True, right_index=True)
-
 
         if pca_loadings:
             peakData = datatable[peakNames].reset_index(drop=True)
@@ -534,7 +535,7 @@ class statistics:
                 statsData = pd.merge(df_pca_components, df_pca_stats, left_index=True, right_index=True);
 
         if not statsData.empty:
-            statsData = pd.merge(peaktable.reset_index(drop=True), statsData, left_index=True, right_index=True)
+            statsData = pd.merge(peaktable.reset_index(drop=True), statsData.reset_index(drop=True), left_index=True, right_index=True)
         else:
             statsData = peaktable.copy()
 
@@ -774,6 +775,7 @@ class statistics:
     def __TotalMissing_Calc(self, peak):
 
         missing = peak.isnull().sum()
+
         totalMissing = np.multiply(np.divide(missing, peak.shape[0]).tolist(), 100)
         df_totalMissing = pd.DataFrame({'Percent_Total_Missing': totalMissing})
 
@@ -928,7 +930,12 @@ class statistics:
         (caseGroup, controlGroup) = zip(*groupList)
 
         if ((len(list(caseGroup)) > 0) and (len(list(controlGroup)) > 0)):
-            MannWhitney_statistic, MannWhitney_pvalue = stats.mannwhitneyu(list(controlGroup), list(caseGroup), alternative="two-sided")
+
+            MannWhitney_statistic, MannWhitney_pvalue = stats.mannwhitneyu(pd.DataFrame(list(controlGroup)).dropna()
+                                                                           , pd.DataFrame(list(caseGroup)).dropna(), alternative="two-sided")
+
+            MannWhitney_statistic = MannWhitney_statistic[0]
+            MannWhitney_pvalue = MannWhitney_pvalue[0]
         else:
             MannWhitney_statistic = np.nan
             MannWhitney_pvalue = np.nan
@@ -939,7 +946,10 @@ class statistics:
         (caseGroup, controlGroup) = zip(*groupList)
 
         if ((len(list(caseGroup)) > 0) and (len(list(controlGroup)) > 0)):
-            LEVENE_twoGroup_statistic, LEVENE_twoGroup_pvalue = stats.levene(list(controlGroup), list(caseGroup))
+            controlGroup = np.array(pd.DataFrame(list(controlGroup)).dropna().values.tolist()).flatten()
+            caseGroup = np.array(pd.DataFrame(list(caseGroup)).dropna().values.tolist()).flatten()
+
+            LEVENE_twoGroup_statistic, LEVENE_twoGroup_pvalue = stats.levene(controlGroup, caseGroup)
         else:
             LEVENE_twoGroup_statistic = np.nan
             LEVENE_twoGroup_pvalue = np.nan

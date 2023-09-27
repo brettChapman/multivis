@@ -150,7 +150,7 @@ class plotNetwork:
             size_attr = np.array(list(nx.get_node_attributes(g, str(self.__sizing_column)).values()))
 
             if ((self.__sizeScale != "ordinal") and (self.__sizeScale != "reverse_ordinal")):
-                df_size_attr = pd.Series(size_attr, dtype=np.float);
+                df_size_attr = pd.Series(size_attr, dtype=float);
                 size_attr = np.array(list(df_size_attr.fillna(0).values))
 
         node_size = transform(size_attr, self.__sizeScale, self.__size_range[0], self.__size_range[1])
